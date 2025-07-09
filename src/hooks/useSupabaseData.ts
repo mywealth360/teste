@@ -40,7 +40,7 @@ export function useSupabaseData() {
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      setError(null);
+      setError(null); 
 
       // Fetch all data in parallel
       const [
@@ -198,7 +198,10 @@ export function useSupabaseData() {
       setTotalInvestmentValue(totalValue);
       setTotalInvestmentIncome(monthlyIncome);
       
-      return data;
+      // Calculate percentage of income from investments for display
+      const investmentIncomePercentage = totalMonthlyIncome > 0 ? (monthlyIncome / totalMonthlyIncome) * 100 : 0;
+      
+      return { data, monthlyIncome, investmentIncomePercentage };
     } catch (err) {
       console.error('Error fetching investments:', err);
       return [];
@@ -235,8 +238,11 @@ export function useSupabaseData() {
       setTotalRealEstateValue(totalValue);
       setTotalRealEstateIncome(monthlyIncome);
       setTotalRealEstateExpenses(monthlyExpenses);
+
+      // Calculate percentage of income from real estate for display
+      const realEstateIncomePercentage = totalMonthlyIncome > 0 ? (monthlyIncome / totalMonthlyIncome) * 100 : 0;
       
-      return data;
+      return { data, monthlyIncome, realEstateIncomePercentage };
     } catch (err) {
       console.error('Error fetching real estate:', err);
       return [];
@@ -256,10 +262,13 @@ export function useSupabaseData() {
       const totalSaved = (data || []).reduce((sum, plan) => sum + plan.total_contributed, 0);
       const monthlyContribution = (data || []).reduce((sum, plan) => sum + plan.monthly_contribution, 0);
 
+      // Calculate percentage of expenses for retirement contributions
+      const retirementExpensePercentage = totalMonthlyExpenses > 0 ? (monthlyContribution / totalMonthlyExpenses) * 100 : 0;
+
       setTotalRetirementSaved(totalSaved);
       setTotalRetirementContribution(monthlyContribution);
       
-      return data;
+      return { data, monthlyContribution, retirementExpensePercentage };
     } catch (err) {
       console.error('Error fetching retirement plans:', err);
       return [];
@@ -281,8 +290,11 @@ export function useSupabaseData() {
 
       setTotalDebt(totalRemainingAmount);
       setTotalLoanPayments(totalMonthlyPayment);
+
+      // Calculate percentage of expenses for loan payments
+      const loanExpensePercentage = totalMonthlyExpenses > 0 ? (totalMonthlyPayment / totalMonthlyExpenses) * 100 : 0;
       
-      return data;
+      return { data, totalMonthlyPayment, loanExpensePercentage };
     } catch (err) {
       console.error('Error fetching loans:', err);
       return [];
@@ -301,10 +313,13 @@ export function useSupabaseData() {
 
       // Calculate total monthly bills
       const totalMonthlyBills = (data || []).reduce((sum, bill) => sum + bill.amount, 0);
+      
+      // Calculate percentage of expenses for bills
+      const billsExpensePercentage = totalMonthlyExpenses > 0 ? (totalMonthlyBills / totalMonthlyExpenses) * 100 : 0;
 
       setTotalBills(totalMonthlyBills);
       
-      return data;
+      return { data, totalMonthlyBills, billsExpensePercentage };
     } catch (err) {
       console.error('Error fetching bills:', err);
       return [];
@@ -322,10 +337,13 @@ export function useSupabaseData() {
 
       // Calculate total bank balance
       const totalBalance = (data || []).reduce((sum, account) => sum + account.balance, 0);
+      
+      // Set percentage of total assets
+      const bankBalancePercentage = totalAssets > 0 ? (totalBalance / totalAssets) * 100 : 0;
 
       setTotalBankBalance(totalBalance);
       
-      return data;
+      return { data, totalBalance, bankBalancePercentage };
     } catch (err) {
       console.error('Error fetching bank accounts:', err);
       return [];
@@ -372,8 +390,20 @@ export function useSupabaseData() {
       setTotalVehicleValue(totalValue);
       setTotalVehicleDepreciation(totalDepreciation);
       setTotalVehicleExpenses(totalExpenses);
+
+      // Calculate percentage of expenses for vehicle expenses
+      const vehicleExpensePercentage = totalMonthlyExpenses > 0 ? (totalExpenses / totalMonthlyExpenses) * 100 : 0;
       
-      return data;
+      // Calculate percentage of total assets
+      const vehicleAssetPercentage = totalAssets > 0 ? (totalValue / totalAssets) * 100 : 0;
+      
+      return { 
+        data, 
+        totalValue,
+        totalExpenses, 
+        vehicleExpensePercentage,
+        vehicleAssetPercentage
+      };
     } catch (err) {
       console.error('Error fetching vehicles:', err);
       return [];
@@ -404,8 +434,11 @@ export function useSupabaseData() {
 
       setTotalExoticAssetsValue(totalValue);
       setTotalExoticAssetsAppreciation(totalAppreciation);
+
+      // Calculate percentage of total assets
+      const exoticAssetPercentage = totalAssets > 0 ? (totalValue / totalAssets) * 100 : 0;
       
-      return data;
+      return { data, totalValue, exoticAssetPercentage };
     } catch (err) {
       console.error('Error fetching exotic assets:', err);
       return [];
@@ -523,6 +556,11 @@ export function useSupabaseData() {
       });
       
       setTotalTaxes(totalTaxAmount);
+
+      // Calculate percentage of expenses for taxes
+      const taxExpensePercentage = totalMonthlyExpenses > 0 ? (totalTaxAmount / totalMonthlyExpenses) * 100 : 0;
+      
+      return { totalTaxAmount, taxExpensePercentage };
     } catch (err) {
       console.error('Error calculating taxes:', err);
     }

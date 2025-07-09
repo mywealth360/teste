@@ -64,13 +64,15 @@ export default function Dashboard() {
   const [selectedBreakdown, setSelectedBreakdown] = useState<string | null>(null);
 
   // Calculate total monthly expenses including all categories
-  const totalMonthlyExpensesComplete = totalMonthlyExpenses + totalLoanPayments + totalBills + totalRetirementContribution + totalRealEstateExpenses + totalVehicleExpenses + totalTaxes;
+  const totalMonthlyExpensesComplete = totalMonthlyExpenses + totalLoanPayments + totalBills + 
+    totalRetirementContribution + totalRealEstateExpenses + totalVehicleExpenses + 
+    totalTaxes;
 
   // Calculate total monthly income including all sources (ensure it's never negative)
-  const totalMonthlyIncomeComplete = Math.max(0, totalMonthlyIncome);
+  const totalMonthlyIncomeComplete = Math.max(0, totalMonthlyIncome + totalInvestmentIncome + totalRealEstateIncome);
 
   // Calculate net monthly income
-  const netMonthlyIncomeComplete = totalMonthlyIncomeComplete - totalMonthlyExpensesComplete;
+  const netMonthlyIncomeComplete = totalMonthlyIncomeComplete - totalMonthlyExpensesComplete; 
 
   // Calculate liquid assets (bank accounts + easily liquidated investments)
   const liquidAssets = totalBankBalance + (totalInvestmentValue * 0.7); // Assuming 70% of investments are liquid
@@ -165,7 +167,7 @@ export default function Dashboard() {
       <div className="space-y-6">
         <div className="flex items-center space-x-3">
           <div className="bg-gradient-to-r from-green-500 to-red-500 w-1 h-8 rounded-full"></div>
-          <h2 className="text-2xl font-bold text-gray-800">Fluxo de Caixa Mensal</h2>
+          <h2 className="text-2xl font-bold text-gray-800">Fluxo de Caixa Mensal (R$)</h2>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -180,11 +182,11 @@ export default function Dashboard() {
                 <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
                   <TrendingUp className="h-8 w-8" />
                 </div>
-                <BarChart3 className="h-6 w-6 opacity-60" />
+                <TrendingUp className="h-6 w-6 opacity-60" />
               </div>
               <div>
                 <p className="text-green-100 text-sm font-medium mb-2">Renda Mensal</p>
-                <p className="text-4xl font-bold mb-2">R$ {totalMonthlyIncomeComplete.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
+                <p className="text-4xl font-bold mb-2">R$ {totalMonthlyIncomeComplete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                 <div className="flex items-center space-x-2">
                   <div className="bg-white/20 px-3 py-1 rounded-full">
                     <span className="text-sm">Todas as fontes</span>
@@ -205,11 +207,11 @@ export default function Dashboard() {
                 <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
                   <TrendingDown className="h-8 w-8" />
                 </div>
-                <Receipt className="h-6 w-6 opacity-60" />
+                <TrendingDown className="h-6 w-6 opacity-60" />
               </div>
               <div>
                 <p className="text-red-100 text-sm font-medium mb-2">Gastos Mensais</p>
-                <p className="text-4xl font-bold mb-2">R$ {totalMonthlyExpensesComplete.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
+                <p className="text-4xl font-bold mb-2">R$ {totalMonthlyExpensesComplete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                 <div className="flex items-center space-x-2">
                   <div className="bg-white/20 px-3 py-1 rounded-full">
                     <span className="text-sm">Todos os gastos</span>
@@ -230,11 +232,13 @@ export default function Dashboard() {
                 <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
                   <DollarSign className="h-8 w-8" />
                 </div>
-                <Calendar className="h-6 w-6 opacity-60" />
+                <DollarSign className="h-6 w-6 opacity-60" />
               </div>
               <div>
                 <p className="text-white/80 text-sm font-medium mb-2">Saldo Mensal</p>
-                <p className="text-4xl font-bold mb-2">R$ {Math.abs(netMonthlyIncomeComplete).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
+                <p className="text-4xl font-bold mb-2">
+                  {netMonthlyIncomeComplete < 0 ? '-' : ''}R$ {Math.abs(netMonthlyIncomeComplete).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
                 <div className="flex items-center space-x-2">
                   <div className="bg-white/20 px-3 py-1 rounded-full">
                     <span className="text-sm">{netMonthlyIncomeComplete >= 0 ? 'Positivo' : 'Negativo'}</span>
@@ -249,82 +253,122 @@ export default function Dashboard() {
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <h3 className="text-lg font-semibold text-gray-800 mb-4">Detalhamento dos Custos Mensais</h3>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Receipt className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <p className="text-blue-600 text-sm font-medium">Transações</p>
+                    <p className="text-lg font-bold text-blue-700">R$ {totalMonthlyExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                </div>
+                <div className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
+                  {((totalMonthlyExpenses / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                </div>
+              </div>
+            </div>
+            
             <div className="bg-red-50 p-4 rounded-xl border border-red-100">
-              <div className="flex items-center space-x-3">
-                <Receipt className="h-5 w-5 text-red-600" />
-                <div>
-                  <p className="text-red-600 text-sm font-medium">Transações</p>
-                  <p className="text-lg font-bold text-red-700">R$ {totalMonthlyExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <CreditCard className="h-5 w-5 text-red-600" />
+                  <div>
+                    <p className="text-red-600 text-sm font-medium">Empréstimos</p>
+                    <p className="text-lg font-bold text-red-700">R$ {totalLoanPayments.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                </div>
+                <div className="text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
+                  {((totalLoanPayments / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
                 </div>
               </div>
             </div>
 
             <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
-              <div className="flex items-center space-x-3">
-                <CreditCard className="h-5 w-5 text-orange-600" />
-                <div>
-                  <p className="text-orange-600 text-sm font-medium">Empréstimos</p>
-                  <p className="text-lg font-bold text-orange-700">R$ {totalLoanPayments.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <FileText className="h-5 w-5 text-orange-600" />
+                  <div>
+                    <p className="text-orange-600 text-sm font-medium">Contas</p>
+                    <p className="text-lg font-bold text-orange-700">R$ {totalBills.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </div>
                 </div>
-              </div>
-            </div>
-
-            <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
-              <div className="flex items-center space-x-3">
-                <FileText className="h-5 w-5 text-yellow-600" />
-                <div>
-                  <p className="text-yellow-600 text-sm font-medium">Contas</p>
-                  <p className="text-lg font-bold text-yellow-700">R$ {totalBills.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
+                <div className="text-xs text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">
+                  {((totalBills / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
                 </div>
               </div>
             </div>
 
             <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-              <div className="flex items-center space-x-3">
-                <Shield className="h-5 w-5 text-blue-600" />
-                <div>
-                  <p className="text-blue-600 text-sm font-medium">Previdência</p>
-                  <p className="text-lg font-bold text-blue-700">R$ {totalRetirementContribution.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Shield className="h-5 w-5 text-blue-600" />
+                  <div>
+                    <p className="text-blue-600 text-sm font-medium">Previdência</p>
+                    <p className="text-lg font-bold text-blue-700">R$ {totalRetirementContribution.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                </div>
+                <div className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
+                  {((totalRetirementContribution / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
                 </div>
               </div>
             </div>
 
             <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-              <div className="flex items-center space-x-3">
-                <Home className="h-5 w-5 text-purple-600" />
-                <div>
-                  <p className="text-purple-600 text-sm font-medium">Imóveis</p>
-                  <p className="text-lg font-bold text-purple-700">R$ {totalRealEstateExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Home className="h-5 w-5 text-purple-600" />
+                  <div>
+                    <p className="text-purple-600 text-sm font-medium">Imóveis</p>
+                    <p className="text-lg font-bold text-purple-700">R$ {totalRealEstateExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                </div>
+                <div className="text-xs text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
+                  {((totalRealEstateExpenses / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
                 </div>
               </div>
             </div>
 
             <div className="bg-teal-50 p-4 rounded-xl border border-teal-100">
-              <div className="flex items-center space-x-3">
-                <Car className="h-5 w-5 text-teal-600" />
-                <div>
-                  <p className="text-teal-600 text-sm font-medium">Veículos</p>
-                  <p className="text-lg font-bold text-teal-700">R$ {totalVehicleExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Car className="h-5 w-5 text-teal-600" />
+                  <div>
+                    <p className="text-teal-600 text-sm font-medium">Veículos</p>
+                    <p className="text-lg font-bold text-teal-700">R$ {totalVehicleExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                </div>
+                <div className="text-xs text-teal-500 bg-teal-50 px-2 py-0.5 rounded-full">
+                  {((totalVehicleExpenses / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
                 </div>
               </div>
             </div>
 
             <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-              <div className="flex items-center space-x-3">
-                <Landmark className="h-5 w-5 text-indigo-600" />
-                <div>
-                  <p className="text-indigo-600 text-sm font-medium">Impostos</p>
-                  <p className="text-lg font-bold text-indigo-700">R$ {totalTaxes.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Landmark className="h-5 w-5 text-indigo-600" />
+                  <div>
+                    <p className="text-indigo-600 text-sm font-medium">Impostos</p>
+                    <p className="text-lg font-bold text-indigo-700">R$ {totalTaxes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                </div>
+                <div className="text-xs text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">
+                  {((totalTaxes / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
                 </div>
               </div>
             </div>
 
             <div className="bg-pink-50 p-4 rounded-xl border border-pink-100">
-              <div className="flex items-center space-x-3">
-                <Users className="h-5 w-5 text-pink-600" />
-                <div>
-                  <p className="text-pink-600 text-sm font-medium">Funcionários</p>
-                  <p className="text-lg font-bold text-pink-700">R$ {(0).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <Users className="h-5 w-5 text-pink-600" />
+                  <div>
+                    <p className="text-pink-600 text-sm font-medium">Funcionários</p>
+                    <p className="text-lg font-bold text-pink-700">R$ {(0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  </div>
+                </div>
+                <div className="text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">
+                  0%
                 </div>
               </div>
             </div>
