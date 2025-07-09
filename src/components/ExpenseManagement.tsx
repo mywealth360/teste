@@ -688,24 +688,75 @@ export default function ExpenseManagement() {
       {/* Gráfico por categoria */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">Gastos por Categoria</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {expenseCategories.map((category, index) => {
-            const Icon = category.icon || FileText;
-            const colorClass = getCategoryColor(category.category);
+            // Calculate percentage based on total expenses
+            const percentage = (category.amount / totalExpensesValue) * 100;
+            
+            // Determine icon and color based on category
+            let Icon;
+            let colorClass;
+            
+            switch(category.category) {
+              case 'Utilidades':
+                Icon = Building;
+                colorClass = 'bg-blue-500';
+                break;
+              case 'Empréstimos':
+                Icon = CreditCard;
+                colorClass = 'bg-orange-500';
+                break;
+              case 'Encargos Sociais':
+                Icon = Landmark;
+                colorClass = 'bg-purple-500';
+                break;
+              case 'Assinatura':
+                Icon = FileText;
+                colorClass = 'bg-green-500';
+                break;
+              case 'Investimentos':
+                Icon = TrendingUp;
+                colorClass = 'bg-indigo-500';
+                break;
+              case 'Previdência':
+                Icon = Shield;
+                colorClass = 'bg-teal-500';
+                break;
+              case 'Veículos':
+                Icon = Car;
+                colorClass = 'bg-red-500';
+                break;
+              case 'Impostos':
+                Icon = Landmark;
+                colorClass = 'bg-yellow-500';
+                break;
+              case 'Funcionários':
+                Icon = Users;
+                colorClass = 'bg-pink-500';
+                break;
+              case 'Metas Financeiras':
+                Icon = Target;
+                colorClass = 'bg-purple-500';
+                break;
+              default:
+                Icon = FileText;
+                colorClass = 'bg-gray-500';
+            }
+            
             return (
-              <div key={index} className="bg-gray-50 p-4 rounded-xl">
-                <div className="flex items-center space-x-3 mb-2">
-                  <div className={`w-8 h-8 ${colorClass} rounded-lg flex items-center justify-center`}>
-                    <Icon className="h-4 w-4 text-white" />
+              <div key={index} className="bg-gray-50 p-3 rounded-xl hover:shadow-md transition-shadow">
+                <div className="flex items-center mb-2">
+                  <div className={`w-7 h-7 ${colorClass} rounded-lg flex items-center justify-center mr-2`}>
+                    <Icon className="h-3.5 w-3.5 text-white" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{category.category}</p>
+                    <p className="text-xs font-medium text-gray-900 truncate">{category.category}</p>
+                    <p className="text-xs text-gray-500">{percentage.toFixed(1)}%</p>
                   </div>
-                  <div className="text-xs text-gray-500">{formatPercentage(category.percentage)}</div>
                 </div>
-                <p className="text-lg font-bold text-gray-900">{formatCurrency(category.amount)}</p>
-                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-                  <div className={`${colorClass} h-1.5 rounded-full`} style={{ width: `${Math.min(100, category.percentage)}%` }}></div>
+                <p className="text-base font-bold text-gray-900">{formatCurrency(category.amount)}</p>
+                <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
+                  <div className={`${colorClass} h-1 rounded-full`} style={{ width: `${Math.min(100, percentage)}%` }}></div>
                 </div>
               </div>
             );
