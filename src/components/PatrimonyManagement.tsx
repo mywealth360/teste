@@ -9,7 +9,6 @@ import {
   Shield,
   Banknote,
   PieChart,
-  Target,
   BarChart3,
   Calendar,
   Percent,
