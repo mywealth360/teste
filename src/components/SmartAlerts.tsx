@@ -1,22 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Bell, 
-  Calendar, 
-  DollarSign, 
-  AlertTriangle, 
-  CheckCircle, 
-  TrendingUp,
-  Clock,
-  Car,
-  Home,
-  Users,
-  CreditCard,
-  Shield,
-  Gem,
-  X,
-  ChevronRight,
-  FileText,
-  Filter
+  Bell, Calendar, DollarSign, AlertTriangle, CheckCircle, TrendingUp,
+  Clock, Car, Home, Users, CreditCard, Shield, Gem, X,
+  ChevronRight, FileText, Filter, Mail, Settings
 } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { supabase } from '../lib/supabase';
@@ -343,6 +329,11 @@ export default function SmartAlerts() {
   const alertTypes = ['bill', 'employee', 'expense', 'achievement', 'tax', 'asset', 'investment'] as AlertType[];
   const activeAlertTypes = alertTypes.filter(type => getAlertCountByType(type) > 0);
 
+  // Add a button to navigate to email notification settings
+  const navigateToEmailSettings = () => {
+    window.location.href = '/?tab=profile';
+  };
+
   if (loading && isInitialLoad) {
     return (
       <div className="space-y-6">
@@ -360,6 +351,10 @@ export default function SmartAlerts() {
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Alertas Inteligentes</h1>
           <p className="text-gray-500 mt-1">Acompanhe eventos importantes e fique por dentro de suas finanças</p>
+          <p className="text-sm text-blue-600 mt-1 flex items-center cursor-pointer" onClick={navigateToEmailSettings}>
+            <Mail className="h-3 w-3 mr-1" />
+            <span>Configurar alertas por email</span>
+          </p>
         </div>
         <div className="bg-blue-500 p-2 rounded-full text-white relative">
           <Bell className="h-6 w-6" />
@@ -441,13 +436,16 @@ export default function SmartAlerts() {
         <div className="flex flex-wrap gap-2">
           <button
             onClick={() => setSelectedFilter('all')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center space-x-1 transition-colors ${
               selectedFilter === 'all'
                 ? 'bg-blue-500 text-white'
                 : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             }`}
           >
-            Todos ({getAlertCountByType('all')})
+            <span>Todos</span> 
+            <span className="bg-blue-700 text-white text-xs rounded-full px-1.5 py-0.5">
+              {getAlertCountByType('all')}
+            </span>
           </button>
           {activeAlertTypes.map((type) => (
             <button
@@ -467,6 +465,23 @@ export default function SmartAlerts() {
       </div>
 
       {/* Lista de alertas */}
+      <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 mb-6 flex items-center justify-between">
+        <div className="flex items-center space-x-3">
+          <Mail className="h-5 w-5 text-blue-600" />
+          <div>
+            <h3 className="font-medium text-gray-800">Alertas por Email</h3>
+            <p className="text-sm text-gray-600">Configure como receber estes alertas no seu email</p>
+          </div>
+        </div>
+        <button
+          onClick={navigateToEmailSettings}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
+        >
+          <Settings className="h-4 w-4" />
+          <span>Configurar</span>
+        </button>
+      </div>
+      
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-xl font-semibold text-gray-800">

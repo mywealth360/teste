@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { User, Settings, Phone, Calendar, MapPin, Mail, Shield, CreditCard, CheckCircle, AlertTriangle } from 'lucide-react';
+import { User, Settings, Phone, Calendar, MapPin, Mail, Shield, CreditCard, CheckCircle, AlertTriangle, Bell } from 'lucide-react';
 import PhoneVerification from './PhoneVerification';
 import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 import { Users } from 'lucide-react';
+import EmailNotificationSettings from './EmailNotificationSettings';
 
 interface Profile {
   id: string;
@@ -45,6 +46,7 @@ export default function UserProfile() {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteRole, setInviteRole] = useState('viewer');
   const [inviteStatus, setInviteStatus] = useState<{message: string, type: 'success' | 'error'} | null>(null);
+  const [activeTab, setActiveTab] = useState<'profile' | 'email_notifications'>('profile');
 
   useEffect(() => {
     fetchProfile();
@@ -182,10 +184,40 @@ export default function UserProfile() {
           <div className="flex items-center">
             <User className="w-6 h-6 text-blue-600 mr-3" />
             <h1 className="text-2xl font-bold text-gray-900">Meu Perfil</h1>
+            
+            <div className="ml-6 space-x-2">
+              <button 
+                onClick={() => setActiveTab('profile')} 
+                className={`px-4 py-1 rounded-lg text-sm ${
+                  activeTab === 'profile' ? 
+                  'bg-blue-600 text-white' : 
+                  'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                Informações Pessoais
+              </button>
+              <button 
+                onClick={() => setActiveTab('email_notifications')} 
+                className={`px-4 py-1 rounded-lg text-sm flex items-center ${
+                  activeTab === 'email_notifications' ? 
+                  'bg-blue-600 text-white' : 
+                  'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <Bell className="h-3 w-3 mr-1" />
+                Alertas por Email
+              </button>
+            </div>
           </div>
         </div>
+        ) : (
+          <div className="p-6">
+            <EmailNotificationSettings />
+          </div>
+        )}
 
-        <div className="p-6">
+        {activeTab === 'profile' ? (
+          <div className="p-6">
           {/* Account Status Section */}
           <div className="mb-8 p-4 bg-gray-50 rounded-xl">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
