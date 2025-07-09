@@ -40,7 +40,7 @@ function AppContent() {
   const [showPaymentFailedModal, setShowPaymentFailedModal] = useState(false);
   
   // Force subscription page when trial days left is 0
-  const { trialDaysLeft, isAdmin } = useAuth();
+  const { trialDaysLeft } = useAuth();
   
   // Check if trial has expired
   React.useEffect(() => {
