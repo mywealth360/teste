@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Heart, X, User, Mail, Lock } from 'lucide-react';
+import { Heart, X, User, Mail, Lock, Phone, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from "../../contexts/AuthContext";
 import RegisterWithPhone from './RegisterWithPhone';
 
@@ -19,6 +19,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
     password: '',
     fullName: '' 
   });
+  const [showPassword, setShowPassword] = useState(false);
   
   const { signIn, signUp } = useAuth();
   
@@ -116,7 +117,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                   <input
-                    type="password"
+                    type={showPassword ? 'text' : 'password'}
                     value={formData.password}
                     onChange={(e) => setFormData({...formData, password: e.target.value})}
                     placeholder="Sua senha"
@@ -124,6 +125,13 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                     minLength={6}
                     className="w-full pl-10 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors duration-200"
                   />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                  >
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </button>
                 </div>
               </div>
 
@@ -224,7 +232,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                     <div className="relative">
                       <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                       <input
-                        type="password"
+                        type={showPassword ? 'text' : 'password'}
                         value={formData.password}
                         onChange={(e) => setFormData({...formData, password: e.target.value})}
                         placeholder="Sua senha"
@@ -232,6 +240,13 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
                         minLength={6}
                         className="w-full pl-10 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors duration-200"
                       />
+                      <button
+                        type="button"
+                        onClick={() => setShowPassword(!showPassword)}
+                        className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
+                      >
+                        {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                      </button>
                     </div>
                   </div>
 
