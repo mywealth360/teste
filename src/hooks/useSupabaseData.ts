@@ -183,7 +183,6 @@ export function useDashboardData() {
   const bills = useBills();
   const employees = useEmployees();
   const financialGoals = useFinancialGoals();
-  const alerts = useAlerts();
   
   // Retirement plans hook
   const retirementPlans = useSupabaseData<{
@@ -241,7 +240,6 @@ export function useDashboardData() {
       bills.loading,
       employees.loading,
       financialGoals.loading,
-      alerts.loading,
       retirementPlans.loading,
       loans.loading,
       bankAccounts.loading
@@ -257,7 +255,6 @@ export function useDashboardData() {
       bills.error,
       employees.error,
       financialGoals.error,
-      alerts.error,
       retirementPlans.error,
       loans.error,
       bankAccounts.error
@@ -275,7 +272,6 @@ export function useDashboardData() {
     bills.loading, bills.error,
     employees.loading, employees.error,
     financialGoals.loading, financialGoals.error,
-    alerts.loading, alerts.error,
     retirementPlans.loading, retirementPlans.error,
     loans.loading, loans.error,
     bankAccounts.loading, bankAccounts.error
@@ -326,11 +322,25 @@ export function useDashboardData() {
 
   const netMonthlyIncome = totalMonthlyIncome - totalMonthlyExpenses;
 
-  const totalInvestmentValue = investments.data.reduce((sum, inv) => sum + inv.amount, 0);
-  const totalInvestmentIncome = investments.data.reduce((sum, inv) => sum + (inv.monthly_income || 0), 0);
+  const totalInvestmentValue = investments.data.reduce((sum, inv) => {
+    if (inv.quantity && inv.current_price) {
+      return sum + (inv.quantity * inv.current_price);
+    }
+    return sum + inv.amount;
+  }, 0);
+  
+  const totalInvestmentIncome = investments.data.reduce((sum, inv) => {
+    if (inv.dividend_yield && inv.quantity && inv.current_price) {
+      const currentValue = inv.quantity * inv.current_price;
+      return sum + ((currentValue * inv.dividend_yield) / 100 / 12);
+    } else if (inv.monthly_income) {
+      return sum + inv.monthly_income;
+    }
+    return sum;
+  }, 0);
 
   const totalRealEstateValue = realEstate.data.reduce((sum, prop) => sum + (prop.current_value || prop.purchase_price), 0);
-  const totalRealEstateIncome = realEstate.data.reduce((sum, prop) => sum + (prop.monthly_rent || 0), 0);
+  const totalRealEstateIncome = realEstate.data.reduce((sum, prop) => sum + (prop.is_rented ? (prop.monthly_rent || 0) : 0), 0);
   const totalRealEstateExpenses = realEstate.data.reduce((sum, prop) => sum + prop.expenses, 0);
 
   const totalRetirementSaved = retirementPlans.data.reduce((sum, plan) => sum + plan.total_contributed, 0);
@@ -360,7 +370,8 @@ export function useDashboardData() {
     .reduce((sum, goal) => sum + goal.current_amount, 0); // Only count current amount, not target amount
 
   const totalAssets = totalInvestmentValue + totalRealEstateValue + totalRetirementSaved + 
-                     totalBankBalance + totalVehicleValue + totalExoticAssetsValue;
+                     totalBankBalance + totalVehicleValue + totalExoticAssetsValue + 
+                     totalFinancialGoals; // Include financial goals in assets
   
   const netWorth = totalAssets - totalDebt;
 
@@ -587,7 +598,7 @@ export function useEmployees() {
 }
 
 export function useFinancialGoals() {
-  const result = useSupabaseData<{
+  return useSupabaseData<{
     id: string;
     name: string;
     target_amount: number;
@@ -601,11 +612,6 @@ export function useFinancialGoals() {
     table: 'financial_goals',
     orderBy: { column: 'target_date', ascending: true }
   });
-  
-  return {
-    ...result,
-    goals: result.data
-  };
 }
 
 export function useAlerts() {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Plus, Edit2, Trash2, TrendingUp } from 'lucide-react';
+import { DollarSign, Plus, Edit2, Trash2, TrendingUp, Home, Building } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -73,6 +73,7 @@ export default function RevenueManagement() {
         amount: property.monthly_rent || 0,
         frequency: 'monthly' as const,
         category: 'Aluguel',
+        next_payment: null,
         is_active: true,
         tax_rate: property.tax_rate || 0,
         created_at: property.created_at,
@@ -99,6 +100,7 @@ export default function RevenueManagement() {
             amount: monthlyAmount,
             frequency: 'monthly' as const,
             category: 'Dividendos',
+            next_payment: null,
             is_active: true,
             tax_rate: investment.tax_rate || 0,
             created_at: investment.created_at,
@@ -215,6 +217,46 @@ export default function RevenueManagement() {
       }, 0);
   };
 
+  // Calculate income by category
+  const calculateIncomeByCategory = () => {
+    const categories: Record<string, number> = {};
+    
+    incomeSources
+      .filter(source => source.is_active)
+      .forEach(source => {
+        let monthlyAmount = source.amount;
+        
+        switch (source.frequency) {
+          case 'weekly':
+            monthlyAmount = source.amount * 4.33;
+            break;
+          case 'yearly':
+            monthlyAmount = source.amount / 12;
+            break;
+          case 'one-time':
+            monthlyAmount = 0;
+            break;
+        }
+        
+        if (!categories[source.category]) {
+          categories[source.category] = 0;
+        }
+        
+        categories[source.category] += monthlyAmount;
+      });
+    
+    // Convert to array and calculate percentages
+    const totalIncome = calculateTotalMonthlyIncome();
+    const categoriesArray = Object.entries(categories).map(([category, amount]) => ({
+      category,
+      amount,
+      percentage: totalIncome > 0 ? (amount / totalIncome) * 100 : 0
+    }));
+    
+    // Sort by amount (descending)
+    return categoriesArray.sort((a, b) => b.amount - a.amount);
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
@@ -232,6 +274,18 @@ export default function RevenueManagement() {
     return frequencies[frequency as keyof typeof frequencies] || frequency;
   };
 
+  // Get category icon
+  const getCategoryIcon = (category: string) => {
+    switch (category.toLowerCase()) {
+      case 'aluguel':
+        return <Home className="h-5 w-5 text-orange-600" />;
+      case 'dividendos':
+        return <Building className="h-5 w-5 text-blue-600" />;
+      default:
+        return <DollarSign className="h-5 w-5 text-green-600" />;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -240,234 +294,291 @@ export default function RevenueManagement() {
     );
   }
 
+  const incomeCategories = calculateIncomeByCategory();
+
   return (
     <div className="space-y-6">
-      <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between mb-6">
-          <h2 className="text-2xl font-bold text-gray-900">Gestão de Receitas</h2>
-          <div className="flex space-x-2">
-          <button
-            onClick={() => setShowAddForm(true)}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center space-x-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Adicionar Fonte de Renda</span>
-          </button>
-          </div>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Gestão de Receitas</h1>
+          <p className="text-gray-500 mt-1">Gerencie suas fontes de renda</p>
         </div>
+        <button 
+          onClick={() => setShowAddForm(true)}
+          className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Adicionar Fonte de Renda</span>
+        </button>
+      </div>
 
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <div className="bg-green-50 rounded-lg p-4">
-            <div className="flex items-center">
-              <DollarSign className="h-8 w-8 text-green-600" />
-              <div className="ml-3">
-                <p className="text-sm text-green-600">Renda Mensal</p>
-                <p className="text-2xl font-bold text-green-900">{formatCurrency(calculateTotalMonthlyIncome())}</p>
-              </div>
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-green-100 text-sm font-medium">Renda Mensal</p>
+              <p className="text-3xl font-bold mt-1">R$ {calculateTotalMonthlyIncome().toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
             </div>
-          </div>
-          
-          <div className="bg-blue-50 rounded-lg p-4">
-            <div className="flex items-center">
-              <TrendingUp className="h-8 w-8 text-blue-600" />
-              <div className="ml-3">
-                <p className="text-sm text-blue-600">Renda Anual</p>
-                <p className="text-2xl font-bold text-blue-900">{formatCurrency(calculateTotalYearlyIncome())}</p>
-              </div>
-            </div>
-          </div>
-          
-          <div className="bg-purple-50 rounded-lg p-4">
-            <div className="flex items-center">
-              <div className="h-8 w-8 bg-purple-600 rounded-full flex items-center justify-center">
-                <span className="text-white font-bold">{incomeSources.filter(s => s.is_active).length}</span>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm text-purple-600">Fontes Ativas</p>
-                <p className="text-2xl font-bold text-purple-900">{incomeSources.length} Total</p>
-              </div>
+            <div className="bg-white/20 p-3 rounded-xl">
+              <DollarSign className="h-6 w-6" />
             </div>
           </div>
         </div>
 
-        {/* Add Form */}
-        {showAddForm && (
-          <div className="bg-gray-50 rounded-lg p-6 mb-6">
-            <h3 className="text-lg font-medium text-gray-900 mb-4">Adicionar Nova Fonte de Renda</h3>
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Nome</label>
-                  <input
-                    type="text"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Valor</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({...formData, amount: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Frequência</label>
-                  <select
-                    value={formData.frequency}
-                    onChange={(e) => setFormData({...formData, frequency: e.target.value as any})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="monthly">Mensal</option>
-                    <option value="weekly">Semanal</option>
-                    <option value="yearly">Anual</option>
-                    <option value="one-time">Única</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
-                  <input
-                    type="text"
-                    value={formData.category}
-                    onChange={(e) => setFormData({...formData, category: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Próximo Pagamento</label>
-                  <input
-                    type="date"
-                    value={formData.next_payment}
-                    onChange={(e) => setFormData({...formData, next_payment: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">Taxa de Imposto (%)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    max="100"
-                    value={formData.tax_rate}
-                    onChange={(e) => setFormData({...formData, tax_rate: e.target.value})}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end space-x-3">
-                <button
-                  type="button"
-                  onClick={() => setShowAddForm(false)}
-                  className="px-4 py-2 text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
-                >
-                  Salvar
-                </button>
-              </div>
-            </form>
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-blue-100 text-sm font-medium">Renda Anual</p>
+              <p className="text-3xl font-bold mt-1">R$ {calculateTotalYearlyIncome().toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            </div>
+            <div className="bg-white/20 p-3 rounded-xl">
+              <TrendingUp className="h-6 w-6" />
+            </div>
           </div>
-        )}
+        </div>
 
-        {/* Income Sources List */}
-        <div className="space-y-4">
-          {incomeSources.map((source) => (
-            <div key={source.id} className="bg-gray-50 rounded-lg p-4">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2">
-                    <h3 className="font-medium text-gray-900">{source.name}</h3>
-                    {source.id.startsWith('rental-') && (
-                      <span className="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
-                        Aluguel
-                      </span>
-                    )}
-                    {source.id.startsWith('dividend-') && (
-                      <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
-                        Dividendo
-                      </span>
-                    )}
-                    <span className={`px-2 py-1 rounded-full text-xs ${
-                      source.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
-                    }`}>
-                      {source.is_active ? 'Ativa' : 'Inativa'}
-                    </span>
-                  </div>
-                  <p className="text-sm text-gray-500">{source.category}</p>
-                  <div className="mt-2 grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-                    <div>
-                      <span className="text-gray-500">Valor:</span>
-                      <span className="ml-2 font-medium">{formatCurrency(source.amount)}</span>
-                    </div>
-                    <div>
-                      <span className="text-gray-500">Frequência:</span>
-                      <span className="ml-2 font-medium">{formatFrequency(source.frequency)}</span>
-                    </div>
-                    {source.next_payment && (
-                      <div>
-                        <span className="text-gray-500">Próximo:</span>
-                        <span className="ml-2 font-medium">{new Date(source.next_payment).toLocaleDateString('pt-BR')}</span>
-                      </div>
-                    )}
-                    {source.tax_rate && (
-                      <div>
-                        <span className="text-gray-500">Imposto:</span>
-                        <span className="ml-2 font-medium">{source.tax_rate}%</span>
-                      </div>
-                    )}
-                  </div>
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-purple-100 text-sm font-medium">Fontes Ativas</p>
+              <p className="text-3xl font-bold mt-1">{incomeSources.filter(s => s.is_active).length}</p>
+              <p className="text-purple-100 text-sm">{incomeSources.length} Total</p>
+            </div>
+            <div className="bg-white/20 p-3 rounded-xl">
+              <div className="h-6 w-6 flex items-center justify-center text-white font-bold">
+                {incomeSources.filter(s => s.is_active).length}
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Income Categories */}
+      <div className="bg-white rounded-2xl shadow-lg p-6 overflow-hidden">
+        <h2 className="text-xl font-semibold text-gray-800 mb-6">Receitas por Categoria</h2>
+        <div className="grid grid-cols-1 gap-4">
+          {incomeCategories.map((category, index) => (
+            <div key={index} className="bg-gray-50 p-4 rounded-xl hover:shadow-md transition-shadow">
+              <div className="flex items-center mb-2">
+                <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mr-3">
+                  {getCategoryIcon(category.category)}
                 </div>
-                <div className="flex space-x-2">
-                  {!source.id.startsWith('rental-') && !source.id.startsWith('dividend-') && (
-                    <>
-                      <button className="text-indigo-600 hover:text-indigo-900">
-                        <Edit2 className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => handleDelete(source.id)}
-                        className="text-red-600 hover:text-red-900"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
-                    </>
-                  )}
+                <div>
+                  <p className="text-sm font-medium text-gray-900">{category.category}</p>
+                  <p className="text-xs text-gray-500">{category.percentage.toFixed(1)}%</p>
                 </div>
+                <div className="ml-auto">
+                  <p className="text-lg font-bold text-green-600">{formatCurrency(category.amount)}</p>
+                </div>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, category.percentage)}%` }}></div>
               </div>
             </div>
           ))}
         </div>
+      </div>
 
-        {incomeSources.length === 0 && (
-          <div className="text-center py-12">
-            <DollarSign className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              Nenhuma fonte de renda encontrada
-            </h3>
-            <p className="text-gray-500 mb-4">
-              Adicione sua primeira fonte de renda para começar a gerenciar suas receitas.
-            </p>
-            <button
-              onClick={() => setShowAddForm(true)}
-              className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center space-x-2 mx-auto"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Adicionar Primeira Fonte</span>
-            </button>
-          </div>
-        )}
+      {/* Add Form */}
+      {showAddForm && (
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h3 className="text-lg font-medium text-gray-900 mb-4">Adicionar Nova Fonte de Renda</h3>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Valor</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  value={formData.amount}
+                  onChange={(e) => setFormData({...formData, amount: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Frequência</label>
+                <select
+                  value={formData.frequency}
+                  onChange={(e) => setFormData({...formData, frequency: e.target.value as any})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                >
+                  <option value="monthly">Mensal</option>
+                  <option value="weekly">Semanal</option>
+                  <option value="yearly">Anual</option>
+                  <option value="one-time">Única</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                <input
+                  type="text"
+                  value={formData.category}
+                  onChange={(e) => setFormData({...formData, category: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                  required
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Próximo Pagamento</label>
+                <input
+                  type="date"
+                  value={formData.next_payment}
+                  onChange={(e) => setFormData({...formData, next_payment: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                />
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Taxa de Imposto (%)</label>
+                <input
+                  type="number"
+                  step="0.01"
+                  min="0"
+                  max="100"
+                  value={formData.tax_rate}
+                  onChange={(e) => setFormData({...formData, tax_rate: e.target.value})}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end space-x-3 pt-4">
+              <button
+                type="button"
+                onClick={() => setShowAddForm(false)}
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+              >
+                Cancelar
+              </button>
+              <button
+                type="submit"
+                className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200"
+              >
+                Salvar
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
+
+      {/* Income Sources List */}
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-xl font-semibold text-gray-800">Suas Fontes de Renda</h2>
+        </div>
+        
+        <div className="divide-y divide-gray-100">
+          {incomeSources.length === 0 ? (
+            <div className="p-12 text-center">
+              <DollarSign className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma fonte de renda cadastrada</h3>
+              <p className="text-gray-500">Adicione suas fontes de renda para acompanhar suas receitas.</p>
+            </div>
+          ) : (
+            incomeSources.map((source) => (
+              <div key={source.id} className="p-6 hover:bg-gray-50 transition-colors duration-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                      source.id.startsWith('rental-') ? 'bg-orange-100' : 
+                      source.id.startsWith('dividend-') ? 'bg-blue-100' : 
+                      'bg-green-100'
+                    }`}>
+                      {source.id.startsWith('rental-') ? (
+                        <Home className="h-6 w-6 text-orange-600" />
+                      ) : source.id.startsWith('dividend-') ? (
+                        <Building className="h-6 w-6 text-blue-600" />
+                      ) : (
+                        <DollarSign className="h-6 w-6 text-green-600" />
+                      )}
+                    </div>
+                    
+                    <div>
+                      <div className="flex items-center space-x-3">
+                        <h3 className="font-medium text-gray-800">{source.name}</h3>
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          source.id.startsWith('rental-') ? 'bg-orange-100 text-orange-700' : 
+                          source.id.startsWith('dividend-') ? 'bg-blue-100 text-blue-700' : 
+                          'bg-green-100 text-green-700'
+                        }`}>
+                          {source.id.startsWith('rental-') ? 'Aluguel' : 
+                           source.id.startsWith('dividend-') ? 'Dividendo' : 
+                           source.category}
+                        </span>
+                        {!source.is_active && (
+                          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
+                            Inativa
+                          </span>
+                        )}
+                      </div>
+                      
+                      <div className="flex items-center space-x-2 mt-1">
+                        <span className="text-sm text-gray-500">
+                          {formatFrequency(source.frequency)}
+                        </span>
+                        {source.next_payment && (
+                          <>
+                            <span className="text-gray-300">•</span>
+                            <span className="text-sm text-gray-500">
+                              Próximo: {new Date(source.next_payment).toLocaleDateString('pt-BR')}
+                            </span>
+                          </>
+                        )}
+                        {source.tax_rate > 0 && (
+                          <>
+                            <span className="text-gray-300">•</span>
+                            <span className="text-sm text-gray-500">
+                              Imposto: {source.tax_rate}%
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center space-x-4">
+                    <div className="text-right">
+                      <p className="font-semibold text-lg text-gray-800">
+                        R$ {source.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                      {source.tax_rate > 0 && (
+                        <p className="text-sm text-red-600">
+                          Imposto: R$ {((source.amount * source.tax_rate) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      )}
+                    </div>
+                    
+                    {!source.id.startsWith('rental-') && !source.id.startsWith('dividend-') && (
+                      <div className="flex items-center space-x-2">
+                        <button 
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(source.id)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
+        </div>
       </div>
     </div>
   );

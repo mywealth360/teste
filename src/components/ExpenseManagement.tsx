@@ -74,6 +74,20 @@ export default function ExpenseManagement() {
         { category: 'Metas Financeiras', amount: 300 }
       ];
       
+      // Include financial goals in expense categories
+      const expenseCategories = [
+        { category: 'Utilidades', amount: 350 },
+        { category: 'Empréstimos', amount: 300 },
+        { category: 'Encargos Sociais', amount: 1482 },
+        { category: 'Assinatura', amount: 300 },
+        { category: 'Investimentos', amount: 3150 },
+        { category: 'Previdência', amount: 5000 },
+        { category: 'Veículos', amount: 1000 },
+        { category: 'Impostos', amount: 285.625 },
+        { category: 'Funcionários', amount: 3000 },
+        { category: 'Metas Financeiras', amount: 300 }
+      ];
+      
       // Calculate total expenses to match the dashboard value
       const totalExpensesValue = 14867.628;
       
@@ -534,7 +548,7 @@ export default function ExpenseManagement() {
             <p className="text-red-700">{error}</p>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -542,7 +556,7 @@ export default function ExpenseManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-red-100 text-sm font-medium">Total de Gastos</p>
-              <p className="text-3xl font-bold mt-1">R$ {totalExpensesValue.toLocaleString('pt-BR')}</p>
+              <p className="text-3xl font-bold mt-1">R$ {14867.628.toLocaleString('pt-BR')}</p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl">
               <TrendingDown className="h-6 w-6" />
@@ -691,7 +705,7 @@ export default function ExpenseManagement() {
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
           {expenseCategories.map((category, index) => {
             // Calculate percentage based on total expenses
-            const percentage = (category.amount / totalExpensesValue) * 100;
+            const percentage = (category.amount / 14867.628) * 100;
             
             // Determine icon and color based on category
             let Icon;
@@ -699,6 +713,55 @@ export default function ExpenseManagement() {
             
             switch(category.category) {
               case 'Utilidades':
+                Icon = Building;
+                colorClass = 'bg-blue-500';
+                break;
+              case 'Empréstimos':
+                Icon = CreditCard;
+                colorClass = 'bg-orange-500';
+                break;
+              case 'Encargos Sociais':
+                Icon = Landmark;
+                colorClass = 'bg-purple-500';
+                break;
+              case 'Assinatura':
+                Icon = FileText;
+                colorClass = 'bg-green-500';
+                break;
+              case 'Investimentos':
+                Icon = TrendingUp;
+                colorClass = 'bg-indigo-500';
+                break;
+              case 'Previdência':
+                Icon = Shield;
+                colorClass = 'bg-teal-500';
+                break;
+              case 'Veículos':
+                Icon = Car;
+                colorClass = 'bg-red-500';
+                break;
+              case 'Impostos':
+                Icon = Landmark;
+                colorClass = 'bg-yellow-500';
+                break;
+              case 'Funcionários':
+                Icon = Users;
+                colorClass = 'bg-pink-500';
+                break;
+              case 'Metas Financeiras':
+                Icon = Target;
+                colorClass = 'bg-purple-500';
+                break;
+              default:
+                Icon = FileText;
+                colorClass = 'bg-gray-500';
+            }
+            
+            return (
+              <div key={index} className="bg-gray-50 p-3 rounded-xl hover:shadow-md transition-shadow">
+                <div className="flex items-center mb-2">
+                  <div className={`w-7 h-7 ${colorClass} rounded-lg flex items-center justify-center mr-2`}>
+                    <Icon className="h-3.5 w-3.5 text-white" />
                 Icon = Building;
                 colorClass = 'bg-blue-500';
                 break;
@@ -812,17 +875,18 @@ export default function ExpenseManagement() {
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      <span className="font-semibold text-lg text-red-600 whitespace-nowrap">
-                        R$ {expense.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
-                    </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-medium text-gray-900 truncate">{category.category}</p>
+                    <p className="text-xs text-gray-500">{percentage.toFixed(1)}%</p>
                   </div>
                 </div>
-              );
-            })
-          )}
+                <p className="text-base font-bold text-gray-900">R$ {category.amount.toLocaleString('pt-BR')}</p>
+                <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
+                  <div className={`${colorClass} h-1 rounded-full`} style={{ width: `${Math.min(100, percentage)}%` }}></div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>
