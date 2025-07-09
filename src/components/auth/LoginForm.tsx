@@ -28,6 +28,7 @@ export default function LoginForm({ onSuccess, onRegisterClick }: LoginFormProps
       if (error) {
         setError(error.message);
       } else {
+        // After successful login, redirect to home page
         onSuccess();
       }
     } catch (err) {

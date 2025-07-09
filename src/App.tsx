@@ -4,6 +4,7 @@ import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
+import SubscriptionPage from './components/SubscriptionPage';
 import InviteAccept from './components/InviteAccept';
 import Dashboard from './components/Dashboard';
 import AIChat from './components/AIChat';
@@ -35,7 +36,7 @@ import AdminPanel from './components/AdminPanel';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { isAdmin, isInTrial, trialExpiresAt } = useAuth();
+  const { isAdmin, isInTrial, trialExpiresAt, userPlan } = useAuth();
   const [showTrialExpiredModal, setShowTrialExpiredModal] = useState(false);
   const [showPaymentFailedModal, setShowPaymentFailedModal] = useState(false);
   
@@ -70,7 +71,23 @@ function AppContent() {
     };
   }, []);
 
+  // Check if we should show subscription page
+  const shouldShowSubscriptionPage = () => {
+    // If trial has expired or subscription has ended, only show subscription page
+    if ((isInTrial && trialExpiresAt && trialExpiresAt < new Date()) || 
+        (!isInTrial && !userPlan)) {
+      return true;
+    }
+    // Otherwise, show the selected tab content
+    return false;
+  };
+
   const renderContent = () => {
+    // If trial expired or no subscription, force subscription page
+    if (shouldShowSubscriptionPage()) {
+      return <SubscriptionPage />;
+    }
+    
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard />;
@@ -110,6 +127,8 @@ function AppContent() {
         return <UserProfile />;
       case 'admin':
         return isAdmin ? <AdminPanel /> : <Dashboard />;
+      case 'subscription':
+        return <SubscriptionPage />;
       case 'subscription':
         return <SubscriptionPage />;
       case 'cards':
@@ -154,7 +173,7 @@ function AppContent() {
 
 function AuthenticatedApp() {
   return (
-    <ProtectedRoute>
+    <ProtectedRoute redirectToSubscription={true}>
       <AppContent />
     </ProtectedRoute>
   );

@@ -10,6 +10,14 @@ interface PaymentFailedModalProps {
 
 export default function PaymentFailedModal({ isOpen, onClose }: PaymentFailedModalProps) {
   if (!isOpen) return null;
+  
+  // When payment fails, redirect to subscription page
+  React.useEffect(() => {
+    if (isOpen) {
+      // Force redirect to subscription page
+      window.location.href = '/?tab=subscription';
+    }
+  }, [isOpen]);
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-fadeIn">

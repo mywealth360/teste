@@ -191,8 +191,9 @@ export default function RegisterWithPhone({ onSuccess, onBack }: RegisterWithPho
       setSuccess('Telefone verificado com sucesso!');
       
       // Call onSuccess callback
+      // Redirect to subscription page after successful registration
       setTimeout(() => {
-        onSuccess();
+        window.location.href = '/';
       }, 1500);
     } catch (err) {
       setError((err as Error).message);

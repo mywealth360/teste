@@ -10,6 +10,14 @@ interface TrialExpiredModalProps {
 
 export default function TrialExpiredModal({ isOpen, onClose }: TrialExpiredModalProps) {
   if (!isOpen) return null;
+  
+  // When trial expires, redirect to subscription page
+  React.useEffect(() => {
+    if (isOpen) {
+      // Force redirect to subscription page
+      window.location.href = '/?tab=subscription';
+    }
+  }, [isOpen]);
 
   return (
     <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4 animate-fadeIn">
