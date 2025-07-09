@@ -550,7 +550,7 @@ export function useEmployees() {
 }
 
 export function useFinancialGoals() {
-  return useSupabaseData<{
+  const result = useSupabaseData<{
     id: string;
     name: string;
     target_amount: number;
@@ -564,6 +564,11 @@ export function useFinancialGoals() {
     table: 'financial_goals',
     orderBy: { column: 'target_date', ascending: true }
   });
+  
+  return {
+    ...result,
+    goals: result.data
+  };
 }
 
 export function useAlerts() {

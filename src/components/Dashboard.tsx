@@ -24,9 +24,11 @@ import { useAuth } from '../contexts/AuthContext';
 import WealthEvolutionChart from './WealthEvolutionChart';
 import FinancialBreakdown from './FinancialBreakdown';
 import { useDashboardData } from '../hooks/useSupabaseData';
+import { useNavigate } from 'react-router-dom';
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [activeBreakdown, setActiveBreakdown] = useState<string | null>(null);
   const [expenseCategories, setExpenseCategories] = useState<{category: string, amount: number, percentage: number, icon?: React.ComponentType<any>}[]>([]);
   const [incomeCategories, setIncomeCategories] = useState<{category: string, amount: number, percentage: number}[]>([]);
@@ -148,7 +150,7 @@ export default function Dashboard() {
               <p className="text-green-100 text-sm font-medium">Receita Mensal</p>
               <p className="text-3xl font-bold mt-1">{formatCurrency(dashboardData.totalMonthlyIncome || 0)}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-xl cursor-pointer" onClick={() => navigate('/revenues')}>
               <TrendingUp className="h-6 w-6" />
             </div>
           </div>
@@ -160,7 +162,7 @@ export default function Dashboard() {
               <p className="text-red-100 text-sm font-medium">Despesa Mensal</p>
               <p className="text-3xl font-bold mt-1">R$ 14.867,628</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-xl cursor-pointer" onClick={() => navigate('/expenses')}>
               <TrendingDown className="h-6 w-6" />
             </div>
           </div>
@@ -237,9 +239,9 @@ export default function Dashboard() {
       <div className="bg-white rounded-2xl shadow-lg p-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">Composição do Patrimônio</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" onClick={(e) => e.currentTarget === e.target && setActiveBreakdown(null)}>
           <button
-            onClick={() => setActiveBreakdown(activeBreakdown === 'investments' ? null : 'investments')}
+            onClick={() => navigate('/investments')}
             className={`p-4 rounded-xl border-2 transition-all ${
               activeBreakdown === 'investments' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'
             }`}
@@ -257,7 +259,7 @@ export default function Dashboard() {
           </button>
           
           <button
-            onClick={() => setActiveBreakdown(activeBreakdown === 'real-estate' ? null : 'real-estate')}
+            onClick={() => navigate('/real-estate')}
             className={`p-4 rounded-xl border-2 transition-all ${
               activeBreakdown === 'real-estate' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'
             }`}
@@ -275,7 +277,7 @@ export default function Dashboard() {
           </button>
           
           <button
-            onClick={() => setActiveBreakdown(activeBreakdown === 'retirement' ? null : 'retirement')}
+            onClick={() => navigate('/retirement')}
             className={`p-4 rounded-xl border-2 transition-all ${
               activeBreakdown === 'retirement' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'
             }`}
@@ -293,7 +295,7 @@ export default function Dashboard() {
           </button>
           
           <button
-            onClick={() => setActiveBreakdown(activeBreakdown === 'vehicles' ? null : 'vehicles')}
+            onClick={() => navigate('/vehicles')}
             className={`p-4 rounded-xl border-2 transition-all ${
               activeBreakdown === 'vehicles' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'
             }`}
@@ -311,7 +313,7 @@ export default function Dashboard() {
           </button>
           
           <button
-            onClick={() => setActiveBreakdown(activeBreakdown === 'exotic-assets' ? null : 'exotic-assets')}
+            onClick={() => navigate('/exotic-assets')}
             className={`p-4 rounded-xl border-2 transition-all ${
               activeBreakdown === 'exotic-assets' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'
             }`}
@@ -329,7 +331,7 @@ export default function Dashboard() {
           </button>
           
           <button
-            onClick={() => setActiveBreakdown(activeBreakdown === 'financial-goals' ? null : 'financial-goals')}
+            onClick={() => navigate('/financial-goals')}
             className={`p-4 rounded-xl border-2 transition-all ${
               activeBreakdown === 'financial-goals' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'
             }`}
