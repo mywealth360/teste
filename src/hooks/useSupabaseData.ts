@@ -167,9 +167,211 @@ export function useSupabaseData<T = any>(options: DataFetchOptions): UseSupabase
   };
 }
 
+// Aggregated hook for dashboard data
+export function useSupabaseData() {
+  const { user } = useAuth();
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // Individual data hooks
+  const incomeSources = useIncomeSources();
+  const transactions = useTransactions();
+  const investments = useInvestments();
+  const realEstate = useRealEstate();
+  const vehicles = useVehicles();
+  const exoticAssets = useExoticAssets();
+  const bills = useBills();
+  const employees = useEmployees();
+  const financialGoals = useFinancialGoals();
+  const alerts = useAlerts();
+  
+  // Retirement plans hook
+  const retirementPlans = useSupabaseData<{
+    id: string;
+    type: string;
+    name: string;
+    company: string;
+    monthly_contribution: number;
+    total_contributed: number;
+    expected_return: number;
+    start_date: string;
+    retirement_age: number;
+  }>({
+    table: 'retirement_plans',
+    orderBy: { column: 'start_date', ascending: false }
+  });
+  
+  // Loans hook
+  const loans = useSupabaseData<{
+    id: string;
+    type: string;
+    bank: string;
+    amount: number;
+    remaining_amount: number;
+    interest_rate: number;
+    monthly_payment: number;
+    due_date: string;
+    start_date: string;
+    end_date: string;
+  }>({
+    table: 'loans',
+    orderBy: { column: 'due_date', ascending: true }
+  });
+  
+  // Bank accounts hook
+  const bankAccounts = useSupabaseData<{
+    id: string;
+    bank_name: string;
+    account_type: string;
+    balance: number;
+    last_updated: string;
+  }>({
+    table: 'bank_accounts',
+    orderBy: { column: 'last_updated', ascending: false }
+  });
+
+  useEffect(() => {
+    const allLoading = [
+      incomeSources.loading,
+      transactions.loading,
+      investments.loading,
+      realEstate.loading,
+      vehicles.loading,
+      exoticAssets.loading,
+      bills.loading,
+      employees.loading,
+      financialGoals.loading,
+      alerts.loading,
+      retirementPlans.loading,
+      loans.loading,
+      bankAccounts.loading
+    ];
+    
+    const allErrors = [
+      incomeSources.error,
+      transactions.error,
+      investments.error,
+      realEstate.error,
+      vehicles.error,
+      exoticAssets.error,
+      bills.error,
+      employees.error,
+      financialGoals.error,
+      alerts.error,
+      retirementPlans.error,
+      loans.error,
+      bankAccounts.error
+    ].filter(Boolean);
+    
+    setLoading(allLoading.some(loading => loading));
+    setError(allErrors.length > 0 ? allErrors[0] : null);
+  }, [
+    incomeSources.loading, incomeSources.error,
+    transactions.loading, transactions.error,
+    investments.loading, investments.error,
+    realEstate.loading, realEstate.error,
+    vehicles.loading, vehicles.error,
+    exoticAssets.loading, exoticAssets.error,
+    bills.loading, bills.error,
+    employees.loading, employees.error,
+    financialGoals.loading, financialGoals.error,
+    alerts.loading, alerts.error,
+    retirementPlans.loading, retirementPlans.error,
+    loans.loading, loans.error,
+    bankAccounts.loading, bankAccounts.error
+  ]);
+
+  // Calculate aggregated values
+  const totalMonthlyIncome = incomeSources.data
+    .filter(source => source.is_active)
+    .reduce((sum, source) => {
+      const multiplier = source.frequency === 'monthly' ? 1 : 
+                        source.frequency === 'weekly' ? 4.33 :
+                        source.frequency === 'yearly' ? 1/12 : 1;
+      return sum + (source.amount * multiplier);
+    }, 0);
+
+  const totalMonthlyExpenses = transactions.data
+    .filter(t => t.type === 'expense')
+    .reduce((sum, t) => sum + t.amount, 0);
+
+  const netMonthlyIncome = totalMonthlyIncome - totalMonthlyExpenses;
+
+  const totalInvestmentValue = investments.data.reduce((sum, inv) => sum + inv.amount, 0);
+  const totalInvestmentIncome = investments.data.reduce((sum, inv) => sum + (inv.monthly_income || 0), 0);
+
+  const totalRealEstateValue = realEstate.data.reduce((sum, prop) => sum + (prop.current_value || prop.purchase_price), 0);
+  const totalRealEstateIncome = realEstate.data.reduce((sum, prop) => sum + (prop.monthly_rent || 0), 0);
+  const totalRealEstateExpenses = realEstate.data.reduce((sum, prop) => sum + prop.expenses, 0);
+
+  const totalRetirementSaved = retirementPlans.data.reduce((sum, plan) => sum + plan.total_contributed, 0);
+  const totalRetirementContribution = retirementPlans.data.reduce((sum, plan) => sum + plan.monthly_contribution, 0);
+
+  const totalDebt = loans.data.reduce((sum, loan) => sum + loan.remaining_amount, 0);
+  const totalLoanPayments = loans.data.reduce((sum, loan) => sum + loan.monthly_payment, 0);
+
+  const totalBills = bills.data
+    .filter(bill => bill.is_active)
+    .reduce((sum, bill) => sum + bill.amount, 0);
+
+  const totalBankBalance = bankAccounts.data.reduce((sum, account) => sum + account.balance, 0);
+
+  const totalVehicleValue = vehicles.data.reduce((sum, vehicle) => sum + (vehicle.current_value || vehicle.purchase_price), 0);
+  const totalVehicleDepreciation = vehicles.data.reduce((sum, vehicle) => {
+    const monthsSincePurchase = Math.max(1, Math.floor((Date.now() - new Date(vehicle.purchase_date).getTime()) / (1000 * 60 * 60 * 24 * 30)));
+    return sum + (vehicle.purchase_price * (vehicle.depreciation_rate / 100) * monthsSincePurchase / 12);
+  }, 0);
+  const totalVehicleExpenses = vehicles.data.reduce((sum, vehicle) => sum + (vehicle.monthly_expenses || 0), 0);
+
+  const totalExoticAssetsValue = exoticAssets.data.reduce((sum, asset) => sum + (asset.current_value || asset.purchase_price), 0);
+  const totalExoticAssetsAppreciation = exoticAssets.data.reduce((sum, asset) => sum + ((asset.current_value || asset.purchase_price) - asset.purchase_price), 0);
+
+  const totalFinancialGoals = financialGoals.data
+    .filter(goal => goal.status === 'active')
+    .reduce((sum, goal) => sum + goal.target_amount, 0);
+
+  const totalAssets = totalInvestmentValue + totalRealEstateValue + totalRetirementSaved + 
+                     totalBankBalance + totalVehicleValue + totalExoticAssetsValue;
+  
+  const netWorth = totalAssets - totalDebt;
+
+  // Calculate taxes (simplified calculation)
+  const totalTaxes = (totalMonthlyIncome * 0.15) + // Simplified income tax
+                     (totalInvestmentIncome * 0.15) + // Investment tax
+                     (totalRealEstateIncome * 0.15); // Real estate tax
+
+  return {
+    totalMonthlyIncome,
+    totalMonthlyExpenses,
+    netMonthlyIncome,
+    totalInvestmentValue,
+    totalInvestmentIncome,
+    totalRealEstateValue,
+    totalRealEstateIncome,
+    totalRealEstateExpenses,
+    totalRetirementSaved,
+    totalRetirementContribution,
+    totalDebt,
+    totalLoanPayments,
+    totalBills,
+    totalBankBalance,
+    totalVehicleValue,
+    totalVehicleDepreciation,
+    totalVehicleExpenses,
+    totalExoticAssetsValue,
+    totalExoticAssetsAppreciation,
+    totalFinancialGoals,
+    totalAssets,
+    netWorth,
+    totalTaxes,
+    loading,
+    error
+  };
+}
+
 // Specific hooks for common tables
 export function useIncomeSources() {
-  return useSupabaseData<{
+  return useSupabaseDataGeneric<{
     id: string;
     name: string;
     amount: number;
@@ -185,7 +387,7 @@ export function useIncomeSources() {
 }
 
 export function useTransactions() {
-  return useSupabaseData<{
+  return useSupabaseDataGeneric<{
     id: string;
     type: string;
     amount: number;
@@ -201,7 +403,7 @@ export function useTransactions() {
 }
 
 export function useInvestments() {
-  return useSupabaseData<{
+  return useSupabaseDataGeneric<{
     id: string;
     type: string;
     name: string;
@@ -223,7 +425,7 @@ export function useInvestments() {
 }
 
 export function useRealEstate() {
-  return useSupabaseData<{
+  return useSupabaseDataGeneric<{
     id: string;
     type: string;
     address: string;
@@ -242,7 +444,7 @@ export function useRealEstate() {
 }
 
 export function useVehicles() {
-  return useSupabaseData<{
+  return useSupabaseDataGeneric<{
     id: string;
     type: string;
     brand: string;
@@ -262,7 +464,7 @@ export function useVehicles() {
 }
 
 export function useExoticAssets() {
-  return useSupabaseData<{
+  return useSupabaseDataGeneric<{
     id: string;
     name: string;
     category: string;
@@ -281,7 +483,7 @@ export function useExoticAssets() {
 }
 
 export function useBills() {
-  return useSupabaseData<{
+  return useSupabaseDataGeneric<{
     id: string;
     name: string;
     company: string;
@@ -305,7 +507,7 @@ export function useBills() {
 }
 
 export function useEmployees() {
-  return useSupabaseData<{
+  return useSupabaseDataGeneric<{
     id: string;
     name: string;
     role: string;
@@ -332,7 +534,7 @@ export function useEmployees() {
 }
 
 export function useFinancialGoals() {
-  return useSupabaseData<{
+  return useSupabaseDataGeneric<{
     id: string;
     name: string;
     target_amount: number;
@@ -349,7 +551,7 @@ export function useFinancialGoals() {
 }
 
 export function useAlerts() {
-  return useSupabaseData<{
+  return useSupabaseDataGeneric<{
     id: string;
     type: string;
     title: string;
@@ -366,4 +568,152 @@ export function useAlerts() {
     table: 'alerts',
     orderBy: { column: 'date', ascending: false }
   });
+}
+
+// Rename the original function to avoid conflicts
+export function useSupabaseDataGeneric<T = any>(options: DataFetchOptions): UseSupabaseDataResult<T> {
+  const { user } = useAuth();
+  const [data, setData] = useState<T[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchData = async () => {
+    if (!user) {
+      setData([]);
+      setLoading(false);
+      return;
+    }
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      let query = supabase
+        .from(options.table)
+        .select(options.columns || '*')
+        .eq('user_id', user.id);
+
+      // Apply additional filters
+      if (options.filter) {
+        Object.entries(options.filter).forEach(([key, value]) => {
+          query = query.eq(key, value);
+        });
+      }
+
+      // Apply ordering
+      if (options.orderBy) {
+        query = query.order(options.orderBy.column, { 
+          ascending: options.orderBy.ascending ?? true 
+        });
+      }
+
+      // Apply limit
+      if (options.limit) {
+        query = query.limit(options.limit);
+      }
+
+      const { data: result, error } = await query;
+
+      if (error) throw error;
+      setData(result || []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      console.error('Error fetching data:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const create = async (newData: Partial<T>): Promise<T | null> => {
+    if (!user) {
+      setError('User not authenticated');
+      return null;
+    }
+
+    try {
+      const { data: result, error } = await supabase
+        .from(options.table)
+        .insert([{ ...newData, user_id: user.id }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      // Update local state
+      setData(prev => [result, ...prev]);
+      return result;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Create failed');
+      console.error('Error creating data:', err);
+      return null;
+    }
+  };
+
+  const update = async (id: string, updateData: Partial<T>): Promise<T | null> => {
+    if (!user) {
+      setError('User not authenticated');
+      return null;
+    }
+
+    try {
+      const { data: result, error } = await supabase
+        .from(options.table)
+        .update(updateData)
+        .eq('id', id)
+        .eq('user_id', user.id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      // Update local state
+      setData(prev => prev.map(item => 
+        (item as any).id === id ? result : item
+      ));
+      return result;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Update failed');
+      console.error('Error updating data:', err);
+      return null;
+    }
+  };
+
+  const deleteItem = async (id: string): Promise<boolean> => {
+    if (!user) {
+      setError('User not authenticated');
+      return false;
+    }
+
+    try {
+      const { error } = await supabase
+        .from(options.table)
+        .delete()
+        .eq('id', id)
+        .eq('user_id', user.id);
+
+      if (error) throw error;
+      
+      // Update local state
+      setData(prev => prev.filter(item => (item as any).id !== id));
+      return true;
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Delete failed');
+      console.error('Error deleting data:', err);
+      return false;
+    }
+  };
+
+  useEffect(() => {
+    fetchData();
+  }, [user, options.table, JSON.stringify(options.filter)]);
+
+  return {
+    data,
+    loading,
+    error,
+    refetch: fetchData,
+    create,
+    update,
+    delete: deleteItem
+  };
 }
