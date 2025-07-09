@@ -26,7 +26,8 @@ import {
   Gem,
   Users,
   ChevronRight,
-  PiggyBank
+  PiggyBank,
+  Briefcase
 } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useMonthlyRenewal } from '../hooks/useMonthlyRenewal';
@@ -376,6 +377,62 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+          
+          {/* Revenue Categories */}
+          <div className="mt-6 border-t border-gray-100 pt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Receitas por Categoria</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-green-50 p-4 rounded-xl border border-green-100 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <Briefcase className="h-5 w-5 text-green-600" />
+                    <h4 className="font-medium text-gray-800">Trabalho</h4>
+                  </div>
+                  <p className="text-xs text-green-500 bg-green-100 px-2 py-0.5 rounded-full">
+                    {totalMonthlyIncome > 0 ? ((totalMonthlyIncome * 0.7) / totalMonthlyIncome * 100).toFixed(0) : '0'}%
+                  </p>
+                </div>
+                <p className="text-xl font-bold text-gray-900">R$ {(totalMonthlyIncome * 0.7).toLocaleString('pt-BR')}</p>
+              </div>
+              
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <Building className="h-5 w-5 text-blue-600" />
+                    <h4 className="font-medium text-gray-800">Investimentos</h4>
+                  </div>
+                  <p className="text-xs text-blue-500 bg-blue-100 px-2 py-0.5 rounded-full">
+                    {totalMonthlyIncomeComplete > 0 ? ((totalInvestmentIncome / totalMonthlyIncomeComplete) * 100).toFixed(0) : '0'}%
+                  </p>
+                </div>
+                <p className="text-xl font-bold text-gray-900">R$ {totalInvestmentIncome.toLocaleString('pt-BR')}</p>
+              </div>
+              
+              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center space-x-2">
+                    <Home className="h-5 w-5 text-purple-600" />
+                    <h4 className="font-medium text-gray-800">Imóveis</h4>
+                  </div>
+                  <p className="text-xs text-purple-500 bg-purple-100 px-2 py-0.5 rounded-full">
+                    {totalMonthlyIncomeComplete > 0 ? ((totalRealEstateIncome / totalMonthlyIncomeComplete) * 100).toFixed(0) : '0'}%
+                  </p>
+                </div>
+                <p className="text-xl font-bold text-gray-900">R$ {totalRealEstateIncome.toLocaleString('pt-BR')}</p>
+              </div>
+            </div>
+            
+            {/* View Details Button */}
+            <div className="mt-4 text-center">
+              <button 
+                onClick={() => navigate('/?tab=revenues')} 
+                className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
+              >
+                <span>Ver detalhamento completo</span>
+                <ChevronRight className="h-4 w-4 ml-1" />
+              </button>
             </div>
           </div>
           

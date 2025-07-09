@@ -294,11 +294,17 @@ export default function Income() {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
-            <div>
+            <div className="flex-1">
               <p className="text-sm text-gray-600">Renda Mensal Total</p>
               <p className="text-2xl font-bold text-gray-900">{formatCurrency(calculateTotalIncome())}</p>
+              
+              <div className="flex flex-wrap gap-1 mt-2">
+                <span className="text-xs bg-green-100 text-green-700 px-1.5 py-0.5 rounded-full">Trabalho</span>
+                <span className="text-xs bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded-full">Investimentos</span>
+                <span className="text-xs bg-purple-100 text-purple-700 px-1.5 py-0.5 rounded-full">Imóveis</span>
+              </div>
             </div>
-            <div className="p-3 bg-green-100 rounded-full">
+            <div className="p-3 bg-green-100 rounded-xl flex-shrink-0">
               <TrendingUp className="h-6 w-6 text-green-600" />
             </div>
           </div>
@@ -308,9 +314,16 @@ export default function Income() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Fontes Ativas</p>
-              <p className="text-2xl font-bold text-gray-900">{incomeSources.filter(s => s.is_active).length}</p>
+              <div className="flex items-baseline space-x-2">
+                <p className="text-2xl font-bold text-gray-900">{incomeSources.filter(s => s.is_active).length}</p>
+                <p className="text-sm text-gray-600">cadastradas</p>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                {incomeSources.filter(s => s.frequency === 'monthly' && s.is_active).length} mensais, 
+                {incomeSources.filter(s => s.frequency === 'yearly' && s.is_active).length} anuais
+              </p>
             </div>
-            <div className="p-3 bg-blue-100 rounded-full">
+            <div className="p-3 bg-blue-100 rounded-xl">
               <DollarSign className="h-6 w-6 text-blue-600" />
             </div>
           </div>
@@ -320,11 +333,15 @@ export default function Income() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-600">Próximos Pagamentos</p>
-              <p className="text-2xl font-bold text-gray-900">
-                {incomeSources.filter(s => s.next_payment && s.is_active).length}
-              </p>
+              <div className="flex items-baseline space-x-2">
+                <p className="text-2xl font-bold text-gray-900">
+                  {incomeSources.filter(s => s.next_payment && s.is_active).length}
+                </p>
+                <p className="text-sm text-gray-600">agendados</p>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">Nos próximos 30 dias</p>
             </div>
-            <div className="p-3 bg-purple-100 rounded-full">
+            <div className="p-3 bg-purple-100 rounded-xl">
               <Calendar className="h-6 w-6 text-purple-600" />
             </div>
           </div>
@@ -334,10 +351,22 @@ export default function Income() {
       {/* Income Sources List */}
       <div className="bg-white rounded-xl shadow-sm border border-gray-100">
         <div className="p-6 border-b border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-900">Suas Fontes de Renda</h3>
+          <div className="flex justify-between items-center">
+            <h3 className="text-lg font-semibold text-gray-900">Suas Fontes de Renda</h3>
+            <div className="flex items-center space-x-2">
+              <span className="text-sm text-gray-600">Categorias:</span>
+              <div className="flex flex-wrap gap-1">
+                {[...new Set(incomeSources.map(i => i.category))].map(category => (
+                  <span key={category} className="text-xs bg-gray-100 text-gray-700 px-2 py-0.5 rounded-full">
+                    {category}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
         </div>
         <div className="p-6">
-          {incomeSources.length === 0 ? (
+          {incomeSources.length === 0 && !loading ? (
             <div className="text-center py-8">
               <DollarSign className="mx-auto h-12 w-12 text-gray-400 mb-4" />
               <p className="text-gray-500">Nenhuma fonte de renda cadastrada</p>

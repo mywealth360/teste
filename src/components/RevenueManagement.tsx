@@ -400,6 +400,16 @@ export default function RevenueManagement() {
             <option value="current-year">Ano atual</option>
             <option value="all">Todos os períodos</option>
           </select>
+
+          <button
+            onClick={() => {
+              // Export revenue categories data for dashboard
+              localStorage.setItem('revenueCategories', JSON.stringify(revenuesByCategory));
+            }}
+            className="hidden"
+          >
+            Sync
+          </button>
         </div>
       </div>
 
@@ -553,7 +563,7 @@ export default function RevenueManagement() {
         <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
           <h3 className="font-medium text-gray-700">Aluguéis de Imóveis</h3>
           {filteredRevenues.filter(r => r.type === 'real_estate').map((revenue, idx) => (
-            <div key={`re-${idx}`} className="bg-orange-50 p-3 rounded-lg border border-orange-100">
+            <div key={`re-${idx}`} className="bg-purple-50 p-3 rounded-lg border border-purple-100">
               <div className="flex justify-between">
                 <div>
                   <p className="font-medium text-gray-800">{revenue.description}</p>
@@ -582,7 +592,14 @@ export default function RevenueManagement() {
             <div key={`inc-${idx}`} className="bg-green-50 p-3 rounded-lg border border-green-100">
               <div className="flex justify-between">
                 <div>
-                  <p className="font-medium text-gray-800">{revenue.description}</p>
+                  <div className="flex items-center">
+                    <p className="font-medium text-gray-800">{revenue.description}</p>
+                    {revenue.tax_rate && revenue.tax_rate > 0 && (
+                      <span className="ml-2 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
+                        IRPF {revenue.tax_rate}%
+                      </span>
+                    )}
+                  </div>
                   <p className="text-sm text-gray-600">{revenue.category} - {getFrequencyLabel(revenue.frequency)}</p>
                 </div>
                 <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
