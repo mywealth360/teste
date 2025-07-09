@@ -23,7 +23,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { useSupabaseData } from '../hooks/useSupabaseData';
+import { useDashboardData, useFinancialGoals } from '../hooks/useSupabaseData';
 
 interface Goal {
   id: string;
@@ -61,7 +61,8 @@ const GoalCategories = [
 
 export default function FinancialGoals() {
   const { user } = useAuth();
-  const { totalMonthlyIncome, totalMonthlyExpenses } = useSupabaseData();
+  const { totalMonthlyIncome, totalMonthlyExpenses } = useDashboardData();
+  const { goals: fetchedGoals } = useFinancialGoals();
   
   const [goals, setGoals] = useState<Goal[]>([]);
   const [recommendations, setRecommendations] = useState<AIRecommendation[]>([]);
@@ -87,6 +88,12 @@ export default function FinancialGoals() {
       generateRecommendations();
     }
   }, [user]);
+
+  useEffect(() => {
+    if (fetchedGoals) {
+      setGoals(fetchedGoals);
+    }
+  }, [fetchedGoals]);
 
   const fetchGoals = async () => {
     try {
