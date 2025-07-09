@@ -1,0 +1,495 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Plus, 
+  Search, 
+  Filter, 
+  TrendingUp, 
+  DollarSign, 
+  Calendar, 
+  PieChart,
+  Building,
+  Home,
+  Briefcase,
+  Target,
+  AlertTriangle,
+  Edit,
+  Trash2,
+  Star,
+  Landmark
+} from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
+
+interface RevenueItem {
+  id: string;
+  type: 'income_source' | 'investment' | 'real_estate' | 'transaction';
+  description: string;
+  amount: number;
+  category: string;
+  date: string;
+  source: string;
+  frequency: string;
+  recurring: boolean;
+  tax_rate?: number; // Taxa de imposto
+}
+
+export default function RevenueManagement() {
+  const { user } = useAuth();
+  const [revenues, setRevenues] = useState<RevenueItem[]>([]);
+  const [filteredRevenues, setFilteredRevenues] = useState<RevenueItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [selectedPeriod, setSelectedPeriod] = useState<string>('current-month');
+
+  useEffect(() => {
+    if (user) {
+      fetchAllRevenues();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    filterRevenues();
+  }, [revenues, searchTerm, selectedCategory, selectedPeriod]);
+
+  const fetchAllRevenues = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Buscar todos os tipos de receitas
+      const [
+        incomeSourceData,
+        investmentData,
+        realEstateData,
+        transactionData
+      ] = await Promise.all([
+        supabase.from('income_sources').select('*').eq('user_id', user?.id).eq('is_active', true),
+        supabase.from('investments').select('*').eq('user_id', user?.id),
+        supabase.from('real_estate').select('*').eq('user_id', user?.id),
+        supabase.from('transactions').select('*').eq('user_id', user?.id).eq('type', 'income')
+      ]);
+
+      const allRevenues: RevenueItem[] = [];
+
+      // Processar fontes de renda
+      (incomeSourceData.data || []).forEach(income => {
+        allRevenues.push({
+          id: `income-${income.id}`,
+          type: 'income_source',
+          description: income.name,
+          amount: income.amount,
+          category: income.category,
+          date: income.next_payment || new Date().toISOString().split('T')[0],
+          source: 'Fonte de Renda',
+          frequency: income.frequency,
+          recurring: true,
+          tax_rate: income.tax_rate
+        });
+      });
+
+      // Processar investimentos com renda
+      (investmentData.data || []).forEach(investment => {
+        if (investment.monthly_income && investment.monthly_income > 0) {
+          allRevenues.push({
+            id: `investment-${investment.id}`,
+            type: 'investment',
+            description: `Renda de ${investment.name}`,
+            amount: investment.monthly_income,
+            category: 'Investimentos',
+            date: new Date().toISOString().split('T')[0],
+            source: investment.broker,
+            frequency: 'monthly',
+            recurring: true,
+            tax_rate: investment.tax_rate
+          });
+        }
+      });
+
+      // Processar imóveis com renda
+      (realEstateData.data || []).forEach(property => {
+        if (property.monthly_rent && property.monthly_rent > 0) {
+          const netRent = property.monthly_rent - property.expenses;
+          allRevenues.push({
+            id: `real-estate-${property.id}`,
+            type: 'real_estate',
+            description: `Aluguel - ${property.address}`,
+            amount: netRent,
+            category: 'Imóveis',
+            date: new Date().toISOString().split('T')[0],
+            source: 'Aluguel',
+            frequency: 'monthly',
+            recurring: true,
+            tax_rate: property.tax_rate
+          });
+        }
+      });
+
+      // Processar transações de receita
+      (transactionData.data || []).forEach(transaction => {
+        allRevenues.push({
+          id: `transaction-${transaction.id}`,
+          type: 'transaction',
+          description: transaction.description,
+          amount: transaction.amount,
+          category: transaction.category,
+          date: transaction.date,
+          source: 'Transação',
+          frequency: transaction.is_recurring ? 'monthly' : 'one-time',
+          recurring: transaction.is_recurring,
+          tax_rate: transaction.tax_rate
+        });
+      });
+
+      setRevenues(allRevenues);
+    } catch (err) {
+      console.error('Error fetching revenues:', err);
+      setError('Erro ao carregar receitas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filterRevenues = () => {
+    let filtered = [...revenues];
+
+    // Filtro por período
+    if (selectedPeriod !== 'all') {
+      const now = new Date();
+      const currentMonth = now.getMonth();
+      const currentYear = now.getFullYear();
+
+      filtered = filtered.filter(revenue => {
+        const revenueDate = new Date(revenue.date);
+        
+        switch (selectedPeriod) {
+          case 'current-month':
+            return revenue.recurring || 
+                   (revenueDate.getMonth() === currentMonth && revenueDate.getFullYear() === currentYear);
+          case 'last-month':
+            const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+            const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+            return revenueDate.getMonth() === lastMonth && revenueDate.getFullYear() === lastMonthYear;
+          case 'current-year':
+            return revenueDate.getFullYear() === currentYear;
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Filtro por categoria
+    if (selectedCategory !== 'all') {
+      filtered = filtered.filter(revenue => revenue.category === selectedCategory);
+    }
+
+    // Filtro por busca
+    if (searchTerm) {
+      filtered = filtered.filter(revenue =>
+        revenue.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        revenue.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        revenue.source.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+    }
+
+    setFilteredRevenues(filtered);
+  };
+
+  const getRevenueIcon = (type: string) => {
+    switch (type) {
+      case 'income_source': return Briefcase;
+      case 'investment': return Building;
+      case 'real_estate': return Home;
+      case 'transaction': return DollarSign;
+      default: return TrendingUp;
+    }
+  };
+
+  const getRevenueColor = (type: string) => {
+    switch (type) {
+      case 'income_source': return 'bg-green-100 text-green-600';
+      case 'investment': return 'bg-blue-100 text-blue-600';
+      case 'real_estate': return 'bg-orange-100 text-orange-600';
+      case 'transaction': return 'bg-purple-100 text-purple-600';
+      default: return 'bg-gray-100 text-gray-600';
+    }
+  };
+
+  const getFrequencyLabel = (frequency: string) => {
+    switch (frequency) {
+      case 'monthly': return 'Mensal';
+      case 'weekly': return 'Semanal';
+      case 'yearly': return 'Anual';
+      case 'one-time': return 'Única';
+      default: return frequency;
+    }
+  };
+
+  const calculateMonthlyRevenue = (revenue: RevenueItem) => {
+    switch (revenue.frequency) {
+      case 'weekly': return revenue.amount * 4.33;
+      case 'yearly': return revenue.amount / 12;
+      case 'monthly':
+      default: return revenue.amount;
+    }
+  };
+
+  // Calcular total de receitas mensais
+  const totalRevenues = filteredRevenues.reduce((sum, revenue) => sum + calculateMonthlyRevenue(revenue), 0);
+  
+  // Calcular total de impostos
+  const totalTaxes = filteredRevenues.reduce((sum, revenue) => {
+    if (!revenue.tax_rate) return sum;
+    const monthlyAmount = calculateMonthlyRevenue(revenue);
+    return sum + (monthlyAmount * revenue.tax_rate / 100);
+  }, 0);
+  
+  const recurringRevenues = filteredRevenues.filter(revenue => revenue.recurring);
+  const oneTimeRevenues = filteredRevenues.filter(revenue => !revenue.recurring);
+
+  // Agrupar por categoria para o gráfico
+  const revenuesByCategory = filteredRevenues.reduce((acc, revenue) => {
+    const monthlyAmount = calculateMonthlyRevenue(revenue);
+    acc[revenue.category] = (acc[revenue.category] || 0) + monthlyAmount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  const categories = Object.keys(revenuesByCategory);
+
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/4 mb-2"></div>
+          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Gestão de Receitas</h1>
+          <p className="text-gray-500 mt-1">Visão completa de todas as suas fontes de renda</p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
+          <div className="flex items-center space-x-3">
+            <AlertTriangle className="h-5 w-5 text-red-600" />
+            <p className="text-red-700">{error}</p>
+          </div>
+        </div>
+      )}
+
+      {/* Resumo */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-green-100 text-sm font-medium">Receita Total Mensal</p>
+              <p className="text-3xl font-bold mt-1">R$ {totalRevenues.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            </div>
+            <div className="bg-white/20 p-3 rounded-xl">
+              <TrendingUp className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-2xl text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-indigo-100 text-sm font-medium">Impostos Estimados</p>
+              <p className="text-3xl font-bold mt-1">R$ {totalTaxes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+            </div>
+            <div className="bg-white/20 p-3 rounded-xl">
+              <Landmark className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-blue-100 text-sm font-medium">Receitas Recorrentes</p>
+              <p className="text-3xl font-bold mt-1">R$ {recurringRevenues.reduce((sum, r) => sum + calculateMonthlyRevenue(r), 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-blue-100 text-sm">{recurringRevenues.length} fontes</p>
+            </div>
+            <div className="bg-white/20 p-3 rounded-xl">
+              <Calendar className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-purple-100 text-sm font-medium">Receitas Extras</p>
+              <p className="text-3xl font-bold mt-1">R$ {oneTimeRevenues.reduce((sum, r) => sum + r.amount, 0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-purple-100 text-sm">{oneTimeRevenues.length} itens</p>
+            </div>
+            <div className="bg-white/20 p-3 rounded-xl">
+              <Star className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filtros */}
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Buscar receitas..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+            />
+          </div>
+
+          <select
+            value={selectedCategory}
+            onChange={(e) => setSelectedCategory(e.target.value)}
+            className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+          >
+            <option value="all">Todas as categorias</option>
+            {categories.map(category => (
+              <option key={category} value={category}>{category}</option>
+            ))}
+          </select>
+
+          <select
+            value={selectedPeriod}
+            onChange={(e) => setSelectedPeriod(e.target.value)}
+            className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-green-500/20 focus:border-green-500"
+          >
+            <option value="current-month">Mês atual</option>
+            <option value="last-month">Mês passado</option>
+            <option value="current-year">Ano atual</option>
+            <option value="all">Todos os períodos</option>
+          </select>
+        </div>
+      </div>
+
+      {/* Gráfico por categoria */}
+      {categories.length > 0 && (
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-6">Receitas por Categoria</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {categories.map(category => {
+              const amount = revenuesByCategory[category];
+              const percentage = (amount / totalRevenues) * 100;
+              
+              return (
+                <div key={category} className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-100">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-medium text-gray-800">{category}</h3>
+                    <span className="text-sm text-green-600 font-medium">{percentage.toFixed(1)}%</span>
+                  </div>
+                  <p className="text-lg font-bold text-green-700">R$ {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  <div className="w-full bg-green-200 rounded-full h-2 mt-2">
+                    <div
+                      className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full"
+                      style={{ width: `${percentage}%` }}
+                    ></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      {/* Lista de receitas */}
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-xl font-semibold text-gray-800">Todas as Receitas</h2>
+          <p className="text-gray-500 text-sm mt-1">{filteredRevenues.length} receitas encontradas</p>
+        </div>
+        
+        <div className="divide-y divide-gray-100">
+          {filteredRevenues.length === 0 ? (
+            <div className="p-12 text-center">
+              <TrendingUp className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma receita encontrada</h3>
+              <p className="text-gray-500">Ajuste os filtros para ver mais resultados.</p>
+            </div>
+          ) : (
+            filteredRevenues.map((revenue) => {
+              const Icon = getRevenueIcon(revenue.type);
+              const colorClass = getRevenueColor(revenue.type);
+              const monthlyAmount = calculateMonthlyRevenue(revenue);
+              
+              // Calcular imposto se houver taxa
+              const taxAmount = revenue.tax_rate ? (monthlyAmount * revenue.tax_rate / 100) : 0;
+              
+              return (
+                <div key={revenue.id} className="p-6 hover:bg-gray-50 transition-colors duration-200">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${colorClass}`}>
+                        <Icon className="h-6 w-6" />
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-medium text-gray-800">{revenue.description}</h3>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <span className="text-sm text-gray-500">{revenue.category}</span>
+                          <span className="text-gray-300">•</span>
+                          <span className="text-sm text-gray-500">{revenue.source}</span>
+                          <span className="text-gray-300">•</span>
+                          <span className="text-sm text-gray-500">
+                            {getFrequencyLabel(revenue.frequency)}
+                          </span>
+                          {revenue.recurring && (
+                            <>
+                              <span className="text-gray-300">•</span>
+                              <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full">
+                                Recorrente
+                              </span>
+                            </>
+                          )}
+                          {revenue.tax_rate && revenue.tax_rate > 0 && (
+                            <>
+                              <span className="text-gray-300">•</span>
+                              <span className="text-xs bg-indigo-100 text-indigo-700 px-2 py-1 rounded-full flex items-center space-x-1">
+                                <Landmark className="h-3 w-3" />
+                                <span>IRPF {revenue.tax_rate}%</span>
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="text-right">
+                      <span className="font-semibold text-lg text-green-600">
+                        R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                      {revenue.frequency !== 'monthly' && (
+                        <p className="text-sm text-gray-500">
+                          ≈ R$ {monthlyAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês
+                        </p>
+                      )}
+                      {taxAmount > 0 && (
+                        <p className="text-sm text-indigo-600">
+                          Imposto: R$ {taxAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

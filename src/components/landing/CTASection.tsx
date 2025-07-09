@@ -1,0 +1,28 @@
+import React from 'react';
+import SubscriptionButton from '../subscription/SubscriptionButton';
+import { products } from '../../stripe-config';
+
+export default function CTASection() {
+  return (
+    <section className="py-20 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+        <h2 className="text-4xl md:text-5xl font-bold mb-6">
+          Pronto para transformar seu patrimônio?
+        </h2>
+        <p className="text-xl text-gray-300 mb-8">
+          Junte-se a milhares de famílias que já estão no controle total do seu dinheiro e patrimônio.
+        </p>
+        <div className="flex flex-col items-center">
+          <SubscriptionButton
+            priceId={products[0].priceId}
+            mode="subscription"
+            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+          >
+            Começar Teste Grátis
+          </SubscriptionButton>
+          <p className="text-sm text-white/80 mt-3">7 dias grátis, depois R$ 79,90/mês. Cancele quando quiser.</p>
+        </div>
+      </div>
+    </section>
+  );
+}
