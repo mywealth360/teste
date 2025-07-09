@@ -227,6 +227,11 @@ export default function RevenueManagement() {
   };
 
   const calculateMonthlyRevenue = (revenue: RevenueItem) => {
+    if (!revenue.recurring && revenue.frequency === 'one-time') {
+      // Non-recurring one-time revenues shouldn't contribute to monthly calculations
+      return 0;
+    }
+    
     switch (revenue.frequency) {
       case 'weekly': return revenue.amount * 4.33;
       case 'yearly': return revenue.amount / 12;
@@ -236,8 +241,8 @@ export default function RevenueManagement() {
   };
 
   // Calcular total de receitas mensais
-  const totalRevenues = filteredRevenues.reduce((sum, revenue) => sum + calculateMonthlyRevenue(revenue), 0);
-  
+  const totalRevenues = filteredRevenues.reduce((sum, revenue) => sum + calculateMonthlyRevenue(revenue), 0); 
+    
   // Calcular total de impostos
   const totalTaxes = filteredRevenues.reduce((sum, revenue) => {
     if (!revenue.tax_rate) return sum;
@@ -245,9 +250,14 @@ export default function RevenueManagement() {
     return sum + (monthlyAmount * revenue.tax_rate / 100);
   }, 0);
   
-  const recurringRevenues = filteredRevenues.filter(revenue => revenue.recurring);
+  // Only include recurring revenues that contribute to monthly income
+  const recurringRevenues = filteredRevenues.filter(revenue => 
+    revenue.recurring && calculateMonthlyRevenue(revenue) > 0
+  );
+  
+  // Only include one-time revenues
   const oneTimeRevenues = filteredRevenues.filter(revenue => !revenue.recurring);
-
+  
   // Agrupar por categoria para o gráfico
   const revenuesByCategory = filteredRevenues.reduce((acc, revenue) => {
     const monthlyAmount = calculateMonthlyRevenue(revenue);
@@ -469,7 +479,7 @@ export default function RevenueManagement() {
                     </div>
                     
                     <div className="text-right">
-                      <span className="font-semibold text-lg text-green-600">
+                      <span className="font-semibold text-lg text-green-600 whitespace-nowrap">
                         R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </span>
                       {revenue.frequency !== 'monthly' && (

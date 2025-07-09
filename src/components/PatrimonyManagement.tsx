@@ -108,8 +108,8 @@ export default function PatrimonyManagement() {
   // Métricas de performance
   const currentPatrimony = evolutionData[evolutionData.length - 1]?.patrimonio || netWorth;
   const previousPatrimony = evolutionData[evolutionData.length - 2]?.patrimonio || netWorth;
-  const patrimonyGrowth = currentPatrimony - previousPatrimony;
-  const patrimonyGrowthPercentage = previousPatrimony > 0 ? ((patrimonyGrowth / previousPatrimony) * 100) : 0;
+  const patrimonyGrowth = currentPatrimony - previousPatrimony; 
+  const patrimonyGrowthPercentage = previousPatrimony > 0 ? ((patrimonyGrowth / previousPatrimony) * 100) : 0; 
 
   const currentCDI = evolutionData[evolutionData.length - 1]?.cdi || 9.5;
   const currentInflation = evolutionData[evolutionData.length - 1]?.inflacao || 3.75;
@@ -191,7 +191,11 @@ export default function PatrimonyManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-emerald-100 text-sm font-medium">Patrimônio Total</p>
-              <p className="text-3xl font-bold mt-1">{formatCurrency(totalAssets)}</p>
+              <p className="text-3xl font-bold mt-1">{formatCurrency(totalAssets)} 
+                <span className={`text-sm ml-2 ${patrimonyGrowth >= 0 ? 'text-emerald-200' : 'text-red-200'}`}>
+                  ({patrimonyGrowthPercentage >= 0 ? '+' : ''}{patrimonyGrowthPercentage.toFixed(1)}%)
+                </span>
+              </p>
               <div className="flex items-center space-x-1 mt-2">
                 {patrimonyGrowth >= 0 ? (
                   <ArrowUpRight className="h-4 w-4 text-emerald-200" />
@@ -213,12 +217,12 @@ export default function PatrimonyManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm font-medium">Ativos Líquidos</p>
-              <p className="text-3xl font-bold mt-1">{formatCurrency(liquidAssets)}</p>
+              <p className="text-3xl font-bold mt-1">{formatCurrency(liquidAssets)}
+                <span className="text-sm ml-2 text-blue-200">({liquidityRatio.toFixed(1)}%)</span>
+              </p>
               <div className="flex items-center space-x-1 mt-2">
                 <Wallet className="h-4 w-4 text-blue-200" />
-                <span className="text-sm text-blue-100">
-                  {liquidityRatio.toFixed(1)}% do total
-                </span>
+                <span className="text-sm text-blue-100">Rápida conversão</span>
               </div>
             </div>
             <div className="bg-white/20 p-3 rounded-2xl">
@@ -231,12 +235,12 @@ export default function PatrimonyManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-indigo-100 text-sm font-medium">Ativos Imobilizados</p>
-              <p className="text-3xl font-bold mt-1">{formatCurrency(immobilizedAssets)}</p>
+              <p className="text-3xl font-bold mt-1">{formatCurrency(immobilizedAssets)}
+                <span className="text-sm ml-2 text-indigo-200">({(100 - liquidityRatio).toFixed(1)}%)</span>
+              </p>
               <div className="flex items-center space-x-1 mt-2">
                 <Landmark className="h-4 w-4 text-indigo-200" />
-                <span className="text-sm text-indigo-100">
-                  {(100 - liquidityRatio).toFixed(1)}% do total
-                </span>
+                <span className="text-sm text-indigo-100">Longo prazo</span>
               </div>
             </div>
             <div className="bg-white/20 p-3 rounded-2xl">
@@ -249,7 +253,12 @@ export default function PatrimonyManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/80 text-sm font-medium">Patrimônio Líquido</p>
-              <p className="text-3xl font-bold mt-1">{formatCurrency(Math.abs(netWorth))}</p>
+              <p className="text-3xl font-bold mt-1">
+                {netWorth >= 0 ? '' : '-'}{formatCurrency(Math.abs(netWorth))}
+                <span className={`text-sm ml-2 ${netWorth >= 0 ? 'text-green-200' : 'text-red-200'}`}>
+                  ({(netWorth / totalAssets * 100).toFixed(1)}%)
+                </span>
+              </p>
               <div className="flex items-center space-x-1 mt-2">
                 {netWorth >= 0 ? (
                   <CheckCircle className="h-4 w-4 text-white/80" />

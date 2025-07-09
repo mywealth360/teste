@@ -829,7 +829,7 @@ export default function FinancialBreakdown({ type }: BreakdownProps) {
                         <p className="text-sm text-gray-500">{loan.type} • {loan.interest_rate}% a.m.</p>
                       </div>
                       <div className="text-right">
-                        <p className="font-semibold text-red-600">R$ {loan.remaining_amount.toLocaleString('pt-BR')}</p>
+                        <p className="font-semibold text-red-600">-R$ {loan.remaining_amount.toLocaleString('pt-BR')}</p>
                         <p className="text-sm text-gray-600">
                           R$ {loan.monthly_payment.toLocaleString('pt-BR')}/mês
                         </p>

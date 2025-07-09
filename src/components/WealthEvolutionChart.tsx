@@ -3,7 +3,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Responsi
 
 // Simulated data for wealth evolution
 const generateWealthData = () => {
-  const months = [
+  const months = [ 
     'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
     'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
   ];
@@ -15,12 +15,12 @@ const generateWealthData = () => {
   let investmentsValue = 200000;
   let realEstateValue = 150000;
   let bankValue = 50000;
-  let otherValue = 50000;
+  let otherValue = 50000; 
   
   for (let i = 0; i < 12; i++) {
-    // Simulate some growth and fluctuation
+    // Simulate some growth and fluctuation with more realistic monthly variations
     const investmentGrowth = investmentsValue * (0.005 + Math.random() * 0.01);
-    const realEstateGrowth = realEstateValue * (0.002 + Math.random() * 0.005);
+    const realEstateGrowth = realEstateValue * (0.001 + Math.random() * 0.003); // More consistent for real estate
     const bankGrowth = bankValue * 0.001;
     const otherGrowth = otherValue * (0.001 + Math.random() * 0.005);
     
@@ -33,7 +33,8 @@ const generateWealthData = () => {
     
     data.push({
       month: `${months[i]}/${currentYear}`,
-      total: Math.round(baseValue),
+      total: Math.round(baseValue), 
+      percentChange: i > 0 ? ((baseValue / data[i-1].total - 1) * 100).toFixed(1) + '%' : '0%',
       investimentos: Math.round(investmentsValue),
       imoveis: Math.round(realEstateValue),
       contas: Math.round(bankValue),
@@ -77,7 +78,7 @@ export default function WealthEvolutionChart() {
                 boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
               }}
               formatter={(value: any) => [`R$ ${value.toLocaleString('pt-BR')}`, '']}
-              labelStyle={{ color: '#374151', fontWeight: 'bold' }}
+              labelStyle={{ color: '#374151', fontWeight: 'bold' }} 
             />
             <Legend 
               wrapperStyle={{ paddingTop: '20px' }}
@@ -85,10 +86,12 @@ export default function WealthEvolutionChart() {
             />
             <Line
               type="monotone"
-              dataKey="total"
+              dataKey="total" 
+              name="Total"
               stroke="#10b981"
               strokeWidth={3}
               dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6 }}
               activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2 }}
               name="Total"
             />

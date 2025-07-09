@@ -349,7 +349,7 @@ export default function ExpenseManagement() {
   const filterExpenses = () => {
     let filtered = [...expenses];
 
-    // Filtro por período
+    // Filtro por período - também inclui despesas recorrentes 
     if (selectedPeriod !== 'all') {
       const now = new Date();
       const currentMonth = now.getMonth();
@@ -357,8 +357,8 @@ export default function ExpenseManagement() {
 
       filtered = filtered.filter(expense => {
         const expenseDate = new Date(expense.date);
-        
-        switch (selectedPeriod) {
+
+        switch (selectedPeriod) {  
           case 'current-month':
             return expense.recurring || 
                    (expenseDate.getMonth() === currentMonth && expenseDate.getFullYear() === currentYear);
@@ -677,7 +677,7 @@ export default function ExpenseManagement() {
                           <span className="text-gray-300">•</span>
                           <span className="text-sm text-gray-500">{expense.source}</span>
                           <span className="text-gray-300">•</span>
-                          <span className="text-sm text-gray-500">
+                          <span className="text-sm text-gray-500 whitespace-nowrap">
                             {new Date(expense.date).toLocaleDateString('pt-BR')}
                           </span>
                           {expense.recurring && (
@@ -693,7 +693,7 @@ export default function ExpenseManagement() {
                     </div>
                     
                     <div className="flex items-center space-x-3">
-                      <span className="font-semibold text-lg text-red-600">
+                      <span className="font-semibold text-lg text-red-600 whitespace-nowrap">
                         R$ {expense.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                       </span>
                     </div>
