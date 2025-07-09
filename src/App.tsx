@@ -16,6 +16,7 @@ import BankAccounts from './components/BankAccounts';
 import Investments from './components/Investments';
 import Retirement from './components/Retirement';
 import RealEstate from './components/RealEstate';
+import FinancialGoals from './components/FinancialGoals';
 import Vehicles from './components/Vehicles';
 import ExoticAssets from './components/ExoticAssets';
 import Loans from './components/Loans';
@@ -135,6 +136,8 @@ function AppContent() {
         return <AIInsights />;
       case 'profile':
         return <UserProfile />;
+      case 'financial-goals':
+        return <FinancialGoals />;
       case 'admin':
         return isAdmin ? <AdminPanel /> : <Dashboard />;
       case 'subscription':

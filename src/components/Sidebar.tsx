@@ -75,6 +75,7 @@ const patrimonySections = [
 // Seção de Outros
 const otherSections = [
   { id: 'transactions', label: 'Transações', icon: Receipt, restricted: false },
+  { id: 'financial-goals', label: 'Metas Financeiras', icon: Target, restricted: false },
   { id: 'access', label: 'Gerenciar Acessos', icon: Users, restricted: true },
   { id: 'documents', label: 'Documentos', icon: FolderOpen, restricted: false },
   { id: 'employees', label: 'Funcionários', icon: Users, restricted: true },
