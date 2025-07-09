@@ -41,22 +41,14 @@ export function useSupabaseData() {
   const fetchAllData = async () => {
     try {
       setLoading(true);
-      setError(null); 
+      setError(null);
 
       // Fetch all data in parallel - income must be fetched first as other functions depend on it
-      const [
-        incomeData,
-        expenseData,
-        investmentData,
-        realEstateData,
-        retirementData,
-        loanData,
-        billData,
-        bankAccountData,
-        vehicleData,
-        exoticAssetsData
-      ] = await Promise.all([
-        fetchIncome(),
+      // First fetch income since other functions depend on it
+      await fetchIncome();
+
+      // Then fetch the rest in parallel
+      await Promise.all([
         fetchExpenses(),
         fetchInvestments(),
         fetchRealEstate(),
@@ -105,7 +97,7 @@ export function useSupabaseData() {
     try {
       const { data, error } = await supabase
         .from('income_sources')
-        .select('*')
+        .select('id, name, amount, frequency, category, is_active, tax_rate')
         .eq('user_id', user?.id)
         .eq('is_active', true);
 
@@ -115,19 +107,17 @@ export function useSupabaseData() {
       
       (data || []).forEach(income => {
         // Only count active income sources
-        if (income.is_active) {
-          switch (income.frequency) {
-          case 'monthly':
-            monthlyTotal += income.amount;
-            break;
-          case 'weekly':
-            monthlyTotal += income.amount * 4.33; // Average weeks per month
-            break;
-          case 'yearly':
-            monthlyTotal += income.amount / 12;
-            break;
-            // One-time income not included in monthly calculations
-          }
+        switch (income.frequency) {
+        case 'monthly':
+          monthlyTotal += income.amount;
+          break;
+        case 'weekly':
+          monthlyTotal += income.amount * 4.33; // Average weeks per month
+          break;
+        case 'yearly':
+          monthlyTotal += income.amount / 12;
+          break;
+        // One-time income not included in monthly calculations
         }
       });
 
@@ -143,7 +133,7 @@ export function useSupabaseData() {
     try {
       const { data, error } = await supabase
         .from('transactions')
-        .select('*')
+        .select('id, amount, is_recurring')
         .eq('user_id', user?.id)
         .eq('type', 'expense');
 
@@ -168,7 +158,7 @@ export function useSupabaseData() {
     try {
       const { data, error } = await supabase
         .from('investments')
-        .select('id, name, type, broker, amount, monthly_income, purchase_price, current_price, quantity, dividend_yield, interest_rate, tax_rate')
+        .select('id, name, type, broker, amount, monthly_income, purchase_price, current_price, quantity, dividend_yield, interest_rate, tax_rate, maturity_date')
         .eq('user_id', user?.id);
 
       if (error) throw error;
@@ -194,13 +184,15 @@ export function useSupabaseData() {
         } 
         // For fixed income with interest rate
         else if (investment.interest_rate && investment.amount) {
-          totalValue += investment.amount;
-          const annualInterest = (investment.amount * investment.interest_rate) / 100;
-          monthlyIncome += annualInterest / 12;
+          totalValue += investment.amount || 0;
+          if (investment.amount && investment.interest_rate) {
+            const annualInterest = (investment.amount * investment.interest_rate) / 100;
+            currentInvestmentMonthlyIncome = annualInterest / 12;
+          }
         }
         // Fallback to amount
         else {
-          totalValue += investment.amount;
+          totalValue += investment.amount || 0;
           
           // Use monthly_income if provided
           if (investment.monthly_income) {
@@ -237,24 +229,24 @@ export function useSupabaseData() {
       // Calculate total real estate value and income
       let totalValue = 0;
       let monthlyIncome = 0;
-      let monthlyExpenses = 0;
+      let totalExpenses = 0;
 
       (data || []).forEach(property => {
         // Use current value if available, otherwise use purchase price
-        totalValue += property.current_value || property.purchase_price;
+        totalValue += property.current_value || property.purchase_price || 0;
 
         // Calculate monthly income from rented properties (net of expenses)
         if (property.is_rented && property.monthly_rent) {
-          monthlyIncome += property.monthly_rent;
+          monthlyIncome += property.monthly_rent || 0;
         }
         
         // Add property expenses
-        monthlyExpenses += property.expenses || 0;
+        totalExpenses += property.expenses || 0;
       });
 
       setTotalRealEstateValue(totalValue);
       setTotalRealEstateIncome(monthlyIncome);
-      setTotalRealEstateExpenses(monthlyExpenses);
+      setTotalRealEstateExpenses(totalExpenses);
 
       // Calculate percentage of income from real estate for display
       const realEstateIncomePercentage = totalMonthlyIncome > 0 ? (monthlyIncome / totalMonthlyIncome) * 100 : 0;
