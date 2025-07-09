@@ -91,45 +91,15 @@ export default function FinancialGoals() {
   const fetchGoals = async () => {
     try {
       setLoading(true);
-      
-      // In a real implementation, you would fetch from a "goals" table
-      // For this demo, we'll use mock data
-      
-      // Simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const mockGoals: Goal[] = [
-        {
-          id: '1',
-          user_id: user?.id || '',
-          name: 'Viagem para Europa',
-          target_amount: 15000,
-          current_amount: 5000,
-          target_date: '2025-12-20',
-          category: 'travel',
-          description: 'Viagem de 15 dias pela Europa visitando 5 países',
-          created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-          updated_at: new Date().toISOString(),
-          status: 'active',
-          priority: 'high'
-        },
-        {
-          id: '2',
-          user_id: user?.id || '',
-          name: 'Abrir consultoria financeira',
-          target_amount: 50000,
-          current_amount: 12500,
-          target_date: '2026-06-30',
-          category: 'business',
-          description: 'Capital inicial para abrir escritório de consultoria financeira',
-          created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-          updated_at: new Date().toISOString(),
-          status: 'active',
-          priority: 'medium'
-        }
-      ];
-      
-      setGoals(mockGoals);
+      // Fetch user's financial goals from the database
+      const { data, error } = await supabase
+        .from('financial_goals')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+        
+      if (error) throw error;
+      setGoals(data || []);
     } catch (err) {
       console.error('Error fetching goals:', err);
     } finally {
@@ -140,57 +110,19 @@ export default function FinancialGoals() {
   const generateRecommendations = async () => {
     try {
       setAiLoading(true);
-      
-      // In a real implementation, you would call an AI service
-      // For this demo, we'll use mock recommendations
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockRecommendations: AIRecommendation[] = [
-        {
-          id: '1',
-          title: 'Reduza gastos com streaming',
-          description: 'Você gasta R$ 178/mês em serviços de streaming. Considere manter apenas os 2 mais usados, economizando R$ 89/mês.',
-          potentialSavings: 89,
-          difficulty: 'easy',
-          category: 'entretenimento'
-        },
-        {
-          id: '2',
-          title: 'Renegocie plano de telefonia',
-          description: 'Seu plano de telefonia parece caro para o uso. Renegociando ou trocando de operadora, você pode economizar R$ 75/mês.',
-          potentialSavings: 75,
-          difficulty: 'medium',
-          category: 'telecomunicações'
-        },
-        {
-          id: '3',
-          title: 'Otimize gastos com restaurantes',
-          description: 'Reduzindo refeições fora de casa em 30%, você pode economizar R$ 320/mês sem grandes sacrifícios.',
-          potentialSavings: 320,
-          difficulty: 'medium',
-          category: 'alimentação'
-        },
-        {
-          id: '4',
-          title: 'Elimine assinaturas não utilizadas',
-          description: 'Identificamos 3 assinaturas que você não utiliza há mais de 3 meses, totalizando R$ 135/mês.',
-          potentialSavings: 135,
-          difficulty: 'easy',
-          category: 'assinaturas'
-        },
-        {
-          id: '5',
-          title: 'Refinanciamento de empréstimo',
-          description: 'Seu empréstimo atual tem taxa alta. Refinanciando, você pode economizar R$ 250/mês.',
-          potentialSavings: 250,
-          difficulty: 'hard',
-          category: 'financeiro'
+      // Call the AI service API
+      const { data: aiData, error: aiError } = await supabase.functions.invoke('goal-recommendations', {
+        body: { 
+          userId: user?.id,
+          goalId: selectedGoal?.id 
         }
-      ];
+      });
+
+      if (aiError) throw aiError;
+
+      // Use real recommendations if available, or fall back to empty array
+      setRecommendations(aiData?.recommendations || []);
       
-      setRecommendations(mockRecommendations);
     } catch (err) {
       console.error('Error generating AI recommendations:', err);
     } finally {
@@ -200,15 +132,19 @@ export default function FinancialGoals() {
 
   const handleAddGoal = async () => {
     try {
+      setLoading(true);
+      
       // Calculate monthly savings needed
       const targetDate = new Date(newGoalFormData.target_date);
       const now = new Date();
       const diffMs = targetDate.getTime() - now.getTime();
-      const diffMonths = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30)));
+      const diffMonths = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30.4375))); // More accurate average month length
       const targetAmount = parseFloat(newGoalFormData.target_amount);
       const monthlySavingsNeeded = targetAmount / diffMonths;
       
-      const newGoal: Omit<Goal, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
+      // Prepare goal data for database insertion
+      const goalData = {
+        user_id: user?.id,
         name: newGoalFormData.name,
         target_amount: targetAmount,
         current_amount: 0,
@@ -219,36 +155,40 @@ export default function FinancialGoals() {
         priority: newGoalFormData.priority as 'high' | 'medium' | 'low'
       };
       
-      // In a real implementation, you would save to database
-      // For demo, we'll just update the state
+      // Insert the goal into the database
+      const { data, error: insertError } = await supabase
+        .from('financial_goals')
+        .insert([goalData])
+        .select();
+
+      if (insertError) throw insertError;
       
-      const mockId = Date.now().toString();
-      
-      // In a real implementation, you would also create a recurring bill for this goal
-      // For demo purposes, we'll just simulate this
-      
-      // This would call the create_goal_contribution_bill function
-      /*
-      await supabase.rpc('create_goal_contribution_bill', {
-        goal_id: mockId,
-        monthly_amount: monthlySavingsNeeded,
-        due_day: 5 // Default due day
-      });
-      */
-      
-      // For demo, we'll log what would happen
-      console.log(`Would create recurring bill: R$ ${monthlySavingsNeeded.toFixed(2)}/month for goal: ${newGoalFormData.name}`);
-      
-      setGoals([
-        ...goals,
-        {
-          ...newGoal,
-          id: mockId,
-          user_id: user?.id || '',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+      // Create recurring bill for this goal
+      if (data && data.length > 0) {
+        const goalId = data[0].id;
+        const dueDay = 5; // Default due day
+        
+        // Create a bill for monthly contributions toward this goal
+        const { error: billError } = await supabase
+          .from('bills')
+          .insert([{
+            user_id: user?.id,
+            name: `Meta: ${newGoalFormData.name}`,
+            company: 'PROSPERA.AI',
+            amount: monthlySavingsNeeded,
+            due_day: dueDay,
+            category: 'Investimentos',
+            is_recurring: true,
+            is_active: true,
+            next_due: new Date(now.getFullYear(), now.getMonth(), dueDay > now.getDate() ? dueDay : dueDay + 30).toISOString().split('T')[0],
+            financial_goal_id: goalId,
+            is_goal_contribution: true
+          }]);
+          
+        if (billError) {
+          console.error('Error creating goal bill:', billError);
         }
-      ]);
+      }
       
       // Reset form
       setNewGoalFormData({
@@ -262,8 +202,13 @@ export default function FinancialGoals() {
       
       setShowAddModal(false);
       
+      // Refresh goals list
+      fetchGoals();
+      
     } catch (err) {
       console.error('Error adding goal:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -474,13 +419,15 @@ export default function FinancialGoals() {
           <p className="text-gray-600 max-w-md mx-auto mb-6">
             Defina metas financeiras claras para ajudar você a economizar para seus sonhos e objetivos.
           </p>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md inline-flex items-center space-x-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Criar Primeira Meta</span>
-          </button>
+          <div className="pt-2">
+            <button
+              onClick={() => setShowAddModal(true)}
+              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md inline-flex items-center space-x-2"
+            >
+              <Plus className="h-4 w-4" />
+              <span>Criar Primeira Meta</span>
+            </button>
+          </div>
         </div>
       ) : (
         <div className="space-y-6">
@@ -621,7 +568,7 @@ export default function FinancialGoals() {
 
                             <div className="flex flex-wrap items-center gap-4 mt-2 text-sm">
                               <span className="flex items-center text-gray-700">
-                                <Calendar className="h-4 w-4 mr-1" />
+                                <Calendar className="h-4 w-4 mr-1 flex-shrink-0" />
                                 <span>{getTimeRemaining(goal.target_date)}</span>
                               </span>
                               
@@ -656,7 +603,7 @@ export default function FinancialGoals() {
                           <div className="flex items-center space-x-2">
                             <button
                               onClick={() => handleContribute(goal.id)}
-                              disabled={goal.status === 'completed'}
+                              disabled={goal.status === 'completed' || loading}
                               className={`px-3 py-1 text-sm rounded-lg flex items-center space-x-1 ${
                                 goal.status === 'completed' 
                                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
@@ -672,7 +619,7 @@ export default function FinancialGoals() {
                                 setSelectedGoal(goal);
                                 setShowAIModal(true);
                               }}
-                              disabled={goal.status === 'completed'}
+                              disabled={goal.status === 'completed' || loading}
                               className={`px-3 py-1 text-sm rounded-lg ${
                                 goal.status === 'completed' 
                                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
