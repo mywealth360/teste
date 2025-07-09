@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Receipt, Calendar, Building, Bell, Edit, Trash2, AlertTriangle, Save, X, CheckCircle, Tag, Home, Car, Users, CreditCard, Shield, FileText, Mail, DollarSign, Clock } from 'lucide-react';
+import { Plus, Receipt, Calendar, Building, Bell, Edit, Trash2, AlertTriangle, Save, X, CheckCircle, Tag, Home, Car, Users, CreditCard, Shield, FileText, Mail, DollarSign, Clock, Target, PiggyBank } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -25,6 +25,21 @@ interface Bill {
   associated_with?: 'property' | 'vehicle' | 'employee' | 'loan';
   associated_id?: string;
   associated_name?: string;
+  payment_status?: 'pending' | 'paid' | 'overdue' | 'partial';
+  payment_date?: string;
+  payment_method?: string;
+  send_email_reminder?: boolean;
+  reminder_days_before?: number;
+  financial_goal_id?: string;
+  is_goal_contribution?: boolean;
+}
+
+interface FinancialGoal {
+  id: string;
+  name: string;
+  target_amount: number;
+  current_amount: number;
+  target_date: string;
 }
 
 interface BillCategory {
@@ -73,10 +88,14 @@ export default function Bills() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [loans, setLoans] = useState<any[]>([]);
 
+  // Financial goals for bill association
+  const [financialGoals, setFinancialGoals] = useState<FinancialGoal[]>([]);
+
   useEffect(() => {
     if (user) {
       fetchBills();
       fetchAssociatedEntities();
+      fetchFinancialGoals();
     }
   }, [user]);
 
@@ -128,6 +147,24 @@ export default function Bills() {
       if (loansResult.data) setLoans(loansResult.data);
     } catch (err) {
       console.error('Error fetching associated entities:', err);
+    }
+  };
+  
+  const fetchFinancialGoals = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('financial_goals')
+        .select('id, name, target_amount, current_amount, target_date, status')
+        .eq('user_id', user.id)
+        .eq('status', 'active')
+        .order('priority', { ascending: false });
+        
+      if (error) throw error;
+      setFinancialGoals(data || []);
+    } catch (err) {
+      console.error('Error fetching financial goals:', err);
     }
   };
 
@@ -215,17 +252,14 @@ export default function Bills() {
     }
   };
 
-  // Mark bill as paid
-  const markAsPaid = async (billId: string, amount?: number, paymentMethod?: string) => {
+  const markAsPaid = async (billId: string, amount?: number, method?: string) => {
     try {
-      const today = new Date().toISOString().split('T')[0];
-      
       // In production, call the mark_bill_as_paid database function
-      const { data, error } = await supabase.rpc('mark_bill_as_paid', {
+      const { error } = await supabase.rpc('mark_bill_as_paid', {
         bill_id: billId,
-        payment_date_val: today,
+        payment_date_val: new Date().toISOString().split('T')[0],
         payment_amount_val: amount,
-        payment_method_val: paymentMethod
+        payment_method_val: method
       });
 
       if (error) throw error;
@@ -293,7 +327,7 @@ export default function Bills() {
     return diffDays;
   };
 
-  const getBillStatus = (bill: Bill) => {
+  const getBillStatus = (bill: Bill): 'paid' | 'partial' | 'overdue' | 'pending' => {
     if (bill.payment_status === 'paid') {
       return 'paid';
     }
@@ -310,6 +344,11 @@ export default function Bills() {
     return 'pending';
   };
 
+  // Check if bill is associated with a financial goal
+  const isGoalContribution = (bill: Bill) => {
+    return bill.is_goal_contribution && bill.financial_goal_id;
+  };
+  
   // Toggle email reminder for a bill
   const toggleEmailReminder = async (billId: string) => {
     try {
@@ -346,6 +385,25 @@ export default function Bills() {
     } catch (err) {
       console.error('Error setting reminder days:', err);
       setError('Erro ao atualizar dias de notificação');
+    }
+  };
+
+  // Associate bill with financial goal
+  const associateBillWithGoal = async (billId: string, goalId: string) => {
+    try {
+      const { error } = await supabase
+        .from('bills')
+        .update({
+          financial_goal_id: goalId,
+          is_goal_contribution: true
+        })
+        .eq('id', billId);
+      
+      if (error) throw error;
+      fetchBills();
+    } catch (err) {
+      console.error('Error associating bill with goal:', err);
+      setError('Erro ao associar conta à meta financeira');
     }
   };
 
@@ -658,6 +716,8 @@ export default function Bills() {
                       <div>
                         <div className="flex items-center space-x-3">
                           <h3 className="font-medium text-gray-800">{bill.name}</h3>
+                          
+                          {/* Main category tag */}
                           <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
                             {bill.category}
                           </span>
@@ -678,6 +738,36 @@ export default function Bills() {
                             </span>
                           )}
                           
+                          {/* Financial goal tag */}
+                          {isGoalContribution(bill) && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 flex items-center space-x-1">
+                              <Target className="h-3 w-3" />
+                              <span>Meta Financeira</span>
+                            </span>
+                          )}
+
+                          {/* Payment status tag */}
+                          {bill.payment_status === 'paid' && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 flex items-center space-x-1">
+                              <CheckCircle className="h-3 w-3" />
+                              <span>Pago</span>
+                            </span>
+                          )}
+                          
+                          {bill.payment_status === 'partial' && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 flex items-center space-x-1">
+                              <CheckCircle className="h-3 w-3" />
+                              <span>Pago Parcial</span>
+                            </span>
+                          )}
+
+                          {bill.payment_status === 'overdue' && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 flex items-center space-x-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              <span>Atrasado</span>
+                            </span>
+                          )}
+
                           {getBillStatus(bill) === 'pending' && (
                             <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 flex items-center space-x-1">
                               <Tag className="h-3 w-3" />
@@ -707,10 +797,14 @@ export default function Bills() {
                           )}
                           {bill.last_paid && (
                             <>
-                              <span className="text-gray-300">•</span>
-                              <span className="text-sm text-gray-500">
-                                Último pagamento: {new Date(bill.last_paid).toLocaleDateString('pt-BR')}
-                              </span>
+                              {bill.payment_status !== 'paid' && (
+                                <>
+                                  <span className="text-gray-300">•</span>
+                                  <span className="text-sm text-gray-500">
+                                    Último pagamento: {new Date(bill.last_paid).toLocaleDateString('pt-BR')}
+                                  </span>
+                                </>
+                              )}
                             </>
                           )}
                         </div>
@@ -719,34 +813,78 @@ export default function Bills() {
                     
                     <div className="flex items-center space-x-3">
                       <div className="text-right">
-                        <p className="font-semibold text-lg text-gray-800">
-                          R$ {bill.amount.toLocaleString('pt-BR')}
-                        </p>
-                        {bill.is_active && (
-                          <p className="text-sm text-gray-500">
-                            Próximo: {new Date(bill.next_due).toLocaleDateString('pt-BR')}
-                          </p>
-                        )}
-                        
-                        {/* Email notification status */}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            toggleEmailReminder(bill.id);
-                          }}
-                          title={bill.send_email_reminder ? "Desativar notificações por email" : "Ativar notificações por email"}
-                          className={`p-1 rounded-full ${
-                            bill.send_email_reminder 
-                              ? 'text-blue-600 hover:bg-blue-50' 
-                              : 'text-gray-400 hover:bg-gray-50'
-                          } transition-colors duration-200`}
-                        >
-                          <Mail className="h-4 w-4" />
-                        </button>
+                        <div className="flex items-center space-x-4">
+                          <div>
+                            <p className={`font-semibold text-lg ${bill.payment_status === 'paid' ? 'text-green-600' : 'text-gray-800'}`}>
+                              R$ {bill.amount.toLocaleString('pt-BR')}
+                            </p>
+                            {bill.financial_goal_id && (
+                              <p className="text-sm text-indigo-600">
+                                Meta: {financialGoals.find(g => g.id === bill.financial_goal_id)?.name || 'Meta Financeira'}
+                              </p>
+                            )}
+                            {bill.payment_status === 'paid' && bill.payment_date && (
+                              <p className="text-sm text-green-600">
+                                Pago em: {new Date(bill.payment_date).toLocaleDateString('pt-BR')}
+                              </p>
+                            )}
+                            {bill.is_active && (
+                              <p className="text-sm text-gray-500">
+                                Próximo: {new Date(bill.next_due).toLocaleDateString('pt-BR')}
+                              </p>
+                            )}
+                          </div>
+                          
+                          {/* Financial goal button */}
+                          {!isGoalContribution(bill) && financialGoals.length > 0 && (
+                            <div className="dropdown">
+                              <button
+                                className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors duration-200 relative group"
+                                title="Associar a uma meta financeira"
+                              >
+                                <Target className="h-4 w-4" />
+                                
+                                <div className="hidden group-hover:block absolute right-0 top-full mt-1 bg-white shadow-lg rounded-lg z-10 w-64 border border-gray-200">
+                                  <div className="p-2 text-xs font-medium text-gray-700 border-b border-gray-100">
+                                    Associar a uma meta:
+                                  </div>
+                                  <div className="max-h-48 overflow-y-auto">
+                                    {financialGoals.map(goal => (
+                                      <button
+                                        key={goal.id}
+                                        className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm flex items-center space-x-2"
+                                        onClick={() => associateBillWithGoal(bill.id, goal.id)}
+                                      >
+                                        <PiggyBank className="h-3 w-3 text-indigo-500" />
+                                        <span className="truncate">{goal.name}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Email notification status */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleEmailReminder(bill.id);
+                            }}
+                            title={bill.send_email_reminder ? "Desativar notificações por email" : "Ativar notificações por email"}
+                            className={`p-1 rounded-full ${
+                              bill.send_email_reminder 
+                                ? 'text-blue-600 hover:bg-blue-50' 
+                                : 'text-gray-400 hover:bg-gray-50'
+                            } transition-colors duration-200`}
+                          >
+                            <Mail className="h-4 w-4" />
+                          </button>
+                        </div>
                       </div>
                       
                       <div className="flex items-center space-x-2">
-                        {bill.is_active && bill.payment_status !== 'paid' && (
+                        {bill.is_active && (bill.payment_status === 'pending' || bill.payment_status === 'partial' || bill.payment_status === 'overdue') && (
                           <button
                             onClick={() => {
                               const amount = prompt('Valor pago:', bill.amount.toString());
@@ -844,7 +982,7 @@ export default function Bills() {
               
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Associar Conta (opcional)
+                  Associar a Entidade (opcional)
                 </label>
                 
                 {properties.length > 0 && (
@@ -934,6 +1072,43 @@ export default function Bills() {
                     </div>
                   </details>
                 )}
+
+                {/* Financial goals section */}
+                {financialGoals.length > 0 && (
+                  <details className="mb-2">
+                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
+                      <Target className="h-4 w-4 mr-2 text-indigo-600" />
+                      Metas Financeiras
+                    </summary>
+                    <div className="ml-4 mt-2 space-y-2">
+                      {financialGoals.map(goal => (
+                        <label key={goal.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="financial_goal_id"
+                            value={goal.id}
+                            className="rounded-full text-indigo-600"
+                          />
+                          <span className="text-sm text-gray-700 flex items-center">
+                            <PiggyBank className="h-3 w-3 mr-1 text-indigo-500" />
+                            {goal.name} - Meta: {goal.target_amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
+                          </span>
+                        </label>
+                      ))}
+                      <div className="pt-2 text-xs text-indigo-600 border-t border-indigo-100 mt-2">
+                        <label className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            name="is_goal_contribution"
+                            className="rounded text-indigo-600"
+                            defaultChecked
+                          />
+                          <span>Contar pagamentos como contribuição para a meta</span>
+                        </label>
+                      </div>
+                    </div>
+                  </details>
+                )}
               </div>
               
               <select
@@ -953,15 +1128,38 @@ export default function Bills() {
                 <input type="checkbox" name="is_recurring" className="rounded text-blue-600" defaultChecked />
                 <span className="text-gray-700">Conta recorrente (mensal)</span>
               </label>
-              
-              <div className="flex items-center space-x-2 mt-4">
-                <input type="checkbox" name="send_email_reminder" className="rounded text-blue-600" defaultChecked />
-                <label className="text-gray-700 flex items-center space-x-2">
-                  <Mail className="h-4 w-4 text-blue-500" />
-                  <span>Receber notificações por email</span>
-                </label>
+
+              <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100 mt-4">
+                <div className="flex items-center space-x-2 mb-2">
+                  <CheckCircle className="h-4 w-4 text-indigo-600" />
+                  <h3 className="font-medium text-indigo-700">Funcionalidades adicionais</h3>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
+                  <label className="flex items-center space-x-2 text-sm">
+                    <input type="checkbox" name="send_email_reminder" className="rounded text-indigo-600" defaultChecked />
+                    <span className="text-indigo-700 flex items-center">
+                      <Mail className="h-3 w-3 mr-1" />
+                      <span>Alertas por email</span>
+                    </span>
+                  </label>
+                  <div className="flex items-center space-x-2 text-sm">
+                    <span className="text-indigo-700">Lembrar</span>
+                    <select
+                      name="reminder_days_before"
+                      className="border border-indigo-200 rounded text-indigo-700 text-sm py-0 bg-indigo-50"
+                      defaultValue="3"
+                    >
+                      <option value="1">1 dia</option>
+                      <option value="2">2 dias</option>
+                      <option value="3">3 dias</option>
+                      <option value="5">5 dias</option>
+                      <option value="7">7 dias</option>
+                    </select>
+                    <span className="text-indigo-700">antes</span>
+                  </div>
+                </div>
               </div>
-              
+
               <div className="flex space-x-3 pt-4">
                 <button
                   type="button"

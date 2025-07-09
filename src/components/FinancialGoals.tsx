@@ -92,44 +92,16 @@ export default function FinancialGoals() {
     try {
       setLoading(true);
       
-      // In a real implementation, you would fetch from a "goals" table
-      // For this demo, we'll use mock data
+      // Fetch goals from financial_goals table
+      const { data, error } = await supabase
+        .from('financial_goals')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
       
-      // Simulate a delay
-      await new Promise(resolve => setTimeout(resolve, 800));
-      
-      const mockGoals: Goal[] = [
-        {
-          id: '1',
-          user_id: user?.id || '',
-          name: 'Viagem para Europa',
-          target_amount: 15000,
-          current_amount: 5000,
-          target_date: '2025-12-20',
-          category: 'travel',
-          description: 'Viagem de 15 dias pela Europa visitando 5 países',
-          created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
-          updated_at: new Date().toISOString(),
-          status: 'active',
-          priority: 'high'
-        },
-        {
-          id: '2',
-          user_id: user?.id || '',
-          name: 'Abrir consultoria financeira',
-          target_amount: 50000,
-          current_amount: 12500,
-          target_date: '2026-06-30',
-          category: 'business',
-          description: 'Capital inicial para abrir escritório de consultoria financeira',
-          created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
-          updated_at: new Date().toISOString(),
-          status: 'active',
-          priority: 'medium'
-        }
-      ];
-      
-      setGoals(mockGoals);
+      setGoals(data || []);
     } catch (err) {
       console.error('Error fetching goals:', err);
     } finally {
@@ -141,56 +113,75 @@ export default function FinancialGoals() {
     try {
       setAiLoading(true);
       
-      // In a real implementation, you would call an AI service
-      // For this demo, we'll use mock recommendations
+      // Fetch recommendations from goal_recommendations table
+      const { data, error } = await supabase
+        .from('goal_recommendations')
+        .select('*')
+        .eq('user_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      const mockRecommendations: AIRecommendation[] = [
-        {
-          id: '1',
-          title: 'Reduza gastos com streaming',
-          description: 'Você gasta R$ 178/mês em serviços de streaming. Considere manter apenas os 2 mais usados, economizando R$ 89/mês.',
-          potentialSavings: 89,
-          difficulty: 'easy',
-          category: 'entretenimento'
-        },
-        {
-          id: '2',
-          title: 'Renegocie plano de telefonia',
-          description: 'Seu plano de telefonia parece caro para o uso. Renegociando ou trocando de operadora, você pode economizar R$ 75/mês.',
-          potentialSavings: 75,
-          difficulty: 'medium',
-          category: 'telecomunicações'
-        },
-        {
-          id: '3',
-          title: 'Otimize gastos com restaurantes',
-          description: 'Reduzindo refeições fora de casa em 30%, você pode economizar R$ 320/mês sem grandes sacrifícios.',
-          potentialSavings: 320,
-          difficulty: 'medium',
-          category: 'alimentação'
-        },
-        {
-          id: '4',
-          title: 'Elimine assinaturas não utilizadas',
-          description: 'Identificamos 3 assinaturas que você não utiliza há mais de 3 meses, totalizando R$ 135/mês.',
-          potentialSavings: 135,
-          difficulty: 'easy',
-          category: 'assinaturas'
-        },
-        {
-          id: '5',
-          title: 'Refinanciamento de empréstimo',
-          description: 'Seu empréstimo atual tem taxa alta. Refinanciando, você pode economizar R$ 250/mês.',
-          potentialSavings: 250,
-          difficulty: 'hard',
-          category: 'financeiro'
-        }
-      ];
-      
-      setRecommendations(mockRecommendations);
+      // If no recommendations exist, create some mock data
+      if (!data || data.length === 0) {
+        const mockRecommendations: AIRecommendation[] = [
+          {
+            id: '1',
+            title: 'Reduza gastos com streaming',
+            description: 'Você gasta R$ 178/mês em serviços de streaming. Considere manter apenas os 2 mais usados, economizando R$ 89/mês.',
+            potentialSavings: 89,
+            difficulty: 'easy',
+            category: 'entretenimento'
+          },
+          {
+            id: '2',
+            title: 'Renegocie plano de telefonia',
+            description: 'Seu plano de telefonia parece caro para o uso. Renegociando ou trocando de operadora, você pode economizar R$ 75/mês.',
+            potentialSavings: 75,
+            difficulty: 'medium',
+            category: 'telecomunicações'
+          },
+          {
+            id: '3',
+            title: 'Otimize gastos com restaurantes',
+            description: 'Reduzindo refeições fora de casa em 30%, você pode economizar R$ 320/mês sem grandes sacrifícios.',
+            potentialSavings: 320,
+            difficulty: 'medium',
+            category: 'alimentação'
+          },
+          {
+            id: '4',
+            title: 'Elimine assinaturas não utilizadas',
+            description: 'Identificamos 3 assinaturas que você não utiliza há mais de 3 meses, totalizando R$ 135/mês.',
+            potentialSavings: 135,
+            difficulty: 'easy',
+            category: 'assinaturas'
+          },
+          {
+            id: '5',
+            title: 'Refinanciamento de empréstimo',
+            description: 'Seu empréstimo atual tem taxa alta. Refinanciando, você pode economizar R$ 250/mês.',
+            potentialSavings: 250,
+            difficulty: 'hard',
+            category: 'financeiro'
+          }
+        ];
+        
+        setRecommendations(mockRecommendations);
+      } else {
+        // Convert database format to component format
+        const formattedRecommendations = data.map(rec => ({
+          id: rec.id,
+          title: rec.title,
+          description: rec.description,
+          potentialSavings: rec.potential_savings,
+          difficulty: rec.difficulty as 'easy' | 'medium' | 'hard',
+          category: rec.category,
+          appliedToGoal: rec.goal_id || undefined
+        }));
+        
+        setRecommendations(formattedRecommendations);
+      }
     } catch (err) {
       console.error('Error generating AI recommendations:', err);
     } finally {
@@ -208,47 +199,39 @@ export default function FinancialGoals() {
       const targetAmount = parseFloat(newGoalFormData.target_amount);
       const monthlySavingsNeeded = targetAmount / diffMonths;
       
-      const newGoal: Omit<Goal, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
-        name: newGoalFormData.name,
-        target_amount: targetAmount,
-        current_amount: 0,
-        target_date: newGoalFormData.target_date,
-        category: newGoalFormData.category as 'travel' | 'business' | 'wealth' | 'home' | 'education' | 'other',
-        description: newGoalFormData.description,
-        status: 'active',
-        priority: newGoalFormData.priority as 'high' | 'medium' | 'low'
-      };
+      // Insert new goal
+      const { data, error } = await supabase
+        .from('financial_goals')
+        .insert({
+          user_id: user?.id,
+          name: newGoalFormData.name,
+          target_amount: targetAmount,
+          current_amount: 0,
+          target_date: newGoalFormData.target_date,
+          category: newGoalFormData.category,
+          description: newGoalFormData.description,
+          status: 'active',
+          priority: newGoalFormData.priority
+        })
+        .select();
+
+      if (error) throw error;
       
-      // In a real implementation, you would save to database
-      // For demo, we'll just update the state
-      
-      const mockId = Date.now().toString();
-      
-      // In a real implementation, you would also create a recurring bill for this goal
-      // For demo purposes, we'll just simulate this
-      
-      // This would call the create_goal_contribution_bill function
-      /*
-      await supabase.rpc('create_goal_contribution_bill', {
-        goal_id: mockId,
-        monthly_amount: monthlySavingsNeeded,
-        due_day: 5 // Default due day
-      });
-      */
-      
-      // For demo, we'll log what would happen
-      console.log(`Would create recurring bill: R$ ${monthlySavingsNeeded.toFixed(2)}/month for goal: ${newGoalFormData.name}`);
-      
-      setGoals([
-        ...goals,
-        {
-          ...newGoal,
-          id: mockId,
-          user_id: user?.id || '',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString()
+      // Create a recurring bill for this goal
+      if (data && data.length > 0) {
+        const goalId = data[0].id;
+        
+        // Call the create_goal_contribution_bill database function
+        const { data: billData, error: billError } = await supabase.rpc('create_goal_contribution_bill', {
+          goal_id: goalId,
+          monthly_amount: monthlySavingsNeeded,
+          due_day: 5 // Default due day
+        });
+        
+        if (billError) {
+          console.error('Error creating goal contribution bill:', billError);
         }
-      ]);
+      }
       
       // Reset form
       setNewGoalFormData({
@@ -261,51 +244,162 @@ export default function FinancialGoals() {
       });
       
       setShowAddModal(false);
+      fetchGoals(); // Refresh goals list
       
     } catch (err) {
       console.error('Error adding goal:', err);
+      alert('Erro ao adicionar meta: ' + (err as Error).message);
     }
   };
 
-  const handleUpdateGoal = (id: string, updates: Partial<Goal>) => {
-    setGoals(
-      goals.map(goal => (goal.id === id ? { ...goal, ...updates, updated_at: new Date().toISOString() } : goal))
-    );
-    setEditingGoal(null);
+  const handleUpdateGoal = async (id: string, updates: Partial<Goal>) => {
+    try {
+      // Update goal in database
+      const { error } = await supabase
+        .from('financial_goals')
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      // Update local state
+      setGoals(
+        goals.map(goal => (goal.id === id ? { ...goal, ...updates, updated_at: new Date().toISOString() } : goal))
+      );
+      
+      setEditingGoal(null);
+      
+      // If the amount target changed, update the related bill
+      if (updates.target_amount) {
+        const goal = goals.find(g => g.id === id);
+        if (goal) {
+          const targetDate = new Date(updates.target_date || goal.target_date);
+          const now = new Date();
+          const diffMs = targetDate.getTime() - now.getTime();
+          const diffMonths = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30)));
+          const newAmount = updates.target_amount;
+          const currentAmount = updates.current_amount || goal.current_amount;
+          const monthlySavingsNeeded = (newAmount - currentAmount) / diffMonths;
+          
+          // Update the related bill
+          const { error: billError } = await supabase.rpc('update_goal_contribution_bill', {
+            goal_id: id,
+            monthly_amount: monthlySavingsNeeded
+          });
+          
+          if (billError) {
+            console.error('Error updating goal contribution bill:', billError);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('Error updating goal:', err);
+      alert('Erro ao atualizar meta: ' + (err as Error).message);
+    }
   };
 
-  const handleDeleteGoal = (id: string) => {
+  const handleDeleteGoal = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir esta meta?')) return;
-    setGoals(goals.filter(goal => goal.id !== id));
+    
+    try {
+      // Delete goal
+      const { error } = await supabase
+        .from('financial_goals')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      
+      // Update local state
+      setGoals(goals.filter(goal => goal.id !== id));
+    } catch (err) {
+      console.error('Error deleting goal:', err);
+      alert('Erro ao excluir meta: ' + (err as Error).message);
+    }
   };
 
-  const handleContribute = (id: string) => {
+  const handleContribute = async (id: string) => {
     const goal = goals.find(g => g.id === id);
     if (!goal) return;
     
     const amount = parseFloat(prompt('Quanto deseja adicionar à sua meta?', '100') || '0');
     if (amount <= 0) return;
     
-    handleUpdateGoal(id, { 
-      current_amount: goal.current_amount + amount,
-      status: goal.current_amount + amount >= goal.target_amount ? 'completed' : 'active'
-    });
+    try {
+      // Add contribution
+      const { error: contributionError } = await supabase
+        .from('goal_contributions')
+        .insert({
+          goal_id: id,
+          user_id: user?.id,
+          amount: amount,
+          notes: 'Contribuição manual'
+        });
+
+      if (contributionError) throw contributionError;
+      
+      // Update goal amount
+      const newAmount = goal.current_amount + amount;
+      const newStatus = newAmount >= goal.target_amount ? 'completed' : 'active';
+      
+      const { error: updateError } = await supabase
+        .from('financial_goals')
+        .update({
+          current_amount: newAmount,
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+
+      if (updateError) throw updateError;
+      
+      // Update local state
+      handleUpdateGoal(id, { 
+        current_amount: newAmount,
+        status: newStatus
+      });
+      
+    } catch (err) {
+      console.error('Error adding contribution:', err);
+      alert('Erro ao adicionar contribuição: ' + (err as Error).message);
+    }
   };
 
-  const applyRecommendation = (goalId: string, recommendation: AIRecommendation) => {
+  const applyRecommendation = async (goalId: string, recommendation: AIRecommendation) => {
     const goal = goals.find(g => g.id === goalId);
     if (!goal) return;
     
-    setRecommendations(
-      recommendations.map(rec => 
-        rec.id === recommendation.id ? { ...rec, appliedToGoal: goalId } : rec
-      )
-    );
-    
-    // Show success message
-    alert(`Recomendação aplicada: economize R$ ${recommendation.potentialSavings}/mês para atingir sua meta mais rápido!`);
-    
-    setShowAIModal(false);
+    try {
+      // Update recommendation status in database
+      const { error } = await supabase
+        .from('goal_recommendations')
+        .update({
+          goal_id: goalId,
+          is_applied: true,
+          applied_at: new Date().toISOString()
+        })
+        .eq('id', recommendation.id);
+
+      if (error) throw error;
+      
+      // Update local state
+      setRecommendations(
+        recommendations.map(rec => 
+          rec.id === recommendation.id ? { ...rec, appliedToGoal: goalId } : rec
+        )
+      );
+      
+      // Show success message
+      alert(`Recomendação aplicada: economize R$ ${recommendation.potentialSavings}/mês para atingir sua meta mais rápido!`);
+      
+      setShowAIModal(false);
+    } catch (err) {
+      console.error('Error applying recommendation:', err);
+      alert('Erro ao aplicar recomendação: ' + (err as Error).message);
+    }
   };
 
   const getTimeRemaining = (targetDate: string) => {
@@ -557,7 +651,7 @@ export default function FinancialGoals() {
                         value={editingGoal.description || ''}
                         onChange={(e) => setEditingGoal({...editingGoal, description: e.target.value})}
                         className="w-full p-2 border border-gray-300 rounded-lg"
-                        rows={3}
+                        rows={2}
                       />
                     </div>
                     
@@ -595,8 +689,8 @@ export default function FinancialGoals() {
                     <div className="p-6">
                       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                         <div className="flex items-start space-x-4">
-                          <div className={`w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-r ${colorClass} shadow-md`}>
-                            <CategoryIcon className="h-7 w-7 text-white" />
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-r ${colorClass} shadow-md`}>
+                            <CategoryIcon className="h-6 w-6 text-white" />
                           </div>
                           
                           <div>
@@ -743,7 +837,7 @@ export default function FinancialGoals() {
       {/* Add Goal Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-100">
               <h2 className="text-2xl font-semibold text-gray-800">Nova Meta Financeira</h2>
             </div>
@@ -753,12 +847,12 @@ export default function FinancialGoals() {
                 e.preventDefault();
                 handleAddGoal();
               }} className="space-y-6">
-                {/* Goal Type Selection */}
+                {/* Goal Type Selection - More Compact Grid */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Tipo de Meta
                   </label>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-3 gap-3">
                     {GoalCategories.map((category) => {
                       const isSelected = newGoalFormData.category === category.value;
                       return (
@@ -769,16 +863,16 @@ export default function FinancialGoals() {
                             ...newGoalFormData,
                             category: category.value as any
                           })}
-                          className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all ${
+                          className={`flex items-center space-x-2 p-3 rounded-xl border-2 transition-all ${
                             isSelected 
                               ? `border-blue-500 bg-blue-50 shadow-md` 
                               : `border-gray-200 hover:border-gray-300`
                           }`}
                         >
-                          <div className={`w-12 h-12 mb-2 rounded-lg flex items-center justify-center bg-gradient-to-r ${category.color}`}>
-                            <category.icon className="h-6 w-6 text-white" />
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-r ${category.color}`}>
+                            <category.icon className="h-4 w-4 text-white" />
                           </div>
-                          <span className="font-medium text-gray-800">{category.label}</span>
+                          <span className="font-medium text-gray-800 text-sm">{category.label}</span>
                         </button>
                       );
                     })}
@@ -796,7 +890,7 @@ export default function FinancialGoals() {
                       onChange={(e) => setNewGoalFormData({...newGoalFormData, name: e.target.value})}
                       placeholder="Ex: Viagem para Europa"
                       required
-                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="w-full p-2 border border-gray-300 rounded-lg"
                     />
                   </div>
                   
@@ -814,7 +908,7 @@ export default function FinancialGoals() {
                         onChange={(e) => setNewGoalFormData({...newGoalFormData, target_amount: e.target.value})}
                         placeholder="10000"
                         required
-                        className="w-full pl-9 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg"
                       />
                     </div>
                   </div>
@@ -831,7 +925,7 @@ export default function FinancialGoals() {
                       onChange={(e) => setNewGoalFormData({...newGoalFormData, target_date: e.target.value})}
                       required
                       min={new Date().toISOString().split('T')[0]}
-                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="w-full p-2 border border-gray-300 rounded-lg"
                     />
                   </div>
                   
@@ -842,7 +936,7 @@ export default function FinancialGoals() {
                     <select
                       value={newGoalFormData.priority}
                       onChange={(e) => setNewGoalFormData({...newGoalFormData, priority: e.target.value as any})}
-                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      className="w-full p-2 border border-gray-300 rounded-lg"
                     >
                       <option value="high">Alta</option>
                       <option value="medium">Média</option>
@@ -859,72 +953,62 @@ export default function FinancialGoals() {
                     value={newGoalFormData.description}
                     onChange={(e) => setNewGoalFormData({...newGoalFormData, description: e.target.value})}
                     placeholder="Descreva sua meta..."
-                    rows={3}
-                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    rows={2}
+                    className="w-full p-2 border border-gray-300 rounded-lg"
                   />
                 </div>
                 
                 {newGoalFormData.target_amount && newGoalFormData.target_date && (
-                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                    <h3 className="font-medium text-blue-800 mb-1">Simulação</h3>
-                    <div className="text-sm text-blue-700 space-y-1">
-                      <p>Valor total a economizar: {formatCurrency(parseFloat(newGoalFormData.target_amount))}</p>
-                      <p>
-                        Economia mensal necessária: {
-                          formatCurrency(
-                            parseFloat(newGoalFormData.target_amount) / Math.max(1, Math.ceil(
-                              (new Date(newGoalFormData.target_date).getTime() - new Date().getTime()) / 
-                              (1000 * 60 * 60 * 24 * 30)
-                            ))
-                          )
-                        }
-                      </p>
-                      <p>
-                        Percentual da renda mensal: {
-                          totalMonthlyIncome > 0 
-                            ? `${(
-                                (parseFloat(newGoalFormData.target_amount) / Math.max(1, Math.ceil(
-                                  (new Date(newGoalFormData.target_date).getTime() - new Date().getTime()) / 
-                                  (1000 * 60 * 60 * 24 * 30)
-                                )) / totalMonthlyIncome) * 100
-                              ).toFixed(1)}%`
-                            : 'N/A'
-                        }
-                      </p>
+                  <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
+                    <h3 className="font-medium text-blue-800 mb-1 text-sm">Simulação</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="text-xs text-blue-700">
+                        <p>Valor total: {formatCurrency(parseFloat(newGoalFormData.target_amount))}</p>
+                        <p>
+                          Percentual da renda: {
+                            totalMonthlyIncome > 0 
+                              ? `${(
+                                  (parseFloat(newGoalFormData.target_amount) / Math.max(1, Math.ceil(
+                                    (new Date(newGoalFormData.target_date).getTime() - new Date().getTime()) / 
+                                    (1000 * 60 * 60 * 24 * 30)
+                                  )) / totalMonthlyIncome) * 100
+                                ).toFixed(1)}%`
+                              : 'N/A'
+                          }
+                        </p>
+                      </div>
+                      <div className="text-xs text-blue-700">
+                        <p>
+                          Economia mensal: {
+                            formatCurrency(
+                              parseFloat(newGoalFormData.target_amount) / Math.max(1, Math.ceil(
+                                (new Date(newGoalFormData.target_date).getTime() - new Date().getTime()) / 
+                                (1000 * 60 * 60 * 24 * 30)
+                              ))
+                            )
+                          }
+                        </p>
+                        <p className="flex items-center">
+                          <FileText className="h-3 w-3 mr-1 text-blue-600" />
+                          <span>Conta recorrente será criada</span>
+                        </p>
+                      </div>
                     </div>
                   </div>
                 )}
-                
-                <div className="mt-4 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                  <h3 className="font-medium text-indigo-800 mb-2">Conta Recorrente</h3>
-                  <p className="text-sm text-indigo-700 mb-3">
-                    Será criada uma conta recorrente de R$ {
-                      newGoalFormData.target_amount && newGoalFormData.target_date
-                        ? (parseFloat(newGoalFormData.target_amount) / Math.max(1, Math.ceil(
-                            (new Date(newGoalFormData.target_date).getTime() - new Date().getTime()) / 
-                            (1000 * 60 * 60 * 24 * 30)
-                          ))).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                        : '0,00'
-                    }/mês para esta meta.
-                  </p>
-                  <div className="flex items-center text-sm text-indigo-600">
-                    <FileText className="h-4 w-4 mr-2" />
-                    <span>Esta conta aparecerá na seção de Contas para você gerenciar</span>
-                  </div>
-                </div>
                 
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="px-5 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                    className="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                   >
                     Cancelar
                   </button>
                   
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md"
+                    className="px-5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md"
                   >
                     Criar Meta
                   </button>
@@ -938,7 +1022,7 @@ export default function FinancialGoals() {
       {/* AI Recommendations Modal */}
       {showAIModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-100">
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-3">
@@ -966,51 +1050,51 @@ export default function FinancialGoals() {
             
             <div className="p-6">
               {selectedGoal && (
-                <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 mb-6">
-                  <h3 className="font-medium text-indigo-800 mb-2">Meta Selecionada: {selectedGoal.name}</h3>
-                  <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 mb-4">
+                  <h3 className="font-medium text-indigo-800 mb-2 text-sm">Meta Selecionada: {selectedGoal.name}</h3>
+                  <div className="grid grid-cols-2 gap-2 text-xs">
                     <div>
                       <p className="text-indigo-700">Valor: {formatCurrency(selectedGoal.target_amount)}</p>
                       <p className="text-indigo-700">Progresso: {formatCurrency(selectedGoal.current_amount)}</p>
                     </div>
                     <div>
                       <p className="text-indigo-700">Falta: {formatCurrency(selectedGoal.target_amount - selectedGoal.current_amount)}</p>
-                      <p className="text-indigo-700">Economia mensal necessária: {formatCurrency(getMonthlySavingsNeeded(selectedGoal))}</p>
+                      <p className="text-indigo-700">Economia mensal: {formatCurrency(getMonthlySavingsNeeded(selectedGoal))}</p>
                     </div>
                   </div>
                 </div>
               )}
               
               <div className="mb-4">
-                <h3 className="font-semibold text-gray-800 mb-2">Sugestões personalizadas</h3>
-                <p className="text-gray-600 text-sm">
+                <h3 className="font-semibold text-gray-800 text-sm mb-1">Sugestões personalizadas</h3>
+                <p className="text-gray-600 text-xs">
                   A PROSPERA.AI analisou seus gastos e identificou estas oportunidades de economia.
                 </p>
               </div>
               
-              <div className="space-y-4">
+              <div className="space-y-3">
                 {aiLoading ? (
-                  <div className="animate-pulse space-y-4">
+                  <div className="animate-pulse space-y-3">
                     {[1, 2, 3].map(i => (
-                      <div key={i} className="bg-gray-100 h-24 rounded-xl"></div>
+                      <div key={i} className="bg-gray-100 h-16 rounded-xl"></div>
                     ))}
                   </div>
                 ) : recommendations.length === 0 ? (
-                  <div className="text-center py-8">
-                    <p className="text-gray-500">Nenhuma recomendação disponível no momento.</p>
+                  <div className="text-center py-4">
+                    <p className="text-gray-500 text-sm">Nenhuma recomendação disponível no momento.</p>
                   </div>
                 ) : (
                   recommendations.map((rec) => (
-                    <div key={rec.id} className={`p-4 rounded-xl border ${
+                    <div key={rec.id} className={`p-3 rounded-xl border ${
                       rec.appliedToGoal ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200 hover:border-purple-200 hover:shadow-md transition-all'
                     }`}>
-                      <div className="flex justify-between">
+                      <div className="flex justify-between items-center">
                         <div>
-                          <div className="flex items-center space-x-3">
-                            <Scissors className="h-5 w-5 text-purple-600" />
-                            <h4 className="font-medium text-gray-800">{rec.title}</h4>
+                          <div className="flex items-center space-x-2">
+                            <Scissors className="h-4 w-4 text-purple-600" />
+                            <h4 className="font-medium text-gray-800 text-sm">{rec.title}</h4>
                             
-                            <span className={`text-xs px-2 py-1 rounded-full ${
+                            <span className={`text-xs px-2 py-0.5 rounded-full ${
                               rec.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
                               rec.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' :
                               'bg-red-100 text-red-700'
@@ -1020,25 +1104,25 @@ export default function FinancialGoals() {
                             </span>
                           </div>
                           
-                          <p className="text-sm text-gray-600 mt-1">{rec.description}</p>
+                          <p className="text-xs text-gray-600 mt-1">{rec.description}</p>
                         </div>
                         
                         <div className="text-right">
-                          <p className="font-semibold text-green-600">{formatCurrency(rec.potentialSavings)}/mês</p>
+                          <p className="font-semibold text-green-600 text-sm">{formatCurrency(rec.potentialSavings)}/mês</p>
                           
                           {!rec.appliedToGoal && selectedGoal && (
                             <button
                               onClick={() => applyRecommendation(selectedGoal.id, rec)}
-                              className="mt-2 px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-lg hover:bg-purple-200 transition-colors"
+                              className="mt-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-lg hover:bg-purple-200 transition-colors"
                             >
-                              Aplicar à Meta
+                              Aplicar
                             </button>
                           )}
                           
                           {rec.appliedToGoal && (
-                            <p className="text-xs text-green-600 mt-2 flex items-center">
+                            <p className="text-xs text-green-600 flex items-center justify-end mt-1">
                               <CheckCircle className="h-3 w-3 mr-1" />
-                              Aplicado
+                              <span>Aplicado</span>
                             </p>
                           )}
                         </div>
@@ -1055,16 +1139,16 @@ export default function FinancialGoals() {
                       setShowAIModal(false);
                       setSelectedGoal(null);
                     }}
-                    className="px-5 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
                   >
                     Fechar
                   </button>
                   
                   <button
                     onClick={() => generateRecommendations()}
-                    className="px-5 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 flex items-center space-x-2"
+                    className="px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 flex items-center space-x-2 text-sm"
                   >
-                    <Sparkles className="h-4 w-4" />
+                    <Sparkles className="h-3 w-3" />
                     <span>Gerar Novas Sugestões</span>
                   </button>
                 </div>
