@@ -71,7 +71,7 @@ export default function TrialExpiredModal({ isOpen, onClose }: TrialExpiredModal
               </div>
               <div className="flex justify-between items-center mb-2">
                 <h3 className="font-semibold text-gray-800">Plano Family</h3>
-                <span className="text-purple-600 font-bold">R$ 179,90/mês</span>
+                <span className="text-purple-600 font-bold">R$ 129,90/mês</span>
               </div>
               <ul className="space-y-2 mb-4">
                 <li className="flex items-start space-x-2">
@@ -84,7 +84,7 @@ export default function TrialExpiredModal({ isOpen, onClose }: TrialExpiredModal
                 </li>
                 <li className="flex items-start space-x-2">
                   <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                  <span className="text-sm text-gray-600">Imóveis, veículos e ativos exóticos</span>
+                  <span className="text-sm text-gray-600">Acesso compartilhado para família</span>
                 </li>
               </ul>
               <SubscriptionButton

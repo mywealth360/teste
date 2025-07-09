@@ -71,11 +71,7 @@ export default function UpgradeModal({ isOpen, onClose, featureName }: UpgradeMo
               </li>
               <li className="flex items-start space-x-2">
                 <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                <span>IA Financeira avançada</span>
-              </li>
-              <li className="flex items-start space-x-2">
-                <CheckCircle className="h-4 w-4 text-green-500 mt-0.5" />
-                <span>Múltiplos usuários</span>
+                <span>Acesso compartilhado para família</span>
               </li>
             </ul>
           </div>

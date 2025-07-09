@@ -38,10 +38,9 @@ export default function ModuleComparisonSection() {
                 { name: 'Veículos', icon: Car, starter: false, family: true },
                 { name: 'Ativos Exóticos', icon: Gem, starter: false, family: true },
                 { name: 'Funcionários', icon: Users, starter: false, family: true },
-                { name: 'Gerenciar Acessos', icon: Users, starter: false, family: true },
+                { name: 'Acesso Compartilhado', icon: Users, starter: false, family: true },
                 { name: 'Gestão de Patrimônio', icon: Target, starter: false, family: true },
                 { name: 'IA Insights', icon: Brain, starter: false, family: true },
-                { name: 'Múltiplos usuários', icon: Users, starter: false, family: true },
               ].map((module, index) => (
                 <tr key={index} className="hover:bg-gray-50">
                   <td className="py-4 px-6">
@@ -54,7 +53,7 @@ export default function ModuleComparisonSection() {
                     {module.starter ? (
                       <CheckCircle className="h-5 w-5 text-green-500 mx-auto" />
                     ) : ( 
-                      <module.icon className="h-5 w-5 text-gray-300 mx-auto" />
+                      <Lock className="h-5 w-5 text-gray-300 mx-auto" />
                     )}
                   </td>
                   <td className="py-4 px-6 text-center">
