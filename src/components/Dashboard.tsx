@@ -169,7 +169,7 @@ export default function Dashboard() {
         .reduce((sum, transaction) => sum + transaction.amount, 0) || 0;
       
       // Calculate other income (from income sources)
-      const otherIncome = (dashboardData.totalMonthlyIncome || 0) - rentalIncome - dividendIncome - transactionIncome;
+      const otherIncome = (dashboardData.totalMonthlyIncome || 0) - rentalIncome - dividendIncome;
       
       // Create categories array
       const totalIncome = dashboardData.totalMonthlyIncome || 0;

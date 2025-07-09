@@ -124,7 +124,7 @@ export default function RevenueManagement() {
         name: transaction.description,
         amount: transaction.amount,
         frequency: transaction.is_recurring ? 'monthly' as const : 'one-time' as const,
-        category: transaction.category || 'Transações',
+        category: 'Transações',
         next_payment: null,
         is_active: true,
         tax_rate: transaction.tax_rate || 0,
