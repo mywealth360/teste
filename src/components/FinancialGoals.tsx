@@ -17,7 +17,9 @@ import {
   BarChart3,
   Calendar,
   DollarSign,
-  AlertTriangle
+  AlertTriangle,
+  FileText,
+  CheckCircle
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -198,9 +200,17 @@ export default function FinancialGoals() {
 
   const handleAddGoal = async () => {
     try {
+      // Calculate monthly savings needed
+      const targetDate = new Date(newGoalFormData.target_date);
+      const now = new Date();
+      const diffMs = targetDate.getTime() - now.getTime();
+      const diffMonths = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30)));
+      const targetAmount = parseFloat(newGoalFormData.target_amount);
+      const monthlySavingsNeeded = targetAmount / diffMonths;
+      
       const newGoal: Omit<Goal, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
         name: newGoalFormData.name,
-        target_amount: parseFloat(newGoalFormData.target_amount),
+        target_amount: targetAmount,
         current_amount: 0,
         target_date: newGoalFormData.target_date,
         category: newGoalFormData.category as 'travel' | 'business' | 'wealth' | 'home' | 'education' | 'other',
@@ -213,6 +223,21 @@ export default function FinancialGoals() {
       // For demo, we'll just update the state
       
       const mockId = Date.now().toString();
+      
+      // In a real implementation, you would also create a recurring bill for this goal
+      // For demo purposes, we'll just simulate this
+      
+      // This would call the create_goal_contribution_bill function
+      /*
+      await supabase.rpc('create_goal_contribution_bill', {
+        goal_id: mockId,
+        monthly_amount: monthlySavingsNeeded,
+        due_day: 5 // Default due day
+      });
+      */
+      
+      // For demo, we'll log what would happen
+      console.log(`Would create recurring bill: R$ ${monthlySavingsNeeded.toFixed(2)}/month for goal: ${newGoalFormData.name}`);
       
       setGoals([
         ...goals,
@@ -632,13 +657,14 @@ export default function FinancialGoals() {
                             <button
                               onClick={() => handleContribute(goal.id)}
                               disabled={goal.status === 'completed'}
-                              className={`px-3 py-1 text-sm rounded-lg ${
+                              className={`px-3 py-1 text-sm rounded-lg flex items-center space-x-1 ${
                                 goal.status === 'completed' 
                                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                                  : 'bg-green-100 text-green-700 hover:bg-green-200 transition-colors'
+                                  : 'bg-green-500 text-white hover:bg-green-600 transition-colors'
                               }`}
                             >
-                              Adicionar
+                              <DollarSign className="h-3 w-3" />
+                              <span>Adicionar</span>
                             </button>
                             
                             <button
@@ -827,7 +853,7 @@ export default function FinancialGoals() {
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Descrição
+                    Descrição (opcional)
                   </label>
                   <textarea
                     value={newGoalFormData.description}
@@ -868,6 +894,24 @@ export default function FinancialGoals() {
                     </div>
                   </div>
                 )}
+                
+                <div className="mt-4 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                  <h3 className="font-medium text-indigo-800 mb-2">Conta Recorrente</h3>
+                  <p className="text-sm text-indigo-700 mb-3">
+                    Será criada uma conta recorrente de R$ {
+                      newGoalFormData.target_amount && newGoalFormData.target_date
+                        ? (parseFloat(newGoalFormData.target_amount) / Math.max(1, Math.ceil(
+                            (new Date(newGoalFormData.target_date).getTime() - new Date().getTime()) / 
+                            (1000 * 60 * 60 * 24 * 30)
+                          ))).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        : '0,00'
+                    }/mês para esta meta.
+                  </p>
+                  <div className="flex items-center text-sm text-indigo-600">
+                    <FileText className="h-4 w-4 mr-2" />
+                    <span>Esta conta aparecerá na seção de Contas para você gerenciar</span>
+                  </div>
+                </div>
                 
                 <div className="flex justify-end space-x-3 pt-4">
                   <button
