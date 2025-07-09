@@ -186,10 +186,10 @@ export default function Dashboard() {
               </div>
               <div>
                 <p className="text-green-100 text-sm font-medium mb-2">Renda Mensal</p>
-                <p className="text-4xl font-bold mb-2">R$ {totalMonthlyIncomeComplete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-4xl font-bold mb-2 text-white">R$ {totalMonthlyIncomeComplete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                 <div className="flex items-center space-x-2">
-                  <div className="bg-white/20 px-3 py-1 rounded-full">
-                    <span className="text-sm">Todas as fontes</span>
+                  <div className="bg-white/20 px-3 py-1 rounded-full flex items-center space-x-1">
+                    <span className="text-sm text-white">Todas as fontes</span>
                   </div>
                 </div>
               </div>
@@ -211,10 +211,10 @@ export default function Dashboard() {
               </div>
               <div>
                 <p className="text-red-100 text-sm font-medium mb-2">Gastos Mensais</p>
-                <p className="text-4xl font-bold mb-2">R$ {totalMonthlyExpensesComplete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-4xl font-bold mb-2 text-white">R$ {totalMonthlyExpensesComplete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
                 <div className="flex items-center space-x-2">
-                  <div className="bg-white/20 px-3 py-1 rounded-full">
-                    <span className="text-sm">Todos os gastos</span>
+                  <div className="bg-white/20 px-3 py-1 rounded-full flex items-center space-x-1">
+                    <span className="text-sm text-white">Todos os gastos</span>
                   </div>
                 </div>
               </div>
@@ -237,11 +237,11 @@ export default function Dashboard() {
               <div>
                 <p className="text-white/80 text-sm font-medium mb-2">Saldo Mensal</p>
                 <p className="text-4xl font-bold mb-2">
-                  {netMonthlyIncomeComplete < 0 ? '-' : ''}R$ {Math.abs(netMonthlyIncomeComplete).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  <span className="text-white">{netMonthlyIncomeComplete < 0 ? '-' : ''}R$ {Math.abs(netMonthlyIncomeComplete).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                 </p>
                 <div className="flex items-center space-x-2">
-                  <div className="bg-white/20 px-3 py-1 rounded-full">
-                    <span className="text-sm">{netMonthlyIncomeComplete >= 0 ? 'Positivo' : 'Negativo'}</span>
+                  <div className="bg-white/20 px-3 py-1 rounded-full flex items-center space-x-1">
+                    <span className="text-sm text-white">{netMonthlyIncomeComplete >= 0 ? 'Positivo' : 'Negativo'}</span>
                   </div>
                 </div>
               </div>
