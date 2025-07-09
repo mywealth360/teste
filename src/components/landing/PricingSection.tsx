@@ -1,9 +1,13 @@
 import React from 'react';
 import { products } from '../../stripe-config';
-import PlanCard from '../subscription/PlanCard';
 import { Home, Car, Gem, Users, Target, CreditCard, Calendar, CheckCircle, Lock } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
+import AuthModal from '../auth/AuthModal';
 
 export default function PricingSection() {
+  const [showAuthModal, setShowAuthModal] = React.useState(false);
+  const { user } = useAuth();
+
   // Define the plans with updated pricing
   const plans = [
     {
@@ -50,6 +54,15 @@ export default function PricingSection() {
       popular: true
     }
   ];
+
+  const handlePlanClick = () => {
+    if (!user) {
+      setShowAuthModal(true);
+    } else {
+      // If user is logged in, redirect to dashboard
+      window.location.href = '/';
+    }
+  };
 
   return (
     <section id="pricing" className="py-20 bg-white">
@@ -116,7 +129,7 @@ export default function PricingSection() {
               
               <div className="px-8 pb-8">
                 <button
-                  onClick={() => window.location.href = "#"}
+                  onClick={handlePlanClick}
                   className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 ${
                     plan.popular 
                       ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700'
@@ -152,6 +165,13 @@ export default function PricingSection() {
           </div>
         </div>
       </div>
+      
+      {/* Auth Modal */}
+      <AuthModal 
+        isOpen={showAuthModal} 
+        onClose={() => setShowAuthModal(false)} 
+        initialMode="register" 
+      />
     </section>
   );
 }
