@@ -25,9 +25,9 @@ export default function TrialExpiredModal({ isOpen, onClose }: TrialExpiredModal
         <div className="p-6 border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center space-x-3">
             <div className="w-10 h-10 bg-gradient-to-br from-red-500 to-orange-600 rounded-full flex items-center justify-center">
-              <Clock className="h-6 w-6 text-white" />
+              <Clock className="h-5 w-5 text-white" />
             </div>
-            <h2 className="text-xl font-bold text-gray-800">Seu período de teste expirou</h2>
+            <h2 className="text-xl font-bold text-gray-800">Seu período de teste na PROSPERA.AI expirou</h2>
           </div>
           <button
             onClick={onClose}
@@ -40,7 +40,7 @@ export default function TrialExpiredModal({ isOpen, onClose }: TrialExpiredModal
         <div className="p-6 space-y-4">
           <div className="bg-red-50 p-4 rounded-xl border border-red-100">
             <p className="text-red-700">
-              Seu período de teste gratuito de 7 dias chegou ao fim. Para continuar utilizando o MyWealth 360, escolha um plano abaixo.
+              Seu período de teste gratuito chegou ao fim. Para continuar utilizando a PROSPERA.AI, escolha um plano abaixo.
             </p>
           </div>
           
