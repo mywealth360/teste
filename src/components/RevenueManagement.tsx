@@ -311,14 +311,14 @@ export default function RevenueManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Gestão de Receitas</h1>
           <p className="text-gray-500 mt-1">Gerencie suas fontes de renda</p>
         </div>
         <button 
           onClick={() => setShowAddForm(true)}
-          className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg"
+          className="flex items-center space-x-2 px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-200 shadow-md"
         >
           <Plus className="h-4 w-4" />
           <span>Adicionar Fonte de Renda</span>
@@ -326,7 +326,7 @@ export default function RevenueManagement() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
@@ -368,11 +368,11 @@ export default function RevenueManagement() {
       </div>
 
       {/* Income Categories */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-md p-6 overflow-hidden">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">Receitas por Categoria</h2>
         <div className="grid grid-cols-1 gap-4">
           {incomeCategories.map((category, index) => (
-            <div key={index} className="bg-gray-50 p-4 rounded-xl hover:shadow-md transition-shadow">
+            <div key={index} className="bg-white p-4 rounded-xl border border-gray-200 hover:shadow-md transition-shadow">
               <div className="flex items-center mb-2">
                <div className="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-green-500">
                   {getCategoryIcon(category.category)}
@@ -395,10 +395,10 @@ export default function RevenueManagement() {
 
       {/* Add Form */}
       {showAddForm && (
-        <div className="bg-white rounded-2xl shadow-lg p-6">
+        <div className="bg-white rounded-xl shadow-md p-6">
           <h3 className="text-lg font-medium text-gray-900 mb-4">Adicionar Nova Fonte de Renda</h3>
           <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nome</label>
                 <input
@@ -465,17 +465,17 @@ export default function RevenueManagement() {
                 />
               </div>
             </div>
-            <div className="flex justify-end space-x-3 pt-4">
+            <div className="flex flex-col sm:flex-row sm:justify-end space-y-3 sm:space-y-0 sm:space-x-3 pt-4">
               <button
                 type="button"
                 onClick={() => setShowAddForm(false)}
-                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors shadow-sm"
               >
                 Cancelar
               </button>
               <button
                 type="submit"
-                className="px-4 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200"
+                className="px-4 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-200 shadow-sm"
               >
                 Salvar
               </button>
@@ -485,7 +485,7 @@ export default function RevenueManagement() {
       )}
 
       {/* Income Sources List */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div className="bg-white rounded-xl shadow-md overflow-hidden">
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-xl font-semibold text-gray-800">Suas Fontes de Renda</h2>
         </div>

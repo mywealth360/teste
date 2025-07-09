@@ -69,16 +69,16 @@ export default function FloatingChatButton() {
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 w-14 h-14 bg-indigo-600 text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center z-50 hover:scale-110 ${
+        className={`fixed bottom-6 right-6 w-12 h-12 sm:w-14 sm:h-14 bg-indigo-600 text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center z-50 hover:scale-110 ${
           isOpen ? 'hidden' : 'block'
         }`}
       >
-        <MessageCircle className="h-6 w-6" />
+        <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
       </button>
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 h-[500px] bg-white rounded-2xl shadow-2xl border border-gray-200 z-50 flex flex-col overflow-hidden">
+        <div className="fixed bottom-6 right-6 w-[90vw] sm:w-80 md:w-96 h-[80vh] sm:h-[500px] bg-white rounded-xl shadow-lg border border-gray-200 z-50 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="p-4 bg-indigo-600 text-white">
             <div className="flex items-center justify-between">
@@ -101,7 +101,7 @@ export default function FloatingChatButton() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
             {messages.map((message) => (
               <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`flex items-start space-x-2 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
@@ -122,7 +122,7 @@ export default function FloatingChatButton() {
                       ? 'bg-blue-500 text-white'
                       : 'bg-gray-100 text-gray-800'
                   }`}>
-                    <p className="text-xs leading-relaxed">{message.content}</p>
+                    <p className="text-xs sm:text-sm leading-relaxed">{message.content}</p>
                     <p className={`text-xs mt-1 ${
                       message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
                     }`}>
@@ -171,7 +171,7 @@ export default function FloatingChatButton() {
           </div>
 
           {/* Input */}
-          <div className="p-4 border-t border-gray-100">
+          <div className="p-3 sm:p-4 border-t border-gray-100">
             <div className="flex items-center space-x-2">
               <input
                 type="text"
@@ -179,12 +179,12 @@ export default function FloatingChatButton() {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(inputValue)}
                 placeholder="Digite sua pergunta..."
-                className="flex-1 p-2 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-purple-500/20 focus:border-purple-500 transition-colors duration-200"
+                className="flex-1 p-2 text-xs sm:text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors duration-200 bg-white"
               />
               <button
                 onClick={() => handleSendMessage(inputValue)}
                 disabled={!inputValue.trim() || isTyping}
-                className="p-2 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl hover:from-purple-600 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+                className="p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
               >
                 <Send className="h-3 w-3" />
               </button>

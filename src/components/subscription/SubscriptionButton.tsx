@@ -83,11 +83,11 @@ export default function SubscriptionButton({
   return (
     <Button
       onClick={handleSubscribe}
-      disabled={loading || !user}
+      disabled={loading}
       className={className}
     > 
       {loading ? (
-        <span className="flex items-center space-x-2">
+        <span className="flex items-center justify-center space-x-2">
           <Loader2 className="h-4 w-4 animate-spin" />
           <span>Processando...</span>
         </span>

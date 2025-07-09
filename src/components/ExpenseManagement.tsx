@@ -338,7 +338,7 @@ export default function ExpenseManagement() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Gestão de Gastos</h1>
           <p className="text-gray-500 mt-1">Visão gerencial de todas as suas despesas</p>
@@ -355,8 +355,8 @@ export default function ExpenseManagement() {
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="bg-white rounded-xl p-6 shadow-md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Total de Gastos</p>
@@ -370,7 +370,7 @@ export default function ExpenseManagement() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-6 shadow-md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Itens de Despesa</p>
@@ -382,7 +382,7 @@ export default function ExpenseManagement() {
           </div>
         </div>
 
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-6 shadow-md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-500">Categorias</p>
@@ -396,8 +396,8 @@ export default function ExpenseManagement() {
       </div>
 
       {/* Filters and Search */}
-      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
-        <div className="flex flex-col md:flex-row gap-4">
+      <div className="bg-white rounded-xl p-6 shadow-md">
+        <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
@@ -449,7 +449,7 @@ export default function ExpenseManagement() {
       </div>
 
       {/* Expenses List */}
-      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+      <div className="bg-white rounded-xl shadow-md overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-100">
           <h2 className="text-lg font-semibold text-gray-800">Lista de Despesas</h2>
         </div>
@@ -506,7 +506,7 @@ export default function ExpenseManagement() {
 
       {/* Expenses by Type Chart */}
       {Object.keys(expensesByType).length > 0 && (
-        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="bg-white rounded-xl p-6 shadow-md">
           <h2 className="text-lg font-semibold text-gray-800 mb-4">Gastos por Tipo</h2>
           <div className="space-y-3">
             {Object.entries(expensesByType)

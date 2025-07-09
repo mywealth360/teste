@@ -80,9 +80,9 @@ export default function PricingSection() {
           </div>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-5xl mx-auto">
           {plans.map((plan, index) => (
-            <div key={index} className={`bg-white rounded-2xl shadow-lg ${plan.popular ? 'border-2 border-blue-500 relative' : 'border border-gray-200'}`}>
+            <div key={index} className={`bg-white rounded-xl shadow-md ${plan.popular ? 'border-2 border-blue-500 relative' : 'border border-gray-200'}`}>
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
                   <div className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">
@@ -149,11 +149,11 @@ export default function PricingSection() {
           ))}
         </div>
         
-        <div className="mt-12 max-w-3xl mx-auto bg-blue-50 p-6 rounded-xl">
-          <div className="flex items-center justify-center space-x-4 text-blue-800">
+        <div className="mt-12 max-w-3xl mx-auto bg-white border border-blue-200 p-6 rounded-xl shadow-sm">
+          <div className="flex flex-wrap items-center justify-center gap-4 text-gray-700">
             <div className="flex items-center">
               <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
-              <span>7 dias grátis</span>
+              <span>7 dias grátis sem cartão</span>
             </div>
             <div className="flex items-center">
               <Calendar className="h-5 w-5 mr-2 text-blue-500" />

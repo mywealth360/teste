@@ -352,14 +352,14 @@ export default function Investments() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Investimentos</h1>
           <p className="text-gray-500 mt-1">Gerencie sua carteira de investimentos</p>
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
-          className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg"
+          className="flex items-center space-x-2 px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-200 shadow-md"
         >
           <Plus className="h-4 w-4" />
           <span>Novo Investimento</span>
@@ -373,7 +373,7 @@ export default function Investments() {
       )}
 
       {/* Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-4 md:gap-6">
         <div className="bg-blue-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
@@ -452,7 +452,7 @@ export default function Investments() {
       </div>
 
       {/* Lista de investimentos */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div className="bg-white rounded-xl shadow-md overflow-hidden">
         <div className="p-6 border-b border-gray-100">
           <h2 className="text-xl font-semibold text-gray-800">Sua Carteira</h2>
         </div>
@@ -971,7 +971,7 @@ export default function Investments() {
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200"
+                      className="flex-1 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-200 shadow-sm"
                     >
                       Adicionar
                     </button>

@@ -377,7 +377,7 @@ export default function FinancialGoals() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <div className="flex-1">
           <h1 className="text-3xl font-bold text-gray-800">Metas Financeiras</h1>
           <p className="text-gray-500 mt-1">Estabeleça metas claras e acompanhe seu progresso</p>
@@ -385,7 +385,7 @@ export default function FinancialGoals() {
         <div className="flex space-x-3">
           <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center space-x-2 px-5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg"
+            className="flex items-center space-x-2 px-5 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-md"
           >
             <Plus className="h-4 w-4" />
             <span>Nova Meta</span>
@@ -394,7 +394,7 @@ export default function FinancialGoals() {
       </div>
       
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
         <div className="bg-blue-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
@@ -442,13 +442,13 @@ export default function FinancialGoals() {
       
       {/* Goals List */}
       {loading ? (
-        <div className="animate-pulse space-y-4">
+        <div className="animate-pulse space-y-4 mt-6">
           {[1, 2].map((_, index) => (
             <div key={index} className="bg-gray-100 h-40 rounded-2xl"></div>
           ))}
         </div>
       ) : goals.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+        <div className="bg-white rounded-xl shadow-md p-8 text-center">
           <Target className="h-16 w-16 text-gray-300 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-gray-800 mb-2">Nenhuma meta financeira definida</h3>
           <p className="text-gray-600 max-w-md mx-auto mb-6">
@@ -457,7 +457,7 @@ export default function FinancialGoals() {
           <div className="pt-2">
             <button
               onClick={() => setShowAddModal(true)}
-              className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md inline-flex items-center space-x-2"
+              className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-md inline-flex items-center space-x-2"
             >
               <Plus className="h-4 w-4" />
               <span>Criar Primeira Meta</span>
@@ -473,9 +473,9 @@ export default function FinancialGoals() {
             const progressPercentage = getProgressPercentage(goal.current_amount, goal.target_amount);
             const monthlySavingsNeeded = getMonthlySavingsNeeded(goal);
             const isEditing = editingGoal?.id === goal.id;
-            
+
             return (
-              <div key={goal.id} className={`bg-white rounded-2xl shadow-lg overflow-hidden border-l-4 ${
+              <div key={goal.id} className={`bg-white rounded-xl shadow-md overflow-hidden border-l-4 ${
                 goal.status === 'completed' ? 'border-green-500' : 
                 goal.status === 'abandoned' ? 'border-gray-400' :
                 goal.priority === 'high' ? 'border-red-500' :
@@ -558,7 +558,17 @@ export default function FinancialGoals() {
                     
                     <div className="flex justify-end space-x-3">
                       <button
-                        onClick={() => setEditingGoal(null)}
+                        onClick={() => {
+                          setShowAddModal(false);
+                          setFormData({
+                            name: '',
+                            target_amount: '',
+                            target_date: '',
+                            category: 'wealth',
+                            description: '',
+                            priority: 'medium'
+                          });
+                        }}
                         className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
                       >
                         Cancelar
@@ -692,9 +702,7 @@ export default function FinancialGoals() {
                     {/* Progress Bar */}
                     <div className="h-2 bg-gray-200">
                       <div 
-                        className={`h-2 transition-all duration-300 ${
-                          goal.status === 'completed' ? 'bg-green-600' : 'bg-blue-600'
-                        }`} 
+                        className="h-2 transition-all duration-300 bg-blue-600" 
                         style={{ width: `${progressPercentage}%` }}
                       ></div>
                     </div>

@@ -3,10 +3,10 @@ import { BarChart3, FileText, TrendingUp, Building, Shield, Home, Car, Gem, User
 
 export default function ModuleComparisonSection() {
   return (
-    <section className="py-16 bg-gray-50">
+    <section className="py-16 bg-white border-t border-gray-100">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-gray-900 mb-4">
+          <h2 className="text-3xl font-bold text-gray-800 mb-4">
             Comparação de Módulos
           </h2>
           <p className="text-lg text-gray-600 max-w-3xl mx-auto">
@@ -14,8 +14,9 @@ export default function ModuleComparisonSection() {
           </p>
         </div>
         
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          <table className="w-full">
+        <div className="bg-white rounded-xl shadow-md overflow-hidden">
+          <div className="overflow-x-auto">
+            <table className="w-full">
             <thead>
               <tr className="bg-gray-50">
                 <th className="py-4 px-6 text-left text-gray-500 font-medium">Módulo</th>
@@ -63,6 +64,7 @@ export default function ModuleComparisonSection() {
               ))}
             </tbody>
           </table>
+          </div>
         </div>
       </div>
     </section>
