@@ -158,7 +158,7 @@ function AppContent() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main className="ml-64 p-8 text-gray-900">
+      <main className="ml-72 p-8 text-gray-900">
         {renderContent()}
       </main>
       <FloatingChatButton />

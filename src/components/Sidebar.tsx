@@ -159,56 +159,17 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   };
 
   return (
-    <div className="w-64 bg-white shadow-xl border-r border-gray-100 h-screen fixed left-0 top-0 z-30 overflow-y-auto flex flex-col">
+    <div className="w-72 bg-white shadow-xl border-r border-gray-100 h-screen fixed left-0 top-0 z-30 overflow-y-auto flex flex-col">
       <div className="p-2 border-b border-gray-100">
         <div className="flex flex-col items-center justify-center py-4">
           <h1 className="text-xl font-bold text-blue-600">MyWealth 360</h1>
           <p className="text-xs text-gray-500">Gestão Financeira Familiar</p>
         </div>
       </div>
-      
-      {/* Subscription Status */}
-      <div className="p-4 border-b border-gray-100">
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-xl text-white">
-          <div className="flex items-center justify-between">
-            <div className="flex-1 cursor-pointer" onClick={() => setActiveTab('subscription')}>
-              <h2 className="text-sm font-bold text-white">
-                Plano {userPlan === 'family' ? 'Family' : 'Starter'} 
-                {isInTrial && (
-                  <span className={`ml-1 text-xs ${trialDaysLeft > 0 ? 'bg-green-500' : 'bg-red-500'} text-white px-1.5 py-0.5 rounded-full`}>
-                    {trialDaysLeft > 0 ? 'Trial' : 'Expirado'}
-                  </span>
-                )}
-              </h2>
-              <SubscriptionStatus />
-            </div>
-            {isAdmin && (
-              <div className="flex items-center space-x-1">
-                <Crown className="h-3 w-3 text-yellow-300" />
-                <span className="text-xs text-white font-medium">Admin</span>
-              </div> 
-            )}
-          </div>
-        </div>
-      </div>
-      
-      <nav className="p-4 space-y-2 flex-1 overflow-y-auto">
+     
+      <nav className="p-4 space-y-3 flex-1 overflow-y-auto">
         {/* Main Section */}
         <div className="space-y-1">
-          {/* Admin Panel Button - Visible only for admins at the top */}
-          {isAdmin && (
-            <button
-              onClick={() => setActiveTab('admin')}
-              className="w-full flex items-center justify-between px-3 py-3 mb-2 rounded-xl transition-all duration-200 text-sm font-bold bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:shadow-xl"
-            >
-              <div className="flex items-center space-x-3">
-                <Crown className="h-5 w-5" />
-                <span>PAINEL ADMIN</span>
-              </div>
-              <Shield className="h-5 w-5" />
-            </button>
-          )}
-          
           {mainSections.map((item) => {
             const Icon = item.icon;
             const isRestricted = item.restricted && userPlan === 'starter';
@@ -313,8 +274,30 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         </div>
       </nav>
 
-      {/* User section */}
-      <div className="p-4 border-t border-gray-100">
+      {/* Subscription Status - moved to bottom */}
+      <div className="p-4 border-t border-gray-100 mt-auto">
+        <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-xl text-white mb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex-1 cursor-pointer" onClick={() => setActiveTab('subscription')}>
+              <h2 className="text-sm font-bold text-white">
+                Plano {userPlan === 'family' ? 'Family' : 'Starter'} 
+                {isInTrial && (
+                  <span className={`ml-1 text-xs ${trialDaysLeft > 0 ? 'bg-green-500' : 'bg-red-500'} text-white px-1.5 py-0.5 rounded-full`}>
+                    {trialDaysLeft > 0 ? 'Trial' : 'Expirado'}
+                  </span>
+                )}
+              </h2>
+              <SubscriptionStatus />
+            </div>
+            {isAdmin && (
+              <div className="flex items-center space-x-1">
+                <Crown className="h-3 w-3 text-yellow-300" />
+                <span className="text-xs text-white font-medium">Admin</span>
+              </div> 
+            )}
+          </div>
+        </div>
+        
         <div className="flex items-center space-x-3 mb-3">
           <div className={`w-8 h-8 ${isAdmin ? 'bg-red-500' : 'bg-gray-200'} rounded-full flex items-center justify-center`}>
             {isAdmin ? <Crown className="h-4 w-4 text-white" /> : <User className="h-4 w-4 text-white" />}
