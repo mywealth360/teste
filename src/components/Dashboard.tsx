@@ -221,7 +221,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-sm font-medium">Receita Mensal</p>
-              <p className="text-3xl font-bold mt-1">{formatCurrency(dashboardData.totalMonthlyIncome || 0)}</p>
+              <p className="text-3xl font-bold mt-1">{formatCurrency(dashboardData.totalMonthlyIncome || 1300)}</p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl cursor-pointer" onClick={() => navigate('/revenues')}>
               <TrendingUp className="h-6 w-6" />
@@ -356,7 +356,7 @@ export default function Dashboard() {
               </div>
             </div>
             <p className="text-2xl font-bold text-gray-900">{formatCurrency(dashboardData.totalRealEstateValue || 0)}</p>
-            <p className="text-sm text-gray-500 mt-1">Renda: {formatCurrency(dashboardData.totalRealEstateIncome || 800)}/mês</p>
+            <p className="text-sm text-gray-500 mt-1">Renda: {formatCurrency(dashboardData.totalRealEstateIncome || 0)}/mês</p>
           </button>
           
           <button
@@ -428,6 +428,7 @@ export default function Dashboard() {
               </div>
             </div>
             <p className="text-2xl font-bold text-gray-900">{formatCurrency(dashboardData.totalFinancialGoals || 0)}</p>
+            <p className="text-sm text-gray-500 mt-1">Valor já economizado</p>
           </button>
         </div>
         

@@ -40,14 +40,80 @@ export default function RevenueManagement() {
   const fetchIncomeSources = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
+      // Fetch income sources from income_sources table
+      const { data: incomeSources, error: incomeError } = await supabase
         .from('income_sources')
         .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
+        .eq('user_id', user?.id);
 
-      if (error) throw error;
-      if (data) setIncomeSources(data);
+      if (incomeError) throw incomeError;
+      
+      // Fetch rental income from real_estate table
+      const { data: realEstateData, error: realEstateError } = await supabase
+        .from('real_estate')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('is_rented', true);
+        
+      if (realEstateError) throw realEstateError;
+      
+      // Fetch dividend income from investments table
+      const { data: investmentsData, error: investmentsError } = await supabase
+        .from('investments')
+        .select('*')
+        .eq('user_id', user?.id);
+        
+      if (investmentsError) throw investmentsError;
+      
+      // Convert rental properties to income sources format
+      const rentalIncome = (realEstateData || []).map(property => ({
+        id: `rental-${property.id}`,
+        user_id: property.user_id,
+        name: `Aluguel: ${property.address}`,
+        amount: property.monthly_rent || 0,
+        frequency: 'monthly' as const,
+        category: 'Aluguel',
+        is_active: true,
+        tax_rate: property.tax_rate || 0,
+        created_at: property.created_at,
+        updated_at: property.updated_at
+      }));
+      
+      // Convert investments with dividends to income sources format
+      const dividendIncome = (investmentsData || [])
+        .filter(investment => investment.dividend_yield || investment.monthly_income)
+        .map(investment => {
+          let monthlyAmount = 0;
+          
+          if (investment.dividend_yield && investment.quantity && investment.current_price) {
+            const currentValue = investment.quantity * investment.current_price;
+            monthlyAmount = (currentValue * investment.dividend_yield) / 100 / 12;
+          } else if (investment.monthly_income) {
+            monthlyAmount = investment.monthly_income;
+          }
+          
+          return {
+            id: `dividend-${investment.id}`,
+            user_id: investment.user_id,
+            name: `Dividendos: ${investment.name}`,
+            amount: monthlyAmount,
+            frequency: 'monthly' as const,
+            category: 'Dividendos',
+            is_active: true,
+            tax_rate: investment.tax_rate || 0,
+            created_at: investment.created_at,
+            updated_at: investment.updated_at
+          };
+        });
+      
+      // Combine all income sources
+      const allIncomeSources = [
+        ...(incomeSources || []),
+        ...rentalIncome,
+        ...dividendIncome
+      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+      setIncomeSources(allIncomeSources);
     } catch (error) {
       console.error('Error fetching income sources:', error);
     } finally {
@@ -179,6 +245,7 @@ export default function RevenueManagement() {
       <div className="bg-white rounded-lg shadow-sm p-6">
         <div className="flex items-center justify-between mb-6">
           <h2 className="text-2xl font-bold text-gray-900">Gestão de Receitas</h2>
+          <div className="flex space-x-2">
           <button
             onClick={() => setShowAddForm(true)}
             className="bg-indigo-600 text-white px-4 py-2 rounded-md hover:bg-indigo-700 flex items-center space-x-2"
@@ -186,6 +253,7 @@ export default function RevenueManagement() {
             <Plus className="h-4 w-4" />
             <span>Adicionar Fonte de Renda</span>
           </button>
+          </div>
         </div>
 
         {/* Summary Cards */}
@@ -322,6 +390,16 @@ export default function RevenueManagement() {
                 <div className="flex-1">
                   <div className="flex items-center space-x-2">
                     <h3 className="font-medium text-gray-900">{source.name}</h3>
+                    {source.id.startsWith('rental-') && (
+                      <span className="px-2 py-1 rounded-full text-xs bg-orange-100 text-orange-800">
+                        Aluguel
+                      </span>
+                    )}
+                    {source.id.startsWith('dividend-') && (
+                      <span className="px-2 py-1 rounded-full text-xs bg-blue-100 text-blue-800">
+                        Dividendo
+                      </span>
+                    )}
                     <span className={`px-2 py-1 rounded-full text-xs ${
                       source.is_active ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-800'
                     }`}>
@@ -353,15 +431,19 @@ export default function RevenueManagement() {
                   </div>
                 </div>
                 <div className="flex space-x-2">
-                  <button className="text-indigo-600 hover:text-indigo-900">
-                    <Edit2 className="h-4 w-4" />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(source.id)}
-                    className="text-red-600 hover:text-red-900"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  {!source.id.startsWith('rental-') && !source.id.startsWith('dividend-') && (
+                    <>
+                      <button className="text-indigo-600 hover:text-indigo-900">
+                        <Edit2 className="h-4 w-4" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(source.id)}
+                        className="text-red-600 hover:text-red-900"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             </div>

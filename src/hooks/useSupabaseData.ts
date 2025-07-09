@@ -291,7 +291,7 @@ export function useDashboardData() {
       return sum + (source.amount * multiplier);
     }, 0) + 
     // Add real estate rental income
-    realEstate.data.reduce((sum, property) => sum + (property.monthly_rent || 0), 0) +
+    realEstate.data.reduce((sum, property) => sum + (property.is_rented ? (property.monthly_rent || 0) : 0), 0) +
     // Add investment dividend income
     investments.data.reduce((sum, investment) => {
       // Calculate monthly dividend income

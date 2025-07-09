@@ -542,7 +542,7 @@ export default function ExpenseManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-red-100 text-sm font-medium">Total de Gastos</p>
-              <p className="text-3xl font-bold mt-1">R$ {totalExpensesValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-3xl font-bold mt-1">R$ {totalExpensesValue.toLocaleString('pt-BR')}</p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl">
               <TrendingDown className="h-6 w-6" />
@@ -754,7 +754,7 @@ export default function ExpenseManagement() {
                     <p className="text-xs text-gray-500">{percentage.toFixed(1)}%</p>
                   </div>
                 </div>
-                <p className="text-base font-bold text-gray-900">{formatCurrency(category.amount)}</p>
+                <p className="text-base font-bold text-gray-900">R$ {category.amount.toLocaleString('pt-BR')}</p>
                 <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
                   <div className={`${colorClass} h-1 rounded-full`} style={{ width: `${Math.min(100, percentage)}%` }}></div>
                 </div>
