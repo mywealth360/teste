@@ -103,8 +103,6 @@ export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [activeBreakdown, setActiveBreakdown] = useState<string | null>(null);
-  const [expenseCategories, setExpenseCategories] = useState<{category: string, amount: number, percentage: number, icon?: React.ComponentType<any>}[]>([]);
-  const [incomeCategories, setIncomeCategories] = useState<{category: string, amount: number, percentage: number}[]>([]);
   const [loading, setLoading] = useState(true);
   
   // Use the dashboard data hook
@@ -112,115 +110,10 @@ export default function Dashboard() {
 
   useEffect(() => {
     if (user) {
-      fetchExpenseCategories();
-      fetchIncomeCategories();
+      setLoading(false);
     }
   }, [user, dashboardData]);
 
-  const fetchExpenseCategories = async () => {
-    try {
-      setLoading(true);
-      
-      // Define predefined expense categories with their amounts
-      const predefinedCategories = [
-        { category: 'Utilidades', amount: 350, icon: Building },
-        { category: 'Empréstimos', amount: 300, icon: CreditCard },
-        { category: 'Encargos Sociais', amount: 1482, icon: Landmark },
-        { category: 'Assinatura', amount: 300, icon: FileText },
-        { category: 'Investimentos', amount: 3150, icon: TrendingUp },
-        { category: 'Previdência', amount: 5000, icon: Shield },
-        { category: 'Veículos', amount: 1000, icon: Car },
-        { category: 'Impostos', amount: 285.625, icon: Landmark },
-        { category: 'Funcionários', amount: 3000, icon: Users },
-        { category: 'Metas Financeiras', amount: 300, icon: Target }
-      ];
-      
-      // Calculate total
-      const total = predefinedCategories.reduce((sum, cat) => sum + cat.amount, 0);
-      
-      // Add percentage to each category
-      const formattedCategories = predefinedCategories.map(cat => ({
-        ...cat,
-        percentage: total > 0 ? (cat.amount / total) * 100 : 0
-      }));
-      
-      setExpenseCategories(formattedCategories);
-    } catch (err) {
-      console.error('Error fetching expense categories:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchIncomeCategories = async () => {
-    try {
-      setLoading(true);
-      
-      // Define predefined income categories with their amounts
-     // Calculate rental income
-     const rentalIncome = dashboardData.totalRealEstateIncome || 0;
-     
-     // Calculate dividend income
-     const dividendIncome = dashboardData.totalInvestmentIncome || 0;
-     
-      // Calculate transaction income
-      const transactionIncome = dashboardData.transactions?.data
-        .filter(transaction => transaction.type === 'income')
-        .reduce((sum, transaction) => sum + transaction.amount, 0) || 0;
-      
-      // Calculate other income (from income sources)
-      const otherIncome = (dashboardData.totalMonthlyIncome || 0) - rentalIncome - dividendIncome;
-      
-      // Create categories array
-      const totalIncome = dashboardData.totalMonthlyIncome || 0;
-      
-      const predefinedCategories = [
-        { 
-          category: 'Invest', 
-          amount: otherIncome > 0 ? otherIncome * 0.77 : 0, 
-          percentage: totalIncome > 0 ? (otherIncome * 0.77 / totalIncome) * 100 : 0 
-        },
-        { 
-          category: 'Carga', 
-          amount: otherIncome > 0 ? otherIncome * 0.23 : 0, 
-          percentage: totalIncome > 0 ? (otherIncome * 0.23 / totalIncome) * 100 : 0 
-        }
-      ];
-      
-      // Add rental income if it exists
-      if (rentalIncome > 0) {
-        predefinedCategories.push({
-          category: 'Aluguel',
-          amount: rentalIncome,
-          percentage: totalIncome > 0 ? (rentalIncome / totalIncome) * 100 : 0
-        });
-      }
-      
-      // Add dividend income if it exists
-      if (dividendIncome > 0) {
-        predefinedCategories.push({
-          category: 'Dividendos',
-          amount: dividendIncome,
-          percentage: totalIncome > 0 ? (dividendIncome / totalIncome) * 100 : 0
-        });
-      }
-     
-      // Add transaction income if it exists
-      if (transactionIncome > 0) {
-        predefinedCategories.push({
-          category: 'Transações',
-          amount: transactionIncome,
-          percentage: totalIncome > 0 ? (transactionIncome / totalIncome) * 100 : 0
-        });
-      }
-      
-      setIncomeCategories(predefinedCategories);
-    } catch (err) {
-      console.error('Error fetching income categories:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {

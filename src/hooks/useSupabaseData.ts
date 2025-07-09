@@ -315,10 +315,18 @@ export function useDashboardData() {
   ];
   
   // For display in the dashboard, we'll use a fixed value to match the UI
-  const totalMonthlyExpenses = 14867.628; // Updated to match the UI value
+  const totalMonthlyExpenses = bills.data
+    .filter(bill => bill.is_active)
+    .reduce((sum, bill) => sum + bill.amount, 0) +
+    loans.data.reduce((sum, loan) => sum + loan.monthly_payment, 0) +
+    employees.data
+      .filter(emp => emp.status !== 'terminated')
+      .reduce((sum, emp) => sum + emp.salary + (emp.salary * emp.fgts_percentage / 100) + (emp.salary * emp.inss_percentage / 100) + (emp.salary * emp.irrf_percentage / 100) + (emp.other_benefits || 0), 0) +
+    vehicles.data.reduce((sum, vehicle) => sum + (vehicle.monthly_expenses || 0), 0) +
+    realEstate.data.reduce((sum, property) => sum + property.expenses, 0);
   
   // Calculate the total of all expense categories for internal calculations
-  const totalAllExpenses = expenseCategories.reduce((sum, cat) => sum + cat.amount, 0);
+  const totalAllExpenses = totalMonthlyExpenses;
 
   const netMonthlyIncome = totalMonthlyIncome - totalMonthlyExpenses;
 

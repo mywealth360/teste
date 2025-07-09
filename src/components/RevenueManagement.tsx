@@ -185,6 +185,26 @@ export default function RevenueManagement() {
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir esta fonte de renda?')) return;
 
+    // Check if it's a transaction ID
+    if (id.startsWith('transaction-')) {
+      try {
+        // Extract the transaction ID
+        const transactionId = id.replace('transaction-', '');
+        
+        // Delete the transaction
+        const { error } = await supabase
+          .from('transactions')
+          .delete()
+          .eq('id', transactionId);
+        
+        if (error) throw error;
+        fetchIncomeSources();
+      } catch (error) {
+        console.error('Error deleting transaction:', error);
+      }
+      return;
+    }
+
     try {
       let error;
       
@@ -199,18 +219,14 @@ export default function RevenueManagement() {
       } else if (id.startsWith('dividend-')) {
         // Extract the investment ID and delete from investments table
         const investmentId = id.replace('dividend-', '');
+        // For dividend sources, we don't delete the investment, just update to remove dividend info
         const result = await supabase
           .from('investments')
-          .delete()
+          .update({
+            dividend_yield: null,
+            monthly_income: null
+          })
           .eq('id', investmentId);
-        error = result.error;
-      } else if (id.startsWith('transaction-')) {
-        // Extract the transaction ID and delete from transactions table
-        const transactionId = id.replace('transaction-', '');
-        const result = await supabase
-          .from('transactions')
-          .delete()
-          .eq('id', transactionId);
         error = result.error;
       } else {
         // Regular income source - delete from income_sources table

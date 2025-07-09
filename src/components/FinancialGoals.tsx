@@ -230,7 +230,32 @@ export default function FinancialGoals() {
 
   const handleDeleteGoal = (id: string) => {
     if (!confirm('Tem certeza que deseja excluir esta meta?')) return;
-    setGoals(goals.filter(goal => goal.id !== id));
+    
+    // Delete the goal from the database
+    supabase
+      .from('financial_goals')
+      .delete()
+      .eq('id', id)
+      .then(({ error }) => {
+        if (error) {
+          console.error('Error deleting goal:', error);
+          alert('Erro ao excluir meta. Tente novamente.');
+        } else {
+          // Update local state only after successful database deletion
+          setGoals(goals.filter(goal => goal.id !== id));
+          
+          // Also delete any associated bills
+          supabase
+            .from('bills')
+            .delete()
+            .eq('financial_goal_id', id)
+            .then(({ error: billError }) => {
+              if (billError) {
+                console.error('Error deleting associated bills:', billError);
+              }
+            });
+        }
+      });
   };
 
   const handleContribute = async (id: string) => {
