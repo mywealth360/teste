@@ -328,7 +328,7 @@ export function useDashboardData() {
 
   const totalFinancialGoals = financialGoals.data
     .filter(goal => goal.status === 'active')
-    .reduce((sum, goal) => sum + goal.target_amount, 0);
+    .reduce((sum, goal) => sum + goal.current_amount, 0);
 
   const totalAssets = totalInvestmentValue + totalRealEstateValue + totalRetirementSaved + 
                      totalBankBalance + totalVehicleValue + totalExoticAssetsValue;

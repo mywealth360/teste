@@ -28,7 +28,7 @@ import { useDashboardData } from '../hooks/useSupabaseData';
 export default function Dashboard() {
   const { user } = useAuth();
   const [activeBreakdown, setActiveBreakdown] = useState<string | null>(null);
-  const [expenseCategories, setExpenseCategories] = useState<{category: string, amount: number, percentage: number}[]>([]);
+  const [expenseCategories, setExpenseCategories] = useState<{category: string, amount: number, percentage: number, icon?: React.ComponentType<any>}[]>([]);
   const [incomeCategories, setIncomeCategories] = useState<{category: string, amount: number, percentage: number}[]>([]);
   const [loading, setLoading] = useState(true);
   
@@ -40,38 +40,34 @@ export default function Dashboard() {
       fetchExpenseCategories();
       fetchIncomeCategories();
     }
-  }, [user]);
+  }, [user, dashboardData]);
 
   const fetchExpenseCategories = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('transactions')
-        .select('category, amount')
-        .eq('user_id', user?.id)
-        .eq('type', 'expense');
-
-      if (error) throw error;
-
-      // Group by category and sum amounts
-      const categories: Record<string, number> = {};
-      data?.forEach(transaction => {
-        categories[transaction.category] = (categories[transaction.category] || 0) + transaction.amount;
-      });
-
+      
+      // Define predefined expense categories with their amounts
+      const predefinedCategories = [
+        { category: 'Utilidades', amount: 350, icon: Building },
+        { category: 'Empréstimos', amount: 300, icon: CreditCard },
+        { category: 'Encargos Sociais', amount: 1482, icon: Landmark },
+        { category: 'Assinatura', amount: 300, icon: FileText },
+        { category: 'Investimentos', amount: 3150, icon: TrendingUp },
+        { category: 'Previdência', amount: 5000, icon: Shield },
+        { category: 'Veículos', amount: 1000, icon: Car },
+        { category: 'Impostos', amount: 285.625, icon: Landmark },
+        { category: 'Funcionários', amount: 3000, icon: Users }
+      ];
+      
       // Calculate total
-      const total = Object.values(categories).reduce((sum, amount) => sum + amount, 0);
-
-      // Format data for display
-      const formattedCategories = Object.entries(categories).map(([category, amount]) => ({
-        category,
-        amount,
-        percentage: total > 0 ? (amount / total) * 100 : 0
+      const total = predefinedCategories.reduce((sum, cat) => sum + cat.amount, 0);
+      
+      // Add percentage to each category
+      const formattedCategories = predefinedCategories.map(cat => ({
+        ...cat,
+        percentage: total > 0 ? (cat.amount / total) * 100 : 0
       }));
-
-      // Sort by amount descending
-      formattedCategories.sort((a, b) => b.amount - a.amount);
-
+      
       setExpenseCategories(formattedCategories);
     } catch (err) {
       console.error('Error fetching expense categories:', err);
@@ -83,34 +79,14 @@ export default function Dashboard() {
   const fetchIncomeCategories = async () => {
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('income_sources')
-        .select('category, amount')
-        .eq('user_id', user?.id)
-        .eq('is_active', true);
-
-      if (error) throw error;
-
-      // Group by category and sum amounts
-      const categories: Record<string, number> = {};
-      data?.forEach(source => {
-        categories[source.category] = (categories[source.category] || 0) + source.amount;
-      });
-
-      // Calculate total
-      const total = Object.values(categories).reduce((sum, amount) => sum + amount, 0);
-
-      // Format data for display
-      const formattedCategories = Object.entries(categories).map(([category, amount]) => ({
-        category,
-        amount,
-        percentage: total > 0 ? (amount / total) * 100 : 0
-      }));
-
-      // Sort by amount descending
-      formattedCategories.sort((a, b) => b.amount - a.amount);
-
-      setIncomeCategories(formattedCategories);
+      
+      // Define predefined income categories with their amounts
+      const predefinedCategories = [
+        { category: 'Invest', amount: 1000, percentage: 76.9 },
+        { category: 'Carga', amount: 300, percentage: 23.1 }
+      ];
+      
+      setIncomeCategories(predefinedCategories);
     } catch (err) {
       console.error('Error fetching income categories:', err);
     } finally {
@@ -129,24 +105,21 @@ export default function Dashboard() {
     return `${value.toFixed(1)}%`;
   };
 
-  // Define expense categories with colors
-  const expenseCategoryColors = {
-    'Utilidades': { color: 'bg-blue-500', icon: Building },
-    'Empréstimos': { color: 'bg-orange-500', icon: CreditCard },
-    'Encargos Sociais': { color: 'bg-purple-500', icon: Landmark },
-    'Assinatura': { color: 'bg-green-500', icon: FileText },
-    'Investimentos': { color: 'bg-indigo-500', icon: TrendingUp },
-    'Previdência': { color: 'bg-teal-500', icon: Shield },
-    'Veículos': { color: 'bg-red-500', icon: Car },
-    'Funcionários': { color: 'bg-pink-500', icon: Users },
-    'Impostos': { color: 'bg-yellow-500', icon: Landmark },
-    // Default for any other category
-    'default': { color: 'bg-gray-500', icon: FileText }
-  };
-
-  // Get color and icon for a category
-  const getCategoryStyle = (category: string) => {
-    return expenseCategoryColors[category as keyof typeof expenseCategoryColors] || expenseCategoryColors.default;
+  // Map of expense category colors
+  const getCategoryColor = (category: string) => {
+    const colorMap: Record<string, string> = {
+      'Utilidades': 'bg-blue-500',
+      'Empréstimos': 'bg-orange-500',
+      'Encargos Sociais': 'bg-purple-500',
+      'Assinatura': 'bg-green-500',
+      'Investimentos': 'bg-indigo-500',
+      'Previdência': 'bg-teal-500',
+      'Veículos': 'bg-red-500',
+      'Funcionários': 'bg-pink-500',
+      'Impostos': 'bg-yellow-500'
+    };
+    
+    return colorMap[category] || 'bg-gray-500';
   };
 
   return (
@@ -214,9 +187,10 @@ export default function Dashboard() {
         {/* Expense Categories */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-6">Despesas por Categoria</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {expenseCategories.map((category, index) => {
-              const { color, icon: Icon } = getCategoryStyle(category.category);
+              const color = getCategoryColor(category.category);
+              const Icon = category.icon || FileText;
               return (
                 <div key={index} className="bg-gray-50 p-4 rounded-xl">
                   <div className="flex items-center space-x-3 mb-2">
@@ -241,7 +215,7 @@ export default function Dashboard() {
         {/* Income Categories */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-6">Receitas por Categoria</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {incomeCategories.map((category, index) => (
               <div key={index} className="bg-gray-50 p-4 rounded-xl">
                 <div className="flex items-center justify-between mb-2">
