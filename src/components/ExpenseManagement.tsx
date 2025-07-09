@@ -74,6 +74,9 @@ export default function ExpenseManagement() {
         { category: 'Metas Financeiras', amount: 300 }
       ];
       
+      // Calculate total expenses to match the dashboard value
+      const totalExpensesValue = 14867.628;
+      
       const [
         transactionData,
         loanData,

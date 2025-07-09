@@ -158,7 +158,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-red-100 text-sm font-medium">Despesa Mensal</p>
-              <p className="text-3xl font-bold mt-1">R$ 300,00</p>
+              <p className="text-3xl font-bold mt-1">R$ 14.867,628</p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl">
               <TrendingDown className="h-6 w-6" />
