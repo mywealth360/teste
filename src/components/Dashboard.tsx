@@ -30,6 +30,7 @@ import {
   Briefcase
 } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
+import { useDashboardData } from '../hooks/useSupabaseData';
 import { useMonthlyRenewal } from '../hooks/useMonthlyRenewal';
 import { aiInsights } from '../data/mockData';
 import { useNavigate } from 'react-router-dom';
@@ -65,7 +66,7 @@ export default function Dashboard() {
     totalTaxes,
     loading,
     error
-  } = useSupabaseData();
+  } = useDashboardData();
 
   // Ativar renovação automática mensal
   useMonthlyRenewal();
