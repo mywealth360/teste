@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Plus, Receipt, Calendar, Building, Bell, Edit, Trash2, AlertTriangle, Save, X, 
-  CreditCard,
-  Target
+  CheckCircle, Tag, Home, Car, Users, CreditCard, Target, FileText, Mail, DollarSign, Clock, PiggyBank, Shield
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -26,17 +25,6 @@ interface Bill {
   next_due: string;
   created_at: string;
   updated_at: string;
-  financial_goal_id?: string;
-  is_goal_contribution?: boolean;
-  associated_with?: string;
-  associated_id?: string;
-  associated_name?: string;
-  payment_status?: string;
-  payment_date?: string;
-  payment_amount?: number;
-  payment_method?: string;
-  send_email_reminder?: boolean;
-  reminder_days_before?: number;
   associated_with?: 'property' | 'vehicle' | 'employee' | 'loan';
   associated_id?: string;
   associated_name?: string;
@@ -73,7 +61,7 @@ const categories: BillCategory[] = [
   { value: 'Veículo', label: 'Veículo', icon: Car },
   { value: 'Funcionário', label: 'Funcionário', icon: Users },
   { value: 'Encargos Sociais', label: 'Encargos Sociais', icon: Users },
-  'Outros', 'Investimentos'
+  { value: 'Outros', label: 'Outros', icon: Receipt }
 ];
 
 /* 
@@ -94,14 +82,12 @@ export default function Bills() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
-  const [financialGoals, setFinancialGoals] = useState<any[]>([]);
 
   // Properties, Vehicles, and Employees for associating bills
   const [properties, setProperties] = useState<any[]>([]);
   const [vehicles, setVehicles] = useState<any[]>([]);
   const [employees, setEmployees] = useState<any[]>([]);
   const [loans, setLoans] = useState<any[]>([]);
-  const [selectedGoal, setSelectedGoal] = useState<string>('');
 
   useEffect(() => {
     if (user) {
