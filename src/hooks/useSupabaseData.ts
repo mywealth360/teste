@@ -162,8 +162,8 @@ export function useSupabaseData() {
     try {
       const { data, error } = await supabase
         .from('investments')
-        .select('id, name, type, broker, amount, monthly_income, purchase_price, current_price, quantity, dividend_yield, interest_rate, tax_rate, maturity_date')
-        .eq('user_id', user?.id);
+        .select('id, name, type, broker, amount, purchase_price, current_price, interest_rate, monthly_income, purchase_date, maturity_date, quantity, dividend_yield, tax_rate, created_at, updated_at')
+        .eq('user_id', user?.id)
 
       if (error) throw error;
 
@@ -194,12 +194,18 @@ export function useSupabaseData() {
             currentInvestmentMonthlyIncome = annualInterest / 12;
           }
         }
+        // For dividends on investments without quantity/price but with dividend yield
+        else if (investment.dividend_yield && investment.amount) {
+          totalValue += investment.amount || 0;
+          const annualDividend = (investment.amount * investment.dividend_yield) / 100;
+          currentInvestmentMonthlyIncome = annualDividend / 12;
+        }
         // Fallback to amount
         else {
           totalValue += investment.amount || 0;
           
           // Use monthly_income if provided
-          if (investment.monthly_income) {
+          if (investment.monthly_income && investment.monthly_income > 0) {
             currentInvestmentMonthlyIncome = investment.monthly_income;
           } else if (investment.dividend_yield && investment.amount) {
             // If amount and dividend yield are available (for funds without quantity/price)
