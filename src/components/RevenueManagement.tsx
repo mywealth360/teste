@@ -302,7 +302,7 @@ export default function RevenueManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-sm font-medium">Receita Total Mensal</p>
-              <p className="text-3xl font-bold mt-1">R$ {totalRevenues.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-3xl font-bold mt-1 text-white">R$ {totalRevenues.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl">
               <TrendingUp className="h-6 w-6" />
@@ -314,7 +314,7 @@ export default function RevenueManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-indigo-100 text-sm font-medium">Impostos Estimados</p>
-              <p className="text-3xl font-bold mt-1">R$ {totalTaxes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-3xl font-bold mt-1 text-white">R$ {totalTaxes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl">
               <Landmark className="h-6 w-6" />
@@ -415,6 +415,64 @@ export default function RevenueManagement() {
           </div>
         </div>
       )}
+
+      {/* Detalhamento de Receitas por Fonte */}
+      <div className="bg-white p-6 rounded-2xl shadow-lg">
+        <h2 className="text-xl font-semibold text-gray-800 mb-6">Detalhamento de Receitas por Fonte</h2>
+        <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
+          <h3 className="font-medium text-gray-700">Aluguéis de Imóveis</h3>
+          {filteredRevenues.filter(r => r.type === 'real_estate').map((revenue, idx) => (
+            <div key={`re-${idx}`} className="bg-orange-50 p-3 rounded-lg border border-orange-100">
+              <div className="flex justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">{revenue.description}</p>
+                  <p className="text-sm text-gray-600">{revenue.source}</p>
+                </div>
+                <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              </div>
+            </div>
+          ))}
+          
+          <h3 className="font-medium text-gray-700 mt-6">Dividendos de Investimentos</h3>
+          {filteredRevenues.filter(r => r.type === 'investment').map((revenue, idx) => (
+            <div key={`inv-${idx}`} className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+              <div className="flex justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">{revenue.description}</p>
+                  <p className="text-sm text-gray-600">{revenue.source}</p>
+                </div>
+                <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              </div>
+            </div>
+          ))}
+          
+          <h3 className="font-medium text-gray-700 mt-6">Fontes de Renda</h3>
+          {filteredRevenues.filter(r => r.type === 'income_source').map((revenue, idx) => (
+            <div key={`inc-${idx}`} className="bg-green-50 p-3 rounded-lg border border-green-100">
+              <div className="flex justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">{revenue.description}</p>
+                  <p className="text-sm text-gray-600">{revenue.category} - {getFrequencyLabel(revenue.frequency)}</p>
+                </div>
+                <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              </div>
+            </div>
+          ))}
+          
+          <h3 className="font-medium text-gray-700 mt-6">Outras Receitas</h3>
+          {filteredRevenues.filter(r => r.type === 'transaction').map((revenue, idx) => (
+            <div key={`trans-${idx}`} className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+              <div className="flex justify-between">
+                <div>
+                  <p className="font-medium text-gray-800">{revenue.description}</p>
+                  <p className="text-sm text-gray-600">{revenue.category}</p>
+                </div>
+                <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
       {/* Lista de receitas */}
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
