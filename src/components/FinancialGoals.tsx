@@ -905,12 +905,12 @@ export default function FinancialGoals() {
                 
                 <div className="mt-4 bg-indigo-50 p-4 rounded-xl border border-indigo-100 shadow-sm">
                   <div className="flex items-center space-x-2 mb-2">
-                    <FileText className="h-5 w-5 text-indigo-600" />
+                    <FileText className="h-5 w-5 text-indigo-600 flex-shrink-0" />
                     <h3 className="font-medium text-indigo-800">Conta Recorrente</h3>
                   </div>
                   {newGoalFormData.target_amount && newGoalFormData.target_date ? (
                     <>
-                      <p className="text-sm text-indigo-700 mb-3">
+                      <p className="text-sm text-indigo-700 mb-3 mt-1">
                         Será criada uma conta recorrente de R$ {
                           (parseFloat(newGoalFormData.target_amount) / Math.max(1, Math.ceil(
                             (new Date(newGoalFormData.target_date).getTime() - new Date().getTime()) / 
@@ -918,30 +918,30 @@ export default function FinancialGoals() {
                           ))).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
                         }/mês para esta meta.
                       </p>
-                      <div className="flex items-center text-sm text-indigo-600 bg-indigo-100 p-2 rounded-lg">
+                      <div className="flex items-center text-sm text-indigo-600 bg-indigo-100 p-3 rounded-lg border border-indigo-200">
                         <FileText className="h-4 w-4 mr-2" />
                         <span>Esta conta aparecerá na seção de Contas para você gerenciar</span>
                       </div>
                     </>
                   ) : (
-                    <p className="text-sm text-indigo-700">
+                    <p className="text-sm text-indigo-700 mt-1 py-2">
                       Preencha o valor e a data alvo para ver o valor da contribuição mensal.
                     </p>
                   )}
                 </div>
                 
-                <div className="flex justify-end space-x-3 pt-4">
+                <div className="flex space-x-3 pt-6 mt-2">
                   <button
                     type="button"
                     onClick={() => setShowAddModal(false)}
-                    className="px-5 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                    className="flex-1 px-5 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
                   >
                     Cancelar
                   </button>
                   
                   <button
                     type="submit"
-                    className="px-5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md"
+                    className="flex-1 px-5 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md"
                   >
                     Criar Meta
                   </button>
