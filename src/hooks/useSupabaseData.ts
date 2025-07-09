@@ -168,7 +168,7 @@ export function useSupabaseData<T = any>(options: DataFetchOptions): UseSupabase
 }
 
 // Aggregated hook for dashboard data
-export function useSupabaseData() {
+export function useDashboardData() {
   const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
