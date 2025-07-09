@@ -133,6 +133,7 @@ export default function FinancialGoals() {
   const handleAddGoal = async () => {
     try {
       setLoading(true);
+      setError(null);
       
       // Calculate monthly savings needed
       const targetDate = new Date(newGoalFormData.target_date);
@@ -193,8 +194,8 @@ export default function FinancialGoals() {
       // Reset form
       setNewGoalFormData({
         name: '',
-        target_amount: '',
-        target_date: '',
+        target_amount: '0',
+        target_date: new Date().toISOString().split('T')[0],
         category: 'wealth',
         description: '',
         priority: 'medium'
@@ -206,6 +207,7 @@ export default function FinancialGoals() {
       fetchGoals();
       
     } catch (err) {
+      setError('Erro ao criar meta. Por favor, tente novamente.');
       console.error('Error adding goal:', err);
     } finally {
       setLoading(false);
@@ -227,14 +229,55 @@ export default function FinancialGoals() {
   const handleContribute = (id: string) => {
     const goal = goals.find(g => g.id === id);
     if (!goal) return;
+
+    setLoading(true);
     
     const amount = parseFloat(prompt('Quanto deseja adicionar à sua meta?', '100') || '0');
     if (amount <= 0) return;
     
-    handleUpdateGoal(id, { 
-      current_amount: goal.current_amount + amount,
-      status: goal.current_amount + amount >= goal.target_amount ? 'completed' : 'active'
-    });
+    try {
+      // Calculate new amounts
+      const newAmount = goal.current_amount + amount;
+      const newStatus = newAmount >= goal.target_amount ? 'completed' : 'active';
+      
+      // Update goal in database
+      const { error: updateError } = await supabase
+        .from('financial_goals')
+        .update({ 
+          current_amount: newAmount,
+          status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id);
+      
+      if (updateError) throw updateError;
+      
+      // Add contribution record
+      const { error: contributionError } = await supabase
+        .from('goal_contributions')
+        .insert({
+          goal_id: id,
+          user_id: user?.id,
+          amount: amount,
+          contribution_date: new Date().toISOString(),
+          notes: 'Contribuição manual'
+        });
+      
+      if (contributionError) throw contributionError;
+      
+      // Update UI
+      handleUpdateGoal(id, { 
+        current_amount: newAmount,
+        status: newStatus
+      });
+      
+      alert(`Contribuição de R$ ${amount.toLocaleString('pt-BR')} adicionada com sucesso!`);
+    } catch (err) {
+      console.error('Error adding contribution:', err);
+      alert('Erro ao adicionar contribuição. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const applyRecommendation = (goalId: string, recommendation: AIRecommendation) => {
@@ -610,7 +653,11 @@ export default function FinancialGoals() {
                                   : 'bg-green-500 text-white hover:bg-green-600 transition-colors'
                               }`}
                             >
-                              <DollarSign className="h-3 w-3" />
+                              {loading ? (
+                                <div className="h-3 w-3 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                              ) : (
+                                <DollarSign className="h-3 w-3" />
+                              )}
                               <span>Adicionar</span>
                             </button>
                             
