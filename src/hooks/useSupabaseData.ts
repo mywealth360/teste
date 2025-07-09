@@ -170,19 +170,23 @@ export function useSupabaseData() {
       // Calculate total investment value
       let totalValue = 0;
       let monthlyIncome = 0;
+      let validInvestmentsExist = false;
 
       (data || []).forEach(investment => {
         let currentInvestmentMonthlyIncome = 0;
+        let validInvestment = false;
         
         // For stocks and REITs with quantity and current price
         if ((investment.type === 'acoes' || investment.type === 'fundos-imobiliarios') && 
             investment.quantity && investment.current_price) {
           totalValue += investment.quantity * investment.current_price;
+          validInvestment = true;
           
           // Calculate dividend income if dividend yield is provided
           if (investment.dividend_yield) {
             const annualDividend = (investment.quantity * investment.current_price * investment.dividend_yield) / 100;
             currentInvestmentMonthlyIncome = annualDividend / 12;
+            validInvestment = true;
           }
           
         } 
@@ -199,26 +203,41 @@ export function useSupabaseData() {
           totalValue += investment.amount || 0;
           const annualDividend = (investment.amount * investment.dividend_yield) / 100;
           currentInvestmentMonthlyIncome = annualDividend / 12;
+          validInvestment = true;
         }
         // Fallback to amount
         else {
           totalValue += investment.amount || 0;
+          validInvestment = true;
           
+          validInvestment = investment.amount > 0;
           // Use monthly_income if provided
           if (investment.monthly_income && investment.monthly_income > 0) {
             currentInvestmentMonthlyIncome = investment.monthly_income;
           } else if (investment.dividend_yield && investment.amount) {
+            validInvestment = true;
             // If amount and dividend yield are available (for funds without quantity/price)
             currentInvestmentMonthlyIncome = (investment.amount * investment.dividend_yield) / 100 / 12;
+            validInvestment = true;
+            validInvestment = true;
           }
         }
         
-        // Add this investment's monthly income to the total
-        monthlyIncome += currentInvestmentMonthlyIncome;
+        // Only add income if this is a valid investment
+        if (validInvestment && currentInvestmentMonthlyIncome > 0) {
+          monthlyIncome += currentInvestmentMonthlyIncome;
+          validInvestmentsExist = true;
+        }
       });
 
-      setTotalInvestmentValue(totalValue);
-      setTotalInvestmentIncome(monthlyIncome);
+      // Only set investment values if we have valid investments
+      if (validInvestmentsExist) {
+        setTotalInvestmentValue(totalValue);
+        setTotalInvestmentIncome(monthlyIncome);
+      } else {
+        setTotalInvestmentValue(0);
+        setTotalInvestmentIncome(0);
+      }
       
       // Calculate percentage of income from investments for display
       const investmentIncomePercentage = totalMonthlyIncome > 0 ? (monthlyIncome / totalMonthlyIncome) * 100 : 0;
