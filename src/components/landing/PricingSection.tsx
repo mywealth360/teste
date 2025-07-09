@@ -95,9 +95,9 @@ export default function PricingSection() {
                 <p className="text-gray-500 mt-2">{plan.description}</p>
                 <p className="text-3xl mt-4 font-bold">{plan.price}<span className="text-sm text-gray-500">{plan.period}</span></p>
                 {plan.name === 'Starter' && (
-                  <div className="mt-2 text-green-700 text-sm flex items-center">
+                  <div className="mt-2 text-green-700 text-sm flex items-center justify-center">
                     <Calendar className="h-4 w-4 mr-1" />
-                    <span>7 dias grátis, depois {plan.price}/mês</span>
+                    <span>7 dias grátis sem cartão</span>
                   </div>
                 )}
               </div>
@@ -154,10 +154,6 @@ export default function PricingSection() {
             <div className="flex items-center">
               <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
               <span>7 dias grátis</span>
-            </div>
-            <div className="flex items-center">
-              <CreditCard className="h-5 w-5 mr-2 text-blue-500" />
-              <span>Cartão necessário</span>
             </div>
             <div className="flex items-center">
               <Calendar className="h-5 w-5 mr-2 text-blue-500" />

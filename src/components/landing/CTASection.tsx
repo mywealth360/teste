@@ -21,6 +21,7 @@ export default function CTASection() {
             Começar Teste Grátis
           </SubscriptionButton>
           <p className="text-sm text-white/80 mt-3">7 dias grátis, depois R$ 79,90/mês. Cancele quando quiser.</p>
+          <p className="text-sm text-white/80 mt-1">Sem necessidade de cartão para o período de teste.</p>
         </div>
       </div>
     </section>
