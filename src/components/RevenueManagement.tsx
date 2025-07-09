@@ -56,7 +56,7 @@ export default function RevenueManagement() {
   const fetchAllRevenues = async () => {
     try {
       setLoading(true);
-      setError(null);
+      setError(null); 
 
       // Buscar todos os tipos de receitas
       const [
@@ -68,7 +68,7 @@ export default function RevenueManagement() {
         supabase.from('income_sources').select('*').eq('user_id', user?.id).eq('is_active', true),
         supabase.from('investments').select('*').eq('user_id', user?.id),
         supabase.from('real_estate').select('*').eq('user_id', user?.id),
-        supabase.from('transactions').select('*').eq('user_id', user?.id).eq('type', 'income')
+        supabase.from('transactions').select('*').eq('user_id', user?.id).eq('type', 'income').order('created_at', { ascending: false })
       ]);
 
       const allRevenues: RevenueItem[] = [];
@@ -91,12 +91,29 @@ export default function RevenueManagement() {
 
       // Processar investimentos com renda
       (investmentData.data || []).forEach(investment => {
-        if (investment.monthly_income && investment.monthly_income > 0) {
+        let monthlyIncome = 0;
+        
+        // Calcular renda mensal com base no tipo de investimento
+        if (investment.type === 'acoes' || investment.type === 'fundos-imobiliarios') {
+          if (investment.dividend_yield && investment.quantity && investment.current_price) {
+            const currentValue = investment.quantity * investment.current_price;
+            monthlyIncome = (currentValue * investment.dividend_yield) / 100 / 12;
+          } else if (investment.monthly_income) {
+            monthlyIncome = investment.monthly_income;
+          }
+        } else if (investment.interest_rate && investment.amount) {
+          monthlyIncome = (investment.amount * investment.interest_rate) / 100 / 12;
+        } else if (investment.monthly_income) {
+          monthlyIncome = investment.monthly_income;
+        }
+        
+        // Apenas adicionar se houver renda mensal
+        if (monthlyIncome > 0) {
           allRevenues.push({
             id: `investment-${investment.id}`,
             type: 'investment',
             description: `Renda de ${investment.name}`,
-            amount: investment.monthly_income,
+            amount: monthlyIncome,
             category: 'Investimentos',
             date: new Date().toISOString().split('T')[0],
             source: investment.broker,
@@ -191,6 +208,30 @@ export default function RevenueManagement() {
         revenue.category.toLowerCase().includes(searchTerm.toLowerCase()) ||
         revenue.source.toLowerCase().includes(searchTerm.toLowerCase())
       );
+    }
+
+    // Agrupar por categoria para o gráfico
+    const revenuesByCategory = filtered.reduce((acc, revenue) => {
+      const monthlyAmount = calculateMonthlyRevenue(revenue);
+      acc[revenue.category] = (acc[revenue.category] || 0) + monthlyAmount;
+      return acc;
+    }, {} as Record<string, number>);
+    
+    // Calculate totals by source type
+    const totalsByType = filtered.reduce((acc, revenue) => {
+      const monthlyAmount = calculateMonthlyRevenue(revenue);
+      if (!acc[revenue.type]) {
+        acc[revenue.type] = 0;
+      }
+      acc[revenue.type] += monthlyAmount;
+      return acc;
+    }, {} as Record<string, number>);
+
+    // Update localStorage with data for dashboard
+    if (typeof window !== 'undefined') {
+      // Prepare to update localStorage with category data for dashboard
+      localStorage.setItem('revenueCategories', JSON.stringify(revenuesByCategory));
+      localStorage.setItem('revenuesByType', JSON.stringify(totalsByType));
     }
 
     setFilteredRevenues(filtered);
