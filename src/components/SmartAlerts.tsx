@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   Bell, Calendar, DollarSign, AlertTriangle, CheckCircle, TrendingUp,
-  Clock, Car, Home, Users, CreditCard, Shield, Gem, X,
+  Clock, Car, Home, Users, CreditCard, Shield, Gem, X, Plus,
   ChevronRight, FileText, Filter, Mail, Settings
 } from 'lucide-react';
 import { useDashboardData } from '../hooks/useSupabaseData';
@@ -16,6 +16,7 @@ interface Alert {
   type: AlertType;
   title: string;
   description: string;
+  entity_id?: string;
   date: string;
   priority: AlertPriority;
   isRead: boolean;
@@ -34,6 +35,12 @@ export default function SmartAlerts() {
   const [selectedFilter, setSelectedFilter] = useState<'all' | AlertType>('all');
   const [showAll, setShowAll] = useState(false);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
+  // State for bill selection modal
+  const [showBillSelectionModal, setShowBillSelectionModal] = useState(false);
+  const [selectedBills, setSelectedBills] = useState<string[]>([]);
+  const [bills, setBills] = useState<any[]>([]);
+  const [reminderDays, setReminderDays] = useState(1);
   
   const {
     totalMonthlyExpenses,
@@ -247,6 +254,29 @@ export default function SmartAlerts() {
     }
   }, [user, totalMonthlyExpenses, totalMonthlyIncome, totalLoanPayments, totalBills, netWorth]);
 
+  // Fetch bills for selection
+  const fetchBills = async () => {
+    if (!user) return;
+    
+    try {
+      const { data, error } = await supabase
+        .from('bills')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('is_active', true)
+        .order('next_due', { ascending: true });
+
+      if (error) throw error;
+      setBills(data || []);
+    } catch (err) {
+      console.error('Error fetching bills:', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchBills();
+  }, [user]);
+
   useEffect(() => {
     if (selectedFilter === 'all') {
       setFilteredAlerts(alerts);
@@ -267,6 +297,66 @@ export default function SmartAlerts() {
     markAsRead(alert.id);
     if (alert.actionPath) {
       window.location.href = alert.actionPath;
+    }
+  };
+
+  // Create custom bill alert
+  const createBillAlerts = async () => {
+    if (!user || selectedBills.length === 0) return;
+    
+    try {
+      setLoading(true);
+      
+      // Get selected bill details
+      const selectedBillsData = bills.filter(bill => selectedBills.includes(bill.id));
+      
+      // Create alerts for each selected bill
+      const alertPromises = selectedBillsData.map(bill => {
+        // Calculate alert date based on reminder days
+        const dueDate = new Date(bill.next_due);
+        const alertDate = new Date(dueDate);
+        alertDate.setDate(alertDate.getDate() - reminderDays);
+        
+        return supabase
+          .from('alerts')
+          .insert({
+            user_id: user.id,
+            type: 'bill',
+            title: `Lembrete: ${bill.name}`,
+            description: `${bill.company} - R$ ${bill.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} - Vence em ${reminderDays} ${reminderDays === 1 ? 'dia' : 'dias'}`,
+            date: alertDate.toISOString(),
+            priority: 'medium',
+            is_read: false,
+            related_id: bill.id,
+            related_entity: 'bills',
+            entity_id: bill.id,
+            action_path: '/bills',
+            action_label: 'Ver Contas'
+          });
+      });
+      
+      await Promise.all(alertPromises);
+      
+      // Close modal and refresh alerts
+      setShowBillSelectionModal(false);
+      setSelectedBills([]);
+      generateAlerts();
+      
+      alert('Alertas criados com sucesso!');
+    } catch (err) {
+      console.error('Error creating bill alerts:', err);
+      alert('Erro ao criar alertas. Tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Toggle bill selection
+  const toggleBillSelection = (billId: string) => {
+    if (selectedBills.includes(billId)) {
+      setSelectedBills(selectedBills.filter(id => id !== billId));
+    } else {
+      setSelectedBills([...selectedBills, billId]);
     }
   };
 
@@ -349,25 +439,155 @@ export default function SmartAlerts() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Alertas Inteligentes</h1>
-          <p className="text-gray-500 mt-1">Acompanhe eventos importantes e fique por dentro de suas finanças</p>
+            <h1 className="text-3xl font-bold text-gray-800">Alertas</h1>
           <p className="text-sm text-blue-600 mt-1 flex items-center cursor-pointer" onClick={navigateToEmailSettings}>
             <Mail className="h-3 w-3 mr-1" />
             <span>Configurar alertas por email</span>
           </p>
         </div>
-        <div className="bg-blue-500 p-2 rounded-full text-white relative">
-          <Bell className="h-6 w-6" />
-          {alerts.filter(a => !a.isRead).length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-              {alerts.filter(a => !a.isRead).length}
-            </span>
-          )}
+        <div className="flex space-x-3">
+          <button 
+            onClick={() => setShowBillSelectionModal(true)}
+            className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Criar Alerta</span>
+          </button>
+          <div className="bg-blue-500 p-2 rounded-full text-white relative">
+            <Bell className="h-6 w-6" />
+            {alerts.filter(a => !a.isRead).length > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
+                {alerts.filter(a => !a.isRead).length}
+              </span>
+            )}
+          </div>
         </div>
       </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
           <p className="text-red-700">{error}</p>
+        </div>
+      )}
+      
+      {/* Bill Selection Modal */}
+      {showBillSelectionModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-800">Selecionar Contas para Alertas</h2>
+            </div>
+            
+            <div className="p-6 space-y-4">
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <p className="text-blue-700">
+                  Selecione as contas para as quais você deseja receber alertas por email antes do vencimento.
+                </p>
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Dias antes do vencimento para enviar alerta
+                </label>
+                <select
+                  value={reminderDays}
+                  onChange={(e) => setReminderDays(Number(e.target.value))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                >
+                  <option value={1}>1 dia antes</option>
+                  <option value={2}>2 dias antes</option>
+                  <option value={3}>3 dias antes</option>
+                  <option value={5}>5 dias antes</option>
+                  <option value={7}>7 dias antes</option>
+                </select>
+              </div>
+              
+              <div className="space-y-2 max-h-96 overflow-y-auto">
+                <div className="flex items-center justify-between py-2 px-3 bg-gray-100 rounded-lg">
+                  <div className="flex items-center">
+                    <input
+                      type="checkbox"
+                      id="select-all"
+                      checked={selectedBills.length === bills.length}
+                      onChange={() => {
+                        if (selectedBills.length === bills.length) {
+                          setSelectedBills([]);
+                        } else {
+                          setSelectedBills(bills.map(bill => bill.id));
+                        }
+                      }}
+                      className="h-4 w-4 text-blue-600 rounded"
+                    />
+                    <label htmlFor="select-all" className="ml-2 text-sm font-medium text-gray-700">
+                      Selecionar todas
+                    </label>
+                  </div>
+                  <span className="text-xs text-gray-500">{bills.length} contas</span>
+                </div>
+                
+                {bills.map((bill) => (
+                  <div key={bill.id} className="flex items-center justify-between py-2 px-3 hover:bg-gray-50 rounded-lg">
+                    <div className="flex items-center">
+                      <input
+                        type="checkbox"
+                        id={`bill-${bill.id}`}
+                        checked={selectedBills.includes(bill.id)}
+                        onChange={() => toggleBillSelection(bill.id)}
+                        className="h-4 w-4 text-blue-600 rounded"
+                      />
+                      <label htmlFor={`bill-${bill.id}`} className="ml-2 text-sm font-medium text-gray-700">
+                        {bill.name}
+                      </label>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <span className="text-sm text-gray-500">{bill.company}</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        R$ {bill.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                      <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                        Vence: {new Date(bill.next_due).toLocaleDateString('pt-BR')}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+                
+                {bills.length === 0 && (
+                  <div className="text-center py-8">
+                    <FileText className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                    <p className="text-gray-500">Nenhuma conta encontrada</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowBillSelectionModal(false)}
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={createBillAlerts}
+                  disabled={selectedBills.length === 0 || loading}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center space-x-2"
+                >
+                  {loading ? (
+                    <>
+                      <span className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                      <span>Processando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Bell className="h-4 w-4" />
+                      <span>Criar Alertas</span>
+                    </>
+                  )}
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
 
