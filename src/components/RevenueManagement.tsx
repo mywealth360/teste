@@ -278,11 +278,15 @@ export default function RevenueManagement() {
   const getCategoryIcon = (category: string) => {
     switch (category.toLowerCase()) {
       case 'aluguel':
-        return <Home className="h-5 w-5 text-orange-600" />;
+       return <Home className="h-5 w-5 text-orange-500" />;
       case 'dividendos':
-        return <Building className="h-5 w-5 text-blue-600" />;
+       return <Building className="h-5 w-5 text-blue-500" />;
+     case 'invest':
+       return <TrendingUp className="h-5 w-5 text-indigo-500" />;
+     case 'carga':
+       return <DollarSign className="h-5 w-5 text-green-500" />;
       default:
-        return <DollarSign className="h-5 w-5 text-green-600" />;
+       return <DollarSign className="h-5 w-5 text-green-500" />;
     }
   };
 
@@ -361,7 +365,7 @@ export default function RevenueManagement() {
           {incomeCategories.map((category, index) => (
             <div key={index} className="bg-gray-50 p-4 rounded-xl hover:shadow-md transition-shadow">
               <div className="flex items-center mb-2">
-                <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mr-3">
+               <div className="w-8 h-8 rounded-lg flex items-center justify-center mr-3 bg-green-500">
                   {getCategoryIcon(category.category)}
                 </div>
                 <div>

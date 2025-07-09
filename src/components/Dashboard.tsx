@@ -157,10 +157,48 @@ export default function Dashboard() {
       setLoading(true);
       
       // Define predefined income categories with their amounts
-      const predefinedCategories = [
-        { category: 'Invest', amount: 1000, percentage: 76.9 },
-        { category: 'Carga', amount: 300, percentage: 23.1 }
-      ];
+     // Calculate rental income
+     const rentalIncome = dashboardData.totalRealEstateIncome || 0;
+     
+     // Calculate dividend income
+     const dividendIncome = dashboardData.totalInvestmentIncome || 0;
+     
+     // Calculate other income (from income sources)
+     const otherIncome = (dashboardData.totalMonthlyIncome || 0) - rentalIncome - dividendIncome;
+     
+     // Create categories array
+     const totalIncome = dashboardData.totalMonthlyIncome || 0;
+     
+     const predefinedCategories = [
+       { 
+         category: 'Invest', 
+         amount: otherIncome > 0 ? 1000 : 0, 
+         percentage: totalIncome > 0 ? (otherIncome / totalIncome) * 100 : 0 
+       },
+       { 
+         category: 'Carga', 
+         amount: otherIncome > 0 ? 300 : 0, 
+         percentage: totalIncome > 0 ? (otherIncome / totalIncome) * 100 : 0 
+       }
+     ];
+     
+     // Add rental income if it exists
+     if (rentalIncome > 0) {
+       predefinedCategories.push({
+         category: 'Aluguel',
+         amount: rentalIncome,
+         percentage: totalIncome > 0 ? (rentalIncome / totalIncome) * 100 : 0
+       });
+     }
+     
+     // Add dividend income if it exists
+     if (dividendIncome > 0) {
+       predefinedCategories.push({
+         category: 'Dividendos',
+         amount: dividendIncome,
+         percentage: totalIncome > 0 ? (dividendIncome / totalIncome) * 100 : 0
+       });
+     }
       
       setIncomeCategories(predefinedCategories);
     } catch (err) {
