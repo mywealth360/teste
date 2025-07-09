@@ -12,7 +12,8 @@ import {
   Zap,
   Users,
   Share2,
-  Lock
+  Lock,
+  Sparkles
 } from 'lucide-react';
 import { aiInsights } from '../data/mockData';
 
