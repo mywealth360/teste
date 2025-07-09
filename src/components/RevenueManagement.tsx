@@ -121,7 +121,7 @@ export default function RevenueManagement() {
       const transactionIncome = (transactionsData || []).map(transaction => ({
         id: `transaction-${transaction.id}`,
         user_id: transaction.user_id,
-        name: transaction.description,
+        name: transaction.description || 'Transação',
         amount: transaction.amount,
         frequency: transaction.is_recurring ? 'monthly' as const : 'one-time' as const,
         category: 'Transações',

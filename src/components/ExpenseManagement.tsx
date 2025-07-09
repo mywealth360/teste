@@ -76,7 +76,7 @@ export default function ExpenseManagement() {
           amount: Math.abs(item.amount || 0),
           category: item.category || 'Geral',
           date: item.date || item.created_at || new Date().toISOString(),
-          source: 'transactions',
+          source: 'Transação',
           recurring: item.is_recurring || false
         }));
         allExpenses.push(...mappedTransactions);
