@@ -187,10 +187,28 @@ export default function Dashboard() {
               <div>
                 <p className="text-green-100 text-sm font-medium mb-2">Renda Mensal</p>
                 <p className="text-4xl font-bold mb-2 text-white">R$ {totalMonthlyIncomeComplete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                {/* Breakdown of income sources */}
                 <div className="flex items-center space-x-2">
                   <div className="bg-white/20 px-3 py-1 rounded-full flex items-center space-x-1">
                     <span className="text-sm text-white">Todas as fontes</span>
                   </div>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {totalMonthlyIncome > 0 && (
+                    <div className="bg-green-500/30 px-2 py-0.5 rounded-full text-xs text-white">
+                      Receitas: {((totalMonthlyIncome / totalMonthlyIncomeComplete) * 100).toFixed(0)}%
+                    </div>
+                  )}
+                  {totalInvestmentIncome > 0 && (
+                    <div className="bg-blue-500/30 px-2 py-0.5 rounded-full text-xs text-white">
+                      Investimentos: {((totalInvestmentIncome / totalMonthlyIncomeComplete) * 100).toFixed(0)}%
+                    </div>
+                  )}
+                  {totalRealEstateIncome > 0 && (
+                    <div className="bg-purple-500/30 px-2 py-0.5 rounded-full text-xs text-white">
+                      Imóveis: {((totalRealEstateIncome / totalMonthlyIncomeComplete) * 100).toFixed(0)}%
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -249,126 +267,178 @@ export default function Dashboard() {
           </div>
         </div>
 
-        {/* Detalhamento dos Custos Mensais */}
+        {/* Additional income details section */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Detalhamento dos Custos Mensais</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Receipt className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="text-blue-600 text-sm font-medium">Transações</p>
-                    <p className="text-lg font-bold text-blue-700">R$ {totalMonthlyExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          <div className="mt-6 border-t border-gray-100 pt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Detalhamento das Fontes de Renda</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="bg-green-50 p-4 rounded-xl border border-green-100">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
+                    <DollarSign className="h-5 w-5 text-green-600" />
+                    <div>
+                      <p className="text-green-600 text-sm font-medium">Fontes de Renda</p>
+                      <p className="text-lg font-bold text-green-700">R$ {totalMonthlyIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-green-500 bg-green-50 px-2 py-0.5 rounded-full">
+                    {totalMonthlyIncomeComplete > 0 ? ((totalMonthlyIncome / totalMonthlyIncomeComplete) * 100).toFixed(1) : '0'}%
                   </div>
                 </div>
-                <div className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
-                  {((totalMonthlyExpenses / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+              </div>
+              
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
+                    <Building className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="text-blue-600 text-sm font-medium">Investimentos</p>
+                      <p className="text-lg font-bold text-blue-700">R$ {totalInvestmentIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
+                    {totalMonthlyIncomeComplete > 0 ? ((totalInvestmentIncome / totalMonthlyIncomeComplete) * 100).toFixed(1) : '0'}%
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
+                    <Home className="h-5 w-5 text-purple-600" />
+                    <div>
+                      <p className="text-purple-600 text-sm font-medium">Aluguéis</p>
+                      <p className="text-lg font-bold text-purple-700">R$ {totalRealEstateIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
+                    {totalMonthlyIncomeComplete > 0 ? ((totalRealEstateIncome / totalMonthlyIncomeComplete) * 100).toFixed(1) : '0'}%
+                  </div>
                 </div>
               </div>
             </div>
-            
-            <div className="bg-red-50 p-4 rounded-xl border border-red-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <CreditCard className="h-5 w-5 text-red-600" />
-                  <div>
-                    <p className="text-red-600 text-sm font-medium">Empréstimos</p>
-                    <p className="text-lg font-bold text-red-700">R$ {totalLoanPayments.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          </div>
+          
+          <div className="mt-6 border-t border-gray-100 pt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Detalhamento dos Custos Mensais</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Receipt className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="text-blue-600 text-sm font-medium">Transações</p>
+                      <p className="text-lg font-bold text-blue-700">R$ {totalMonthlyExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
+                    {((totalMonthlyExpenses / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
                   </div>
                 </div>
-                <div className="text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
-                  {((totalLoanPayments / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+              </div>
+              
+              <div className="bg-red-50 p-4 rounded-xl border border-red-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <CreditCard className="h-5 w-5 text-red-600" />
+                    <div>
+                      <p className="text-red-600 text-sm font-medium">Empréstimos</p>
+                      <p className="text-lg font-bold text-red-700">R$ {totalLoanPayments.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
+                    {((totalLoanPayments / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <FileText className="h-5 w-5 text-orange-600" />
-                  <div>
-                    <p className="text-orange-600 text-sm font-medium">Contas</p>
-                    <p className="text-lg font-bold text-orange-700">R$ {totalBills.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="h-5 w-5 text-orange-600" />
+                    <div>
+                      <p className="text-orange-600 text-sm font-medium">Contas</p>
+                      <p className="text-lg font-bold text-orange-700">R$ {totalBills.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="text-xs text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">
-                  {((totalBills / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  <div className="text-xs text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">
+                    {((totalBills / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Shield className="h-5 w-5 text-blue-600" />
-                  <div>
-                    <p className="text-blue-600 text-sm font-medium">Previdência</p>
-                    <p className="text-lg font-bold text-blue-700">R$ {totalRetirementContribution.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Shield className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="text-blue-600 text-sm font-medium">Previdência</p>
+                      <p className="text-lg font-bold text-blue-700">R$ {totalRetirementContribution.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
-                  {((totalRetirementContribution / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  <div className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
+                    {((totalRetirementContribution / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Home className="h-5 w-5 text-purple-600" />
-                  <div>
-                    <p className="text-purple-600 text-sm font-medium">Imóveis</p>
-                    <p className="text-lg font-bold text-purple-700">R$ {totalRealEstateExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Home className="h-5 w-5 text-purple-600" />
+                    <div>
+                      <p className="text-purple-600 text-sm font-medium">Imóveis</p>
+                      <p className="text-lg font-bold text-purple-700">R$ {totalRealEstateExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="text-xs text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
-                  {((totalRealEstateExpenses / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  <div className="text-xs text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
+                    {((totalRealEstateExpenses / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-teal-50 p-4 rounded-xl border border-teal-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Car className="h-5 w-5 text-teal-600" />
-                  <div>
-                    <p className="text-teal-600 text-sm font-medium">Veículos</p>
-                    <p className="text-lg font-bold text-teal-700">R$ {totalVehicleExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <div className="bg-teal-50 p-4 rounded-xl border border-teal-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Car className="h-5 w-5 text-teal-600" />
+                    <div>
+                      <p className="text-teal-600 text-sm font-medium">Veículos</p>
+                      <p className="text-lg font-bold text-teal-700">R$ {totalVehicleExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="text-xs text-teal-500 bg-teal-50 px-2 py-0.5 rounded-full">
-                  {((totalVehicleExpenses / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  <div className="text-xs text-teal-500 bg-teal-50 px-2 py-0.5 rounded-full">
+                    {((totalVehicleExpenses / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Landmark className="h-5 w-5 text-indigo-600" />
-                  <div>
-                    <p className="text-indigo-600 text-sm font-medium">Impostos</p>
-                    <p className="text-lg font-bold text-indigo-700">R$ {totalTaxes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Landmark className="h-5 w-5 text-indigo-600" />
+                    <div>
+                      <p className="text-indigo-600 text-sm font-medium">Impostos</p>
+                      <p className="text-lg font-bold text-indigo-700">R$ {totalTaxes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="text-xs text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">
-                  {((totalTaxes / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  <div className="text-xs text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">
+                    {((totalTaxes / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  </div>
                 </div>
               </div>
-            </div>
 
-            <div className="bg-pink-50 p-4 rounded-xl border border-pink-100">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-3">
-                  <Users className="h-5 w-5 text-pink-600" />
-                  <div>
-                    <p className="text-pink-600 text-sm font-medium">Funcionários</p>
-                    <p className="text-lg font-bold text-pink-700">R$ {(0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <div className="bg-pink-50 p-4 rounded-xl border border-pink-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Users className="h-5 w-5 text-pink-600" />
+                    <div>
+                      <p className="text-pink-600 text-sm font-medium">Funcionários</p>
+                      <p className="text-lg font-bold text-pink-700">R$ {(0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
                   </div>
-                </div>
-                <div className="text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">
-                  0%
+                  <div className="text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">
+                    0%
+                  </div>
                 </div>
               </div>
             </div>

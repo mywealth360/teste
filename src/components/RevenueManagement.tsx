@@ -242,6 +242,19 @@ export default function RevenueManagement() {
 
   // Calcular total de receitas mensais
   const totalRevenues = filteredRevenues.reduce((sum, revenue) => sum + calculateMonthlyRevenue(revenue), 0); 
+  
+  // Get the current month name for display
+  const currentMonthName = new Date().toLocaleDateString('pt-BR', { month: 'long' });
+  
+  // Calculate totals by source type
+  const totalsByType = filteredRevenues.reduce((acc, revenue) => {
+    const monthlyAmount = calculateMonthlyRevenue(revenue);
+    if (!acc[revenue.type]) {
+      acc[revenue.type] = 0;
+    }
+    acc[revenue.type] += monthlyAmount;
+    return acc;
+  }, {} as Record<string, number>);
     
   // Calcular total de impostos
   const totalTaxes = filteredRevenues.reduce((sum, revenue) => {
@@ -302,7 +315,10 @@ export default function RevenueManagement() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-sm font-medium">Receita Total Mensal</p>
-              <p className="text-3xl font-bold mt-1 text-white">R$ {totalRevenues.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+              <p className="text-3xl font-bold mt-1 text-white">
+                R$ {totalRevenues.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </p>
+              <p className="text-xs text-green-100 mt-1">Projeção para {currentMonthName}</p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl">
               <TrendingUp className="h-6 w-6" />
@@ -416,9 +432,124 @@ export default function RevenueManagement() {
         </div>
       )}
 
+      {/* Resumo por tipo de fonte */}
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-6">Receitas por Fonte</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {totalsByType['income_source'] > 0 && (
+            <div className="bg-green-50 p-4 rounded-xl border border-green-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-green-600 text-sm font-medium">Fontes de Renda</p>
+                  <p className="text-2xl font-bold text-green-700">
+                    R$ {totalsByType['income_source'].toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div className="bg-green-100 p-3 rounded-xl">
+                  <Briefcase className="h-6 w-6 text-green-600" />
+                </div>
+              </div>
+              <div className="mt-2">
+                <div className="w-full bg-green-200 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-green-500 to-green-600 h-2 rounded-full"
+                    style={{ width: `${(totalsByType['income_source'] / totalRevenues) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-green-600 mt-1 text-right">
+                  {((totalsByType['income_source'] / totalRevenues) * 100).toFixed(1)}%
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {totalsByType['investment'] > 0 && (
+            <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-blue-600 text-sm font-medium">Investimentos</p>
+                  <p className="text-2xl font-bold text-blue-700">
+                    R$ {totalsByType['investment'].toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div className="bg-blue-100 p-3 rounded-xl">
+                  <Building className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+              <div className="mt-2">
+                <div className="w-full bg-blue-200 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full"
+                    style={{ width: `${(totalsByType['investment'] / totalRevenues) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-blue-600 mt-1 text-right">
+                  {((totalsByType['investment'] / totalRevenues) * 100).toFixed(1)}%
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {totalsByType['real_estate'] > 0 && (
+            <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-orange-600 text-sm font-medium">Imóveis</p>
+                  <p className="text-2xl font-bold text-orange-700">
+                    R$ {totalsByType['real_estate'].toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div className="bg-orange-100 p-3 rounded-xl">
+                  <Home className="h-6 w-6 text-orange-600" />
+                </div>
+              </div>
+              <div className="mt-2">
+                <div className="w-full bg-orange-200 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-orange-500 to-orange-600 h-2 rounded-full"
+                    style={{ width: `${(totalsByType['real_estate'] / totalRevenues) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-orange-600 mt-1 text-right">
+                  {((totalsByType['real_estate'] / totalRevenues) * 100).toFixed(1)}%
+                </p>
+              </div>
+            </div>
+          )}
+          
+          {totalsByType['transaction'] > 0 && (
+            <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-purple-600 text-sm font-medium">Outras Receitas</p>
+                  <p className="text-2xl font-bold text-purple-700">
+                    R$ {totalsByType['transaction'].toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                </div>
+                <div className="bg-purple-100 p-3 rounded-xl">
+                  <DollarSign className="h-6 w-6 text-purple-600" />
+                </div>
+              </div>
+              <div className="mt-2">
+                <div className="w-full bg-purple-200 rounded-full h-2">
+                  <div 
+                    className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full"
+                    style={{ width: `${(totalsByType['transaction'] / totalRevenues) * 100}%` }}
+                  ></div>
+                </div>
+                <p className="text-xs text-purple-600 mt-1 text-right">
+                  {((totalsByType['transaction'] / totalRevenues) * 100).toFixed(1)}%
+                </p>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+
       {/* Detalhamento de Receitas por Fonte */}
       <div className="bg-white p-6 rounded-2xl shadow-lg">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">Detalhamento de Receitas por Fonte</h2>
+        <h2 className="text-xl font-semibold text-gray-800 mb-2">Detalhamento de Receitas</h2>
+        <p className="text-gray-500 mb-4 text-sm">Lista completa de todas as suas fontes de receita</p>
         <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
           <h3 className="font-medium text-gray-700">Aluguéis de Imóveis</h3>
           {filteredRevenues.filter(r => r.type === 'real_estate').map((revenue, idx) => (

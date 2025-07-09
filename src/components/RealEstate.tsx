@@ -145,8 +145,9 @@ export default function RealEstate() {
   };
 
   const calculateMonthlyIncome = (property: RealEstateProperty) => {
-    if (!property.is_rented) return 0;
-    return (property.monthly_rent || 0) - property.expenses;
+    if (!property.is_rented || !property.monthly_rent) return 0;
+    // Calculate net rental income (rent minus expenses)
+    return property.monthly_rent - property.expenses;
   };
 
   const calculateMonthlyTax = (property: RealEstateProperty) => {
@@ -688,11 +689,14 @@ export default function RealEstate() {
                             <button 
                               onClick={() => handleDeleteProperty(property.id)}
                               className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                      <div className="flex items-center space-x-2">
+                        <TrendingUp className="h-4 w-4 text-green-600" />
+                        <p className="text-sm font-medium text-green-700">
+                          Dividend Yield calculado: {displayYield?.toFixed(2)}% a.a.
+                        </p>
+                      </div>
                           </div>
-                        </div>
+                        Baseado em: (R$ {formData.monthly_rent.replace(/\B(?=(\d{3})+(?!\d))/g, ".")} × 12) ÷ R$ {(Number(formData.current_value) || Number(formData.purchase_price)).toLocaleString('pt-BR')} × 100
                       </div>
                     </div>
                   )}

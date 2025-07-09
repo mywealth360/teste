@@ -66,25 +66,27 @@ export default function Investments() {
   };
 
   const calculateMonthlyIncome = (investment: Investment) => {
+    let calculatedIncome = 0;
+    
     // Para ações e FIIs, usar dividend yield
     if (requiresDividendYield(investment.type) && investment.dividend_yield) {
       const currentValue = investment.quantity && investment.current_price 
         ? investment.quantity * investment.current_price 
         : investment.amount;
-      return (currentValue * investment.dividend_yield) / 100 / 12;
+      calculatedIncome = (currentValue * investment.dividend_yield) / 100 / 12;
     }
     
     // Para renda fixa e outros, usar taxa de juros
     if (requiresInterestRate(investment.type) && investment.interest_rate && investment.amount) {
-      return (investment.amount * investment.interest_rate) / 100 / 12;
+      calculatedIncome = (investment.amount * investment.interest_rate) / 100 / 12;
     }
     
     // Fallback para renda mensal manual
     if (investment.monthly_income) {
-      return investment.monthly_income;
+      calculatedIncome = investment.monthly_income;
     }
     
-    return 0;
+    return calculatedIncome;
   };
 
   const calculateCapitalGain = (investment: Investment) => {
@@ -175,7 +177,7 @@ export default function Investments() {
       setLoading(true);
       const { data, error } = await supabase
         .from('investments')
-        .select('*')
+        .select('id, name, type, broker, amount, purchase_price, current_price, interest_rate, monthly_income, purchase_date, maturity_date, quantity, dividend_yield, tax_rate, created_at, updated_at')
         .eq('user_id', user?.id)
         .order('created_at', { ascending: false });
 
