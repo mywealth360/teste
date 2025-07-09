@@ -143,9 +143,9 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
               onClick={() => handleTabClick(item.id, item.restricted)}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
                 activeTab === item.id
-                  ? 'bg-blue-600 text-white shadow-md'
+              className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium shadow-sm ${
                   : isRestricted
-                 ? 'bg-blue-600 text-white shadow-md' 
+                  ? 'bg-blue-600 text-white shadow-md' 
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
               }`}
               disabled={isRestricted && userPlan === 'starter'}
@@ -164,7 +164,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
 
   return (
     <>
-    <div className="w-72 bg-white shadow-xl border-r border-gray-100 h-screen fixed left-0 top-0 z-30 overflow-y-auto">
+    <div className="w-72 bg-white shadow-xl border-r border-gray-100 h-screen fixed left-0 top-0 z-30 overflow-y-auto transition-all duration-300">
       <div className="p-2 border-b border-gray-100">
         <div className="flex items-center justify-between py-4 px-2">
           <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">PROSPERA.AI</h1>
@@ -216,7 +216,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         <div className="pt-2">
           <button
             onClick={() => toggleSection('revenue')}
-            className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg"
+            className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl"
           >
             <div className="flex items-center space-x-2">
               <TrendingUp className="h-4 w-4 text-green-500" />
@@ -235,7 +235,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         <div className="pt-2">
           <button
             onClick={() => toggleSection('expense')}
-            className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg"
+            className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl"
           >
             <div className="flex items-center space-x-2">
               <TrendingDown className="h-4 w-4 text-red-500" />
@@ -254,7 +254,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         <div className="pt-2">
           <button
             onClick={() => toggleSection('patrimony')}
-            className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg"
+            className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl"
           >
             <div className="flex items-center space-x-2">
               <Target className="h-4 w-4 text-blue-500" />
@@ -273,7 +273,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         <div className="pt-2">
           <button
             onClick={() => toggleSection('other')}
-            className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg"
+            className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-xl"
           >
             <div className="flex items-center space-x-2">
               <FileText className="h-4 w-4 text-purple-500" />
@@ -371,7 +371,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           {isAdmin && (
             <button
               onClick={() => setActiveTab('admin')}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-bold bg-gradient-to-r from-red-500 to-red-600 text-white shadow-lg hover:shadow-xl"
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-bold bg-red-600 text-white shadow-md hover:bg-red-700"
             >
               <div className="flex items-center space-x-3">
                 <Crown className="h-5 w-5" />

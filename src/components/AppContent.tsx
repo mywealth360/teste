@@ -1,46 +1,40 @@
-import React, { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import { useAuth } from './contexts/AuthContext'; 
-import ProtectedRoute from './components/ProtectedRoute';
-import Sidebar from './components/Sidebar';
-import SubscriptionPage from './components/SubscriptionPage';
-import InviteAccept from './components/InviteAccept';
-import AccessManagement from './components/AccessManagement';
-import Dashboard from './components/Dashboard';
-import AIChat from './components/AIChat';
-import Transactions from './components/Transactions';
-import SmartAlerts from './components/SmartAlerts';
-import Income from './components/Income';
-import BankAccounts from './components/BankAccounts';
-import Investments from './components/Investments';
-import Retirement from './components/Retirement';
-import RealEstate from './components/RealEstate';
-import FinancialGoals from './components/FinancialGoals';
-import Vehicles from './components/Vehicles';
-import ExoticAssets from './components/ExoticAssets';
-import Loans from './components/Loans';
-import Bills from './components/Bills';
-import Documents from './components/Documents';
-import Employees from './components/Employees';
-import AIInsights from './components/AIInsights';
-import ExpenseManagement from './components/ExpenseManagement';
-import RevenueManagement from './components/RevenueManagement';
-import PatrimonyManagement from './components/PatrimonyManagement';
-import FloatingChatButton from './components/FloatingChatButton';
-import LandingPage from './components/LandingPage';
-import Success from './pages/Success';
-import Cancel from './pages/Cancel';
-import UserProfile from './components/UserProfile';
-import TrialExpiredModal from './components/TrialExpiredModal';
-import PaymentFailedModal from './components/PaymentFailedModal';
-import AdminPanel from './components/AdminPanel';
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '../contexts/AuthContext';
+import Sidebar from './Sidebar';
+import SubscriptionPage from './SubscriptionPage';
+import Dashboard from './Dashboard';
+import AIChat from './AIChat';
+import Transactions from './Transactions';
+import SmartAlerts from './SmartAlerts';
+import Income from './Income';
+import BankAccounts from './BankAccounts';
+import Investments from './Investments';
+import Retirement from './Retirement';
+import RealEstate from './RealEstate';
+import FinancialGoals from './FinancialGoals';
+import Vehicles from './Vehicles';
+import ExoticAssets from './ExoticAssets';
+import Loans from './Loans';
+import Bills from './Bills';
+import Documents from './Documents';
+import Employees from './Employees';
+import AIInsights from './AIInsights';
+import ExpenseManagement from './ExpenseManagement';
+import RevenueManagement from './RevenueManagement';
+import PatrimonyManagement from './PatrimonyManagement';
+import FloatingChatButton from './FloatingChatButton';
+import AccessManagement from './AccessManagement';
+import UserProfile from './UserProfile';
+import TrialExpiredModal from './TrialExpiredModal';
+import PaymentFailedModal from './PaymentFailedModal';
+import AdminPanel from './AdminPanel';
 
-function AppContent() {
+export default function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
   const { isAdmin, isInTrial, trialExpiresAt, userPlan } = useAuth();
   const [showTrialExpiredModal, setShowTrialExpiredModal] = useState(false);
   const [showPaymentFailedModal, setShowPaymentFailedModal] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   
   // Force subscription page when trial days left is 0
   const { trialDaysLeft } = useAuth();
@@ -55,23 +49,15 @@ function AppContent() {
     }
   }, [isInTrial, trialExpiresAt]);
   
-  // Listen for payment failed events (in a real app, this would come from a webhook)
+  // Listen for payment failed events
   React.useEffect(() => {
     const handlePaymentFailed = () => {
       setShowPaymentFailedModal(true);
     };
     
-    // Simulate a payment failed event after 10 seconds (for demo purposes)
-    // In a real app, this would be triggered by a webhook from Stripe
-    // const timer = setTimeout(() => {
-    //   handlePaymentFailed();
-    // }, 10000);
-    
-    // Listen for custom event from webhook handler
     window.addEventListener('paymentFailed', handlePaymentFailed);
     
     return () => {
-      // clearTimeout(timer);
       window.removeEventListener('paymentFailed', handlePaymentFailed);
     };
   }, []);
@@ -163,12 +149,45 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Top right profile icon will be rendered inside the Sidebar component */}
-      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      <main className="ml-72 p-8 text-gray-900">
-        {renderContent()}
+      {/* Mobile menu button */}
+      <div className="lg:hidden fixed top-4 left-4 z-50">
+        <button 
+          onClick={() => setSidebarOpen(!sidebarOpen)}
+          className="p-2 rounded-md bg-white shadow-md text-gray-600"
+        >
+          {sidebarOpen ? (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          ) : (
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+          )}
+        </button>
+      </div>
+      
+      {/* Sidebar */}
+      <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block`}>
+        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
+      </div>
+      
+      {/* Overlay for mobile sidebar */}
+      {sidebarOpen && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
+      
+      {/* Main content */}
+      <main className="pt-16 lg:pt-0 px-4 sm:px-6 lg:px-8 lg:ml-72">
+        <div className="max-w-7xl mx-auto py-6">
+          {renderContent()}
+        </div>
       </main>
-      <div className="fixed bottom-6 right-6 flex flex-col space-y-2">
+      
+      <div className="fixed bottom-6 right-6 flex flex-col space-y-2 z-30">
         <FloatingChatButton />
       </div>
       
@@ -184,51 +203,3 @@ function AppContent() {
     </div>
   );
 }
-
-function AuthenticatedApp() {
-  return (
-    <ProtectedRoute>
-      <AppContent />
-    </ProtectedRoute>
-  );
-}
-
-function PublicApp() {
-  return <LandingPage />;
-}
-
-function AppRouter() {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Carregando...</p>
-        </div>
-      </div>
-    );
-  }
-
-  return user ? <AuthenticatedApp /> : <PublicApp />;
-}
-
-function App() {
-  return (
-    <AuthProvider>
-      <Router>
-        <div className="min-h-screen bg-gray-50">
-          <Routes>
-            <Route path="/success" element={<Success />} />
-            <Route path="/cancel" element={<Cancel />} /> 
-            <Route path="/invite/:token" element={<InviteAccept />} />
-            <Route path="*" element={<AppRouter />} />
-          </Routes>
-        </div>
-      </Router>
-    </AuthProvider>
-  );
-}
-
-export default App;

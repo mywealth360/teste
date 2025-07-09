@@ -49,10 +49,10 @@ const wealthData = generateWealthData();
 
 export default function WealthEvolutionChart() {
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
+    <div className="p-6">
       <h2 className="text-xl font-semibold text-gray-800 mb-6">Evolução Patrimonial</h2>
       <div className="h-80">
-        <ResponsiveContainer width="100%" height="100%">
+        <ResponsiveContainer width="100%" height="100%" className="overflow-x-auto">
           <LineChart
             data={wealthData}
             margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
@@ -89,8 +89,8 @@ export default function WealthEvolutionChart() {
               dataKey="total" 
               name="Total"
               stroke="#10b981"
-              strokeWidth={3}
-              dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+              strokeWidth={2}
+              dot={{ fill: '#10b981', strokeWidth: 1, r: 3 }}
               activeDot={{ r: 6 }}
               activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2 }}
               name="Total"
@@ -99,32 +99,32 @@ export default function WealthEvolutionChart() {
               type="monotone"
               dataKey="investimentos"
               stroke="#3b82f6"
-              strokeWidth={2}
-              dot={{ fill: '#3b82f6', strokeWidth: 2, r: 3 }}
+              strokeWidth={1.5}
+              dot={{ fill: '#3b82f6', strokeWidth: 1, r: 2 }}
               name="Investimentos"
             />
             <Line
               type="monotone"
               dataKey="imoveis"
               stroke="#f59e0b"
-              strokeWidth={2}
-              dot={{ fill: '#f59e0b', strokeWidth: 2, r: 3 }}
+              strokeWidth={1.5}
+              dot={{ fill: '#f59e0b', strokeWidth: 1, r: 2 }}
               name="Imóveis"
             />
             <Line
               type="monotone"
               dataKey="contas"
               stroke="#8b5cf6"
-              strokeWidth={2}
-              dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 3 }}
+              strokeWidth={1.5}
+              dot={{ fill: '#8b5cf6', strokeWidth: 1, r: 2 }}
               name="Contas"
             />
             <Line
               type="monotone"
               dataKey="outros"
               stroke="#ec4899"
-              strokeWidth={2}
-              dot={{ fill: '#ec4899', strokeWidth: 2, r: 3 }}
+              strokeWidth={1.5}
+              dot={{ fill: '#ec4899', strokeWidth: 1, r: 2 }}
               name="Outros"
             />
           </LineChart>

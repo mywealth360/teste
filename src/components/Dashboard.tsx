@@ -29,10 +29,10 @@ import { useNavigate } from 'react-router-dom';
 // Quick Guide component
 const QuickGuide = () => {
   return (
-    <div className="bg-white rounded-2xl shadow-lg p-6">
+    <div className="bg-white rounded-xl shadow-md p-6">
       <h2 className="text-xl font-semibold text-gray-800 mb-4">Guia Rápido</h2>
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-xl border border-blue-200">
           <h3 className="font-medium text-blue-800 mb-2 flex items-center">
             <DollarSign className="h-4 w-4 mr-2" />
             Finanças
@@ -53,7 +53,7 @@ const QuickGuide = () => {
           </ul>
         </div>
         
-        <div className="bg-green-50 p-4 rounded-xl border border-green-100">
+        <div className="bg-white p-4 rounded-xl border border-green-200">
           <h3 className="font-medium text-green-800 mb-2 flex items-center">
             <Building className="h-4 w-4 mr-2" />
             Patrimônio
@@ -74,7 +74,7 @@ const QuickGuide = () => {
           </ul>
         </div>
         
-        <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+        <div className="bg-white p-4 rounded-xl border border-indigo-200">
           <h3 className="font-medium text-purple-800 mb-2 flex items-center">
             <Target className="h-4 w-4 mr-2" />
             Planejamento
@@ -145,12 +145,12 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
           <p className="text-gray-500 mt-1">Visão geral das suas finanças</p>
         </div>
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 self-end sm:self-auto">
           <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">
             <Calendar className="h-5 w-5" />
           </button>
@@ -161,7 +161,7 @@ export default function Dashboard() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         <div className="bg-green-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
@@ -204,13 +204,15 @@ export default function Dashboard() {
       <QuickGuide />
 
       {/* Wealth Evolution Chart */}
-      <WealthEvolutionChart />
+      <div className="bg-white rounded-xl shadow-md overflow-hidden">
+        <WealthEvolutionChart />
+      </div>
 
       {/* Asset Breakdown */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">Composição do Patrimônio</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" onClick={(e) => e.currentTarget === e.target && setActiveBreakdown(null)}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" onClick={(e) => e.currentTarget === e.target && setActiveBreakdown(null)}>
           <button
             onClick={() => navigate('/investments')}
             className={`p-4 rounded-xl border-2 transition-all ${
@@ -322,7 +324,7 @@ export default function Dashboard() {
         
         {/* Detailed breakdown */}
         {activeBreakdown && (
-          <div className="mt-6 bg-gray-50 rounded-xl p-4">
+          <div className="mt-6 bg-white border border-gray-200 rounded-xl p-4">
             <FinancialBreakdown type={activeBreakdown} />
           </div>
         )}
@@ -331,43 +333,31 @@ export default function Dashboard() {
     
 
       {/* Debt Overview */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="bg-white rounded-xl shadow-md p-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">Visão Geral de Dívidas</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-red-50 p-4 rounded-xl border border-red-100">
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="bg-red-100 p-2 rounded-lg">
-                <CreditCard className="h-5 w-5 text-red-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900">Dívida Total</h3>
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+          <div className="bg-white p-4 rounded-xl border border-red-200">
+            <div className="flex items-center space-x-3 mb-3">
+              <CreditCard className="h-5 w-5 text-red-600" />
+              <h3 className="font-semibold text-gray-800">Dívida Total</h3>
             </div>
             <p className="text-2xl font-bold text-red-600">{formatCurrency(dashboardData.totalDebt || 0)}</p>
             <p className="text-sm text-gray-500 mt-1">Pagamento: {formatCurrency(dashboardData.totalLoanPayments || 0)}/mês</p>
           </div>
           
-          <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="bg-orange-100 p-2 rounded-lg">
-                <FileText className="h-5 w-5 text-orange-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900">Contas Mensais</h3>
-              </div>
+          <div className="bg-white p-4 rounded-xl border border-orange-200">
+            <div className="flex items-center space-x-3 mb-3">
+              <FileText className="h-5 w-5 text-orange-600" />
+              <h3 className="font-semibold text-gray-800">Contas Mensais</h3>
             </div>
             <p className="text-2xl font-bold text-orange-600">{formatCurrency(dashboardData.totalBills || 0)}</p>
           </div>
           
-          <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="bg-indigo-100 p-2 rounded-lg">
-                <Landmark className="h-5 w-5 text-indigo-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900">Impostos</h3>
-              </div>
+          <div className="bg-white p-4 rounded-xl border border-indigo-200">
+            <div className="flex items-center space-x-3 mb-3">
+              <Landmark className="h-5 w-5 text-indigo-600" />
+              <h3 className="font-semibold text-gray-800">Impostos</h3>
             </div>
             <p className="text-2xl font-bold text-indigo-600">{formatCurrency(dashboardData.totalTaxes || 0)}</p>
             <button
@@ -380,49 +370,37 @@ export default function Dashboard() {
         </div>
         
         {activeBreakdown === 'taxes' && (
-          <div className="mt-6 bg-gray-50 rounded-xl p-4">
+          <div className="mt-6 bg-white border border-gray-200 rounded-xl p-4">
             <FinancialBreakdown type="taxes" />
           </div>
         )}
       </div>
 
       {/* Net Worth */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="bg-white rounded-xl shadow-md p-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">Patrimônio Líquido</h2>
         
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-green-50 p-4 rounded-xl border border-green-100">
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="bg-green-100 p-2 rounded-lg">
-                <TrendingUp className="h-5 w-5 text-green-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900">Total de Ativos</h3>
-              </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+          <div className="bg-white p-4 rounded-xl border border-green-200">
+            <div className="flex items-center space-x-3 mb-3">
+              <TrendingUp className="h-5 w-5 text-green-600" />
+              <h3 className="font-semibold text-gray-800">Total de Ativos</h3>
             </div>
             <p className="text-2xl font-bold text-green-600">{formatCurrency(dashboardData.totalAssets || 0)}</p>
           </div>
           
-          <div className="bg-red-50 p-4 rounded-xl border border-red-100">
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="bg-red-100 p-2 rounded-lg">
-                <TrendingDown className="h-5 w-5 text-red-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900">Total de Passivos</h3>
-              </div>
+          <div className="bg-white p-4 rounded-xl border border-red-200">
+            <div className="flex items-center space-x-3 mb-3">
+              <TrendingDown className="h-5 w-5 text-red-600" />
+              <h3 className="font-semibold text-gray-800">Total de Passivos</h3>
             </div>
             <p className="text-2xl font-bold text-red-600">{formatCurrency(dashboardData.totalDebt || 0)}</p>
           </div>
           
-          <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-            <div className="flex items-center space-x-3 mb-2">
-              <div className="bg-blue-100 p-2 rounded-lg">
-                <DollarSign className="h-5 w-5 text-blue-600" />
-              </div>
-              <div className="flex-1">
-                <h3 className="font-medium text-gray-900">Patrimônio Líquido</h3>
-              </div>
+          <div className="bg-white p-4 rounded-xl border border-blue-200">
+            <div className="flex items-center space-x-3 mb-3">
+              <DollarSign className="h-5 w-5 text-blue-600" />
+              <h3 className="font-semibold text-gray-800">Patrimônio Líquido</h3>
             </div>
             <p className="text-2xl font-bold text-blue-600">{formatCurrency(dashboardData.netWorth || 0)}</p>
             <button
@@ -435,7 +413,7 @@ export default function Dashboard() {
         </div>
         
         {activeBreakdown === 'balance' && (
-          <div className="mt-6 bg-gray-50 rounded-xl p-4">
+          <div className="mt-6 bg-white border border-gray-200 rounded-xl p-4">
             <FinancialBreakdown type="balance" />
           </div>
         )}

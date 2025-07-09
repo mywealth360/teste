@@ -37,7 +37,7 @@ export default function HeroSection({ onRegisterClick }: HeroSectionProps) {
               <ArrowRight className="h-5 w-5 ml-2" />
             </SubscriptionButton>
             
-            <Button className="border border-gray-300 text-gray-700 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center space-x-2">
+            <Button className="border border-gray-300 text-gray-700 px-8 py-4 rounded-xl text-lg font-semibold hover:bg-gray-50 transition-all duration-200 flex items-center space-x-2 shadow-sm">
               <MessageCircle className="h-5 w-5" />
               <span>Ver Demo</span>
             </Button>
