@@ -56,42 +56,193 @@ export default function ExpenseManagement() {
       setLoading(true);
       setError(null);
 
-      // Fetch from all relevant tables
-      const tables = [
-        'transactions',
-        'loans',
-        'bills',
-        'retirement_plans',
-        'real_estate_expenses',
-        'vehicle_expenses',
-        'taxes',
-        'employee_expenses',
-        'financial_goals'
-      ];
-
+      // Fetch from all relevant expense tables
       const allExpenses: ExpenseItem[] = [];
 
-      for (const table of tables) {
-        const { data, error } = await supabase
-          .from(table)
-          .select('*')
-          .eq('user_id', user.id);
+      // Fetch transactions (expenses only)
+      const { data: transactions, error: transactionsError } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('type', 'expense');
 
-        if (error) throw error;
+      if (transactionsError) throw transactionsError;
 
-        if (data) {
-          const mappedData = data.map(item => ({
+      if (transactions) {
+        const mappedTransactions = transactions.map(item => ({
+          id: item.id,
+          type: 'transaction' as const,
+          description: item.description || 'Sem descrição',
+          amount: Math.abs(item.amount || 0),
+          category: item.category || 'Geral',
+          date: item.date || item.created_at || new Date().toISOString(),
+          source: 'transactions',
+          recurring: item.is_recurring || false
+        }));
+        allExpenses.push(...mappedTransactions);
+      }
+
+      // Fetch loans
+      const { data: loans, error: loansError } = await supabase
+        .from('loans')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (loansError) throw loansError;
+
+      if (loans) {
+        const mappedLoans = loans.map(item => ({
+          id: item.id,
+          type: 'loan' as const,
+          description: `${item.type} - ${item.bank}`,
+          amount: Math.abs(item.monthly_payment || 0),
+          category: item.type || 'Empréstimo',
+          date: item.start_date || item.created_at || new Date().toISOString(),
+          source: 'loans',
+          recurring: true
+        }));
+        allExpenses.push(...mappedLoans);
+      }
+
+      // Fetch bills
+      const { data: bills, error: billsError } = await supabase
+        .from('bills')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (billsError) throw billsError;
+
+      if (bills) {
+        const mappedBills = bills.map(item => ({
+          id: item.id,
+          type: 'bill' as const,
+          description: `${item.name} - ${item.company}`,
+          amount: Math.abs(item.amount || 0),
+          category: item.category || 'Conta',
+          date: item.next_due || item.created_at || new Date().toISOString(),
+          source: 'bills',
+          recurring: item.is_recurring || false
+        }));
+        allExpenses.push(...mappedBills);
+      }
+
+      // Fetch retirement plans
+      const { data: retirement, error: retirementError } = await supabase
+        .from('retirement_plans')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (retirementError) throw retirementError;
+
+      if (retirement) {
+        const mappedRetirement = retirement.map(item => ({
+          id: item.id,
+          type: 'retirement' as const,
+          description: `${item.name} - ${item.company}`,
+          amount: Math.abs(item.monthly_contribution || 0),
+          category: item.type || 'Aposentadoria',
+          date: item.start_date || item.created_at || new Date().toISOString(),
+          source: 'retirement_plans',
+          recurring: true
+        }));
+        allExpenses.push(...mappedRetirement);
+      }
+
+      // Fetch real estate expenses (from real_estate table)
+      const { data: realEstate, error: realEstateError } = await supabase
+        .from('real_estate')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (realEstateError) throw realEstateError;
+
+      if (realEstate) {
+        const mappedRealEstate = realEstate.map(item => ({
+          id: item.id,
+          type: 'real_estate_expense' as const,
+          description: `${item.type} - ${item.address}`,
+          amount: Math.abs(item.expenses || 0),
+          category: item.type || 'Imóvel',
+          date: item.purchase_date || item.created_at || new Date().toISOString(),
+          source: 'real_estate',
+          recurring: false
+        }));
+        allExpenses.push(...mappedRealEstate);
+      }
+
+      // Fetch vehicle expenses (from vehicles table)
+      const { data: vehicles, error: vehiclesError } = await supabase
+        .from('vehicles')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (vehiclesError) throw vehiclesError;
+
+      if (vehicles) {
+        const mappedVehicles = vehicles.map(item => ({
+          id: item.id,
+          type: 'vehicle_expense' as const,
+          description: `${item.brand} ${item.model} (${item.year})`,
+          amount: Math.abs(item.monthly_expenses || 0),
+          category: item.type || 'Veículo',
+          date: item.purchase_date || item.created_at || new Date().toISOString(),
+          source: 'vehicles',
+          recurring: true
+        }));
+        allExpenses.push(...mappedVehicles);
+      }
+
+      // Fetch employee expenses (from employees table)
+      const { data: employees, error: employeesError } = await supabase
+        .from('employees')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (employeesError) throw employeesError;
+
+      if (employees) {
+        const mappedEmployees = employees.map(item => ({
+          id: item.id,
+          type: 'employee_expense' as const,
+          description: `${item.name} - ${item.role}`,
+          amount: Math.abs(item.salary || 0),
+          category: 'Funcionário',
+          date: item.hiring_date || item.created_at || new Date().toISOString(),
+          source: 'employees',
+          recurring: true
+        }));
+        allExpenses.push(...mappedEmployees);
+      }
+
+      // Fetch financial goals (as planned expenses)
+      const { data: goals, error: goalsError } = await supabase
+        .from('financial_goals')
+        .select('*')
+        .eq('user_id', user.id);
+
+      if (goalsError) throw goalsError;
+
+      if (goals) {
+        const mappedGoals = goals.map(item => {
+          // Calculate monthly contribution needed
+          const targetDate = new Date(item.target_date);
+          const now = new Date();
+          const monthsLeft = Math.max(1, Math.ceil((targetDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24 * 30)));
+          const remainingAmount = (item.target_amount || 0) - (item.current_amount || 0);
+          const monthlyContribution = Math.max(0, remainingAmount / monthsLeft);
+
+          return {
             id: item.id,
-            type: getTypeFromTable(table),
-            description: item.description || item.name || item.title || 'Sem descrição',
-            amount: Math.abs(item.amount || item.value || item.monthly_payment || 0),
-            category: item.category || 'Geral',
-            date: item.date || item.created_at || new Date().toISOString(),
-            source: table,
-            recurring: item.recurring || false
-          }));
-          allExpenses.push(...mappedData);
-        }
+            type: 'financial_goal' as const,
+            description: item.name,
+            amount: monthlyContribution,
+            category: item.category || 'Meta Financeira',
+            date: item.target_date || item.created_at || new Date().toISOString(),
+            source: 'financial_goals',
+            recurring: true
+          };
+        });
+        allExpenses.push(...mappedGoals);
       }
 
       setExpenses(allExpenses);
@@ -101,21 +252,6 @@ export default function ExpenseManagement() {
     } finally {
       setLoading(false);
     }
-  };
-
-  const getTypeFromTable = (table: string): ExpenseItem['type'] => {
-    const mapping: Record<string, ExpenseItem['type']> = {
-      'transactions': 'transaction',
-      'loans': 'loan',
-      'bills': 'bill',
-      'retirement_plans': 'retirement',
-      'real_estate_expenses': 'real_estate_expense',
-      'vehicle_expenses': 'vehicle_expense',
-      'taxes': 'tax',
-      'employee_expenses': 'employee_expense',
-      'financial_goals': 'financial_goal'
-    };
-    return mapping[table] || 'transaction';
   };
 
   const getTypeIcon = (type: string) => {
@@ -141,7 +277,6 @@ export default function ExpenseManagement() {
       case 'retirement': return 'bg-blue-100 text-blue-500';
       case 'real_estate_expense': return 'bg-purple-100 text-purple-500';
       case 'vehicle_expense': return 'bg-teal-100 text-teal-500';
-      case 'tax': return 'bg-indigo-100 text-indigo-500';
       case 'employee_expense': return 'bg-pink-100 text-pink-500';
       case 'financial_goal': return 'bg-indigo-100 text-indigo-500';
       default: return 'bg-gray-100 text-gray-500';
@@ -156,7 +291,6 @@ export default function ExpenseManagement() {
       'retirement': 'Aposentadoria',
       'real_estate_expense': 'Imóvel',
       'vehicle_expense': 'Veículo',
-      'tax': 'Imposto',
       'employee_expense': 'Funcionário',
       'financial_goal': 'Meta Financeira'
     };
@@ -290,7 +424,6 @@ export default function ExpenseManagement() {
               <option value="retirement">Aposentadoria</option>
               <option value="real_estate_expense">Imóveis</option>
               <option value="vehicle_expense">Veículos</option>
-              <option value="tax">Impostos</option>
               <option value="employee_expense">Funcionários</option>
               <option value="financial_goal">Metas</option>
             </select>
