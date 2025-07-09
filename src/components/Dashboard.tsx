@@ -163,51 +163,56 @@ export default function Dashboard() {
      // Calculate dividend income
      const dividendIncome = dashboardData.totalInvestmentIncome || 0;
      
-     // Calculate other income (from income sources)
-    const otherIncome = (dashboardData.totalMonthlyIncome || 0) - rentalIncome - dividendIncome - transactionIncome;
+      // Calculate transaction income
+      const transactionIncome = dashboardData.transactions?.data
+        .filter(transaction => transaction.type === 'income')
+        .reduce((sum, transaction) => sum + transaction.amount, 0) || 0;
+      
+      // Calculate other income (from income sources)
+      const otherIncome = (dashboardData.totalMonthlyIncome || 0) - rentalIncome - dividendIncome - transactionIncome;
+      
+      // Create categories array
+      const totalIncome = dashboardData.totalMonthlyIncome || 0;
+      
+      const predefinedCategories = [
+        { 
+          category: 'Invest', 
+          amount: otherIncome > 0 ? otherIncome * 0.77 : 0, 
+          percentage: totalIncome > 0 ? (otherIncome * 0.77 / totalIncome) * 100 : 0 
+        },
+        { 
+          category: 'Carga', 
+          amount: otherIncome > 0 ? otherIncome * 0.23 : 0, 
+          percentage: totalIncome > 0 ? (otherIncome * 0.23 / totalIncome) * 100 : 0 
+        }
+      ];
+      
+      // Add rental income if it exists
+      if (rentalIncome > 0) {
+        predefinedCategories.push({
+          category: 'Aluguel',
+          amount: rentalIncome,
+          percentage: totalIncome > 0 ? (rentalIncome / totalIncome) * 100 : 0
+        });
+      }
+      
+      // Add dividend income if it exists
+      if (dividendIncome > 0) {
+        predefinedCategories.push({
+          category: 'Dividendos',
+          amount: dividendIncome,
+          percentage: totalIncome > 0 ? (dividendIncome / totalIncome) * 100 : 0
+        });
+      }
      
-     // Create categories array
-     const totalIncome = dashboardData.totalMonthlyIncome || 0;
-     
-     const predefinedCategories = [
-       { 
-         category: 'Invest', 
-         amount: otherIncome > 0 ? otherIncome * 0.77 : 0, 
-         percentage: totalIncome > 0 ? (otherIncome * 0.77 / totalIncome) * 100 : 0 
-       },
-       { 
-         category: 'Carga', 
-         amount: otherIncome > 0 ? otherIncome * 0.23 : 0, 
-         percentage: totalIncome > 0 ? (otherIncome * 0.23 / totalIncome) * 100 : 0 
-       }
-     ];
-     
-     // Add rental income if it exists
-     if (rentalIncome > 0) {
-       predefinedCategories.push({
-         category: 'Aluguel',
-         amount: rentalIncome,
-         percentage: totalIncome > 0 ? (rentalIncome / totalIncome) * 100 : 0
-       });
-     }
-     
-     // Add dividend income if it exists
-     if (dividendIncome > 0) {
-       predefinedCategories.push({
-         category: 'Dividendos',
-         amount: dividendIncome,
-         percentage: totalIncome > 0 ? (dividendIncome / totalIncome) * 100 : 0
-       });
-     }
-    
-    // Add transaction income if it exists
-    if (transactionIncome > 0) {
-      predefinedCategories.push({
-        category: 'Transações',
-        amount: transactionIncome,
-        percentage: totalIncome > 0 ? (transactionIncome / totalIncome) * 100 : 0
-      });
-    }
+      // Add transaction income if it exists
+      if (transactionIncome > 0) {
+        predefinedCategories.push({
+          category: 'Transações',
+          amount: transactionIncome,
+          percentage: totalIncome > 0 ? (transactionIncome / totalIncome) * 100 : 0
+        });
+      }
       
       setIncomeCategories(predefinedCategories);
     } catch (err) {
@@ -241,11 +246,6 @@ export default function Dashboard() {
       'Funcionários': 'bg-pink-500',
       'Impostos': 'bg-yellow-500'
     };
-    
-    // Calculate transaction income
-    const transactionIncome = dashboardData.transactions?.data
-      .filter(transaction => transaction.type === 'income')
-      .reduce((sum, transaction) => sum + transaction.amount, 0) || 0;
     
     return colorMap[category] || 'bg-gray-500';
   };
