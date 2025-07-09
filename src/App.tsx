@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import { useAuth } from './contexts/AuthContext';
+import { useAuth } from './contexts/AuthContext'; 
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 import SubscriptionPage from './components/SubscriptionPage';
@@ -163,6 +163,7 @@ function AppContent() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      {/* Top right profile icon will be rendered inside the Sidebar component */}
       <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       <main className="ml-72 p-8 text-gray-900">
         {renderContent()}

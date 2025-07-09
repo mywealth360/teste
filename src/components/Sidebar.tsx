@@ -85,12 +85,13 @@ const otherSections = [
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const { user, signOut, isAdmin, userPlan, isInTrial, trialDaysLeft } = useAuth();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [restrictedFeature, setRestrictedFeature] = useState<string | undefined>(undefined);
   const [expandedSections, setExpandedSections] = useState({
-    revenue: true,
-    expense: true,
-    patrimony: true,
-    other: true
+    revenue: false,
+    expense: false,
+    patrimony: false,
+    other: false
   });
 
   const handleSignOut = async () => {
@@ -162,9 +163,10 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   };
 
   return (
-    <div className="w-72 bg-white shadow-xl border-r border-gray-100 h-screen fixed left-0 top-0 z-30 overflow-y-auto flex flex-col">
+    <>
+    <div className="w-72 bg-white shadow-xl border-r border-gray-100 h-screen fixed left-0 top-0 z-30 overflow-y-auto">
       <div className="p-2 border-b border-gray-100">
-        <div className="flex flex-col items-center justify-center py-4">
+        <div className="flex items-center justify-between py-4 px-2">
           <h1 className="text-xl font-bold text-blue-600">PROSPERA.AI</h1>
           <p className="text-xs text-gray-500">Gestão Financeira Familiar</p>
         </div>
@@ -286,9 +288,22 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           {renderSectionItems(otherSections, expandedSections.other)}
         </div>
       </nav>
+    </div>
 
-      {/* Subscription Status - moved to bottom */}
-      <div className="p-4 border-t border-gray-100 mt-auto">
+    {/* Profile icon in the top right corner */}
+    <div className="fixed top-4 right-4 z-40">
+      <button 
+        onClick={() => setShowProfileDropdown(!showProfileDropdown)}
+        className="bg-white p-2 rounded-full shadow-md hover:shadow-lg transition-all"
+      >
+        <div className={`w-8 h-8 ${isAdmin ? 'bg-red-500' : 'bg-gray-200'} rounded-full flex items-center justify-center`}>
+          {isAdmin ? <Crown className="h-4 w-4 text-white" /> : <User className="h-4 w-4 text-white" />}
+        </div>
+      </button>
+      
+      {/* Profile dropdown */}
+      {showProfileDropdown && (
+        <div className="absolute top-12 right-0 bg-white rounded-xl shadow-xl border border-gray-100 w-64 overflow-hidden">
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-xl text-white mb-4">
           <div className="flex items-center justify-between">
             <div className="flex-1 cursor-pointer" onClick={() => setActiveTab('subscription')}>
@@ -311,10 +326,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           </div>
         </div>
         
-        <div className="flex items-center space-x-3 mb-3">
-          <div className={`w-8 h-8 ${isAdmin ? 'bg-red-500' : 'bg-gray-200'} rounded-full flex items-center justify-center`}>
-            {isAdmin ? <Crown className="h-4 w-4 text-white" /> : <User className="h-4 w-4 text-white" />}
-          </div>
+        <div className="mb-3 flex items-center space-x-3">
           <div className="flex-1 min-w-0">
             <p className="text-sm font-medium text-gray-800 truncate">
               {user?.email}
@@ -331,7 +343,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
             </div>
           </div>
         </div>
-        <div className="space-y-2">
+        <div className="space-y-2 mt-3">
           <button
             onClick={() => setActiveTab('profile')}
             className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
@@ -377,7 +389,9 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
             <span>Sair</span>
           </button>
         </div>
-      </div>
+        </div>
+      )}
+    </div>
       
       {/* Modal de Upgrade */}
       <UpgradeModal 
@@ -385,6 +399,6 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         onClose={() => setShowUpgradeModal(false)}
         featureName={restrictedFeature}
       />
-    </div>
+    </>
   );
 }

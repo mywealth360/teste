@@ -13,17 +13,20 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
     <header className="fixed top-0 w-full bg-white/95 backdrop-blur-sm border-b border-gray-100 z-40">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
+          {/* Left side - Logo */}
           <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-blue-600">MyWealth 360</h1>
+            <h1 className="text-2xl font-bold text-blue-600">PROSPERA.AI</h1>
             <p className="text-sm text-gray-500 ml-2">Gestão Financeira Familiar</p>
           </div>
           
+          {/* Center - Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <Link to="#features" className="text-gray-600 hover:text-gray-800 transition-colors">Recursos</Link>
             <Link to="#pricing" className="text-gray-600 hover:text-gray-800 transition-colors">Preços</Link>
             <Link to="#testimonials" className="text-gray-600 hover:text-gray-800 transition-colors">Depoimentos</Link>
           </nav>
 
+          {/* Right side - Auth buttons */}
           <div className="flex items-center space-x-4">
             <button
               onClick={onLoginClick}
