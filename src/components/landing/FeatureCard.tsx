@@ -13,8 +13,8 @@ export default function FeatureCard({ icon: Icon, title, description, color }: F
       <div className={`w-12 h-12 bg-gradient-to-r ${color} rounded-xl flex items-center justify-center mb-6`}>
         <Icon className="h-6 w-6 text-white" />
       </div>
-      <h3 className="text-xl font-semibold text-gray-900 mb-3">{title}</h3>
-      <p className="text-gray-600 leading-relaxed">{description}</p>
+      <h3 className="text-xl font-semibold text-gray-800 mb-3">{title}</h3>
+      <p className="text-gray-700 leading-relaxed">{description}</p>
     </div>
   );
 }

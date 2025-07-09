@@ -18,12 +18,12 @@ export default function HeroSection({ onRegisterClick }: HeroSectionProps) {
             <span>Teste Grátis por 7 Dias • Cancele quando quiser</span>
           </div>
           
-          <h1 className="text-5xl md:text-7xl font-bold text-gray-900 mb-6">
+          <h1 className="text-5xl md:text-7xl font-bold text-gray-800 mb-6">
             Controle Patrimonial
             <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Familiar Inteligente</span>
           </h1>
           
-          <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto leading-relaxed">
+          <p className="text-xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
             A primeira plataforma de gestão patrimonial com IA que integra receitas, despesas e ativos para maximizar seu patrimônio e acelerar o crescimento da sua riqueza.
           </p>
           
@@ -43,7 +43,7 @@ export default function HeroSection({ onRegisterClick }: HeroSectionProps) {
             </Button>
           </div>
           
-          <div className="mt-12 flex items-center justify-center space-x-8 text-sm text-gray-500">
+          <div className="mt-12 flex items-center justify-center space-x-8 text-sm text-gray-600">
             <div className="flex items-center space-x-2">
               <CheckCircle className="h-4 w-4 text-green-500" />
               <span>7 dias grátis, sem cobranças</span>

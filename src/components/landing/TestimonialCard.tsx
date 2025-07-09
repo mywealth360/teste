@@ -16,10 +16,10 @@ export default function TestimonialCard({ name, role, content, rating }: Testimo
           <Star key={i} className="h-5 w-5 text-yellow-400 fill-current" />
         ))}
       </div>
-      <p className="text-gray-600 mb-6 leading-relaxed">"{content}"</p>
+      <p className="text-gray-700 mb-6 leading-relaxed">"{content}"</p>
       <div>
-        <div className="font-semibold text-gray-900">{name}</div>
-        <div className="text-gray-500 text-sm">{role}</div>
+        <div className="font-semibold text-gray-800">{name}</div>
+        <div className="text-gray-600 text-sm">{role}</div>
       </div>
     </div>
   );

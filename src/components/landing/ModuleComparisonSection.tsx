@@ -21,7 +21,7 @@ export default function ModuleComparisonSection() {
                 <th className="py-4 px-6 text-left text-gray-500 font-medium">Módulo</th>
                 <th className="py-4 px-6 text-center text-gray-500 font-medium">Starter</th>
                 <th className="py-4 px-6 text-center text-gray-500 font-medium">Family</th>
-              </tr> 
+              </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {[
@@ -46,7 +46,7 @@ export default function ModuleComparisonSection() {
                   <td className="py-4 px-6">
                     <div className="flex items-center space-x-3">
                       <module.icon className="h-5 w-5 text-gray-500" />
-                      <span className="font-medium text-gray-800">{module.name}</span>
+                      <span className="font-medium text-gray-900">{module.name}</span>
                     </div>
                   </td>
                   <td className="py-4 px-6 text-center">

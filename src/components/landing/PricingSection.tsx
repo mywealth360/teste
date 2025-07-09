@@ -95,7 +95,7 @@ export default function PricingSection() {
                 <p className="text-gray-500 mt-2">{plan.description}</p>
                 <p className="text-3xl mt-4 font-bold">{plan.price}<span className="text-sm text-gray-500">{plan.period}</span></p>
                 {plan.name === 'Starter' && (
-                  <div className="mt-2 text-green-600 text-sm flex items-center">
+                  <div className="mt-2 text-green-700 text-sm flex items-center">
                     <Calendar className="h-4 w-4 mr-1" />
                     <span>7 dias grátis, depois {plan.price}/mês</span>
                   </div>
@@ -107,7 +107,7 @@ export default function PricingSection() {
                   {plan.features.map((feature, idx) => (
                     <li key={idx} className="flex items-start">
                       <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                      <span>{feature}</span>
+                      <span className="text-gray-800">{feature}</span>
                     </li>
                   ))}
                 </ul>
@@ -117,7 +117,7 @@ export default function PricingSection() {
                     <h4 className="font-medium text-gray-700 mb-3">Módulos bloqueados:</h4>
                     <div className="grid grid-cols-2 gap-2">
                       {plan.restrictedModules.map((module, idx) => (
-                        <div key={idx} className="flex items-center text-gray-400">
+                        <div key={idx} className="flex items-center text-gray-600">
                           <Lock className="h-4 w-4 mr-2" /> 
                           <span className="text-sm">{module.name}</span>
                         </div>
@@ -139,9 +139,10 @@ export default function PricingSection() {
                   {plan.name === 'Starter' ? 'Começar Gratuitamente' : 'Assinar Agora'}
                 </button>
                 <p className="text-xs text-center text-gray-500 mt-2">
-                  {plan.name === 'Starter' 
+                  <span className="text-gray-600">{plan.name === 'Starter' 
                     ? 'Cartão necessário. Sem cobrança nos primeiros 7 dias.'
                     : 'Inclui 7 dias de teste grátis'}
+                  </span>
                 </p>
               </div>
             </div>
@@ -149,7 +150,7 @@ export default function PricingSection() {
         </div>
         
         <div className="mt-12 max-w-3xl mx-auto bg-blue-50 p-6 rounded-xl">
-          <div className="flex items-center justify-center space-x-4 text-blue-700">
+          <div className="flex items-center justify-center space-x-4 text-blue-800">
             <div className="flex items-center">
               <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
               <span>7 dias grátis</span>
