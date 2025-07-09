@@ -425,18 +425,20 @@ export default function Transactions() {
                         {transaction.type === 'income' ? '+' : '-'}R$ {transaction.amount.toLocaleString('pt-BR')}
                       </span>
                       
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center space-x-2 ml-4">
                         <button 
                           onClick={() => handleEditTransaction(transaction)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200 flex items-center"
                         >
                           <Edit className="h-4 w-4" />
+                          <span className="ml-1 text-sm">Editar</span>
                         </button>
                         <button 
                           onClick={() => handleDeleteTransaction(transaction.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200 flex items-center"
                         >
                           <Trash2 className="h-4 w-4" />
+                          <span className="ml-1 text-sm">Excluir</span>
                         </button>
                       </div>
                     </div>

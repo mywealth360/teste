@@ -71,6 +71,7 @@ export default function PatrimonyManagement() {
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [exoticAssets, setExoticAssets] = useState<ExoticAsset[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showCharts, setShowCharts] = useState(true);
 
   useEffect(() => {
     if (user) {
@@ -133,13 +134,77 @@ export default function PatrimonyManagement() {
   return (
     <div className="space-y-6">
       <div className="bg-white rounded-lg shadow-sm p-6">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-gray-900">Gestão de Patrimônio</h2>
           <div className="text-right">
             <p className="text-sm text-gray-500">Patrimônio Total</p>
             <p className="text-2xl font-bold text-green-600">{formatCurrency(calculateTotalValue())}</p>
           </div>
         </div>
+        
+        {/* Asset Distribution Chart */}
+        {showCharts && (
+          <div className="mb-6 border-t border-gray-100 pt-4">
+            <h3 className="text-lg font-medium text-gray-800 mb-4">Distribuição de Patrimônio</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Pie Chart */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="relative h-64">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-48 h-48 rounded-full border-8 border-blue-500 relative">
+                      <div className="absolute top-0 left-0 w-full h-full rounded-full border-8 border-green-500" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 50%, 0 50%)' }}></div>
+                      <div className="absolute top-0 left-0 w-full h-full rounded-full border-8 border-purple-500" style={{ clipPath: 'polygon(100% 0, 100% 100%, 75% 100%, 75% 50%, 100% 50%)' }}></div>
+                      <div className="absolute top-0 left-0 w-full h-full rounded-full border-8 border-orange-500" style={{ clipPath: 'polygon(0 50%, 75% 50%, 75% 100%, 0 100%)' }}></div>
+                    </div>
+                  </div>
+                  <div className="absolute bottom-0 w-full">
+                    <div className="flex flex-wrap justify-center gap-4">
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
+                        <span className="text-sm text-gray-600">Investimentos (40%)</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
+                        <span className="text-sm text-gray-600">Imóveis (35%)</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
+                        <span className="text-sm text-gray-600">Veículos (15%)</span>
+                      </div>
+                      <div className="flex items-center">
+                        <div className="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
+                        <span className="text-sm text-gray-600">Outros (10%)</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              {/* Bar Chart */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <h4 className="text-base font-medium text-gray-700 mb-4">Evolução Patrimonial</h4>
+                <div className="h-48 relative">
+                  <div className="absolute inset-x-0 bottom-0 h-px bg-gray-200"></div>
+                  <div className="absolute inset-y-0 left-0 w-px bg-gray-200"></div>
+                  
+                  {/* Bars */}
+                  <div className="absolute bottom-0 left-[10%] w-8 h-24 bg-blue-500 rounded-t-lg"></div>
+                  <div className="absolute bottom-0 left-[30%] w-8 h-28 bg-blue-500 rounded-t-lg"></div>
+                  <div className="absolute bottom-0 left-[50%] w-8 h-32 bg-blue-500 rounded-t-lg"></div>
+                  <div className="absolute bottom-0 left-[70%] w-8 h-36 bg-blue-500 rounded-t-lg"></div>
+                  <div className="absolute bottom-0 left-[90%] w-8 h-40 bg-blue-500 rounded-t-lg"></div>
+                  
+                  {/* X-axis labels */}
+                  <div className="absolute bottom-[-20px] left-[10%] text-xs text-gray-500">2021</div>
+                  <div className="absolute bottom-[-20px] left-[30%] text-xs text-gray-500">2022</div>
+                  <div className="absolute bottom-[-20px] left-[50%] text-xs text-gray-500">2023</div>
+                  <div className="absolute bottom-[-20px] left-[70%] text-xs text-gray-500">2024</div>
+                  <div className="absolute bottom-[-20px] left-[90%] text-xs text-gray-500">2025</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
 
         <div className="border-b border-gray-200 mb-6">
           <nav className="-mb-px flex space-x-8">
@@ -172,10 +237,14 @@ export default function PatrimonyManagement() {
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">{item.address}</h3>
                       <p className="text-sm text-gray-500 capitalize">{item.type}</p>
-                      <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+                      <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
                         <div>
                           <span className="text-gray-500">Valor Atual:</span>
                           <span className="ml-2 font-medium">{formatCurrency(item.current_value || item.purchase_price)}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Compra:</span>
+                          <span className="ml-2 font-medium">{formatCurrency(item.purchase_price)}</span>
                         </div>
                         {item.monthly_rent && (
                           <div>
@@ -207,10 +276,14 @@ export default function PatrimonyManagement() {
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">{item.name}</h3>
                       <p className="text-sm text-gray-500 capitalize">{item.type} - {item.broker}</p>
-                      <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+                      <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
                         <div>
                           <span className="text-gray-500">Valor Atual:</span>
                           <span className="ml-2 font-medium">{formatCurrency((item.current_price || item.purchase_price || 0) * (item.quantity || 1))}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Rentabilidade:</span>
+                          <span className="ml-2 font-medium text-green-600">+{(item.interest_rate || 5).toFixed(2)}%</span>
                         </div>
                         {item.monthly_income && (
                           <div>
@@ -242,10 +315,14 @@ export default function PatrimonyManagement() {
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">{item.brand} {item.model}</h3>
                       <p className="text-sm text-gray-500 capitalize">{item.type} - {item.year}</p>
-                      <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+                      <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
                         <div>
                           <span className="text-gray-500">Valor Atual:</span>
                           <span className="ml-2 font-medium">{formatCurrency(item.current_value || item.purchase_price)}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Depreciação:</span>
+                          <span className="ml-2 font-medium text-red-600">-{item.depreciation_rate}%/ano</span>
                         </div>
                         <div>
                           <span className="text-gray-500">Quilometragem:</span>
@@ -275,10 +352,16 @@ export default function PatrimonyManagement() {
                     <div className="flex-1">
                       <h3 className="font-medium text-gray-900">{item.name}</h3>
                       <p className="text-sm text-gray-500 capitalize">{item.category}</p>
-                      <div className="mt-2 grid grid-cols-2 gap-4 text-sm">
+                      <div className="mt-2 grid grid-cols-3 gap-4 text-sm">
                         <div>
                           <span className="text-gray-500">Valor Atual:</span>
                           <span className="ml-2 font-medium">{formatCurrency(item.current_value || item.purchase_price)}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-500">Valorização:</span>
+                          <span className="ml-2 font-medium text-green-600">
+                            +{(((item.current_value || item.purchase_price) / item.purchase_price - 1) * 100).toFixed(1)}%
+                          </span>
                         </div>
                         <div>
                           <span className="text-gray-500">Condição:</span>
