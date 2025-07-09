@@ -173,8 +173,8 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Renda Mensal */}
           <div 
-            onClick={() => setSelectedBreakdown('income')}
-            className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl p-8 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105"
+            onClick={() => setSelectedBreakdown('income')} 
+            className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl p-6 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="relative z-10">
@@ -182,12 +182,13 @@ export default function Dashboard() {
                 <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
                   <TrendingUp className="h-8 w-8" />
                 </div>
-                <TrendingUp className="h-6 w-6 opacity-60" />
+                <DollarSign className="h-6 w-6 opacity-60" />
               </div>
               <div>
                 <p className="text-green-100 text-sm font-medium mb-2">Renda Mensal</p>
-                <p className="text-4xl font-bold mb-2 text-white">R$ {totalMonthlyIncomeComplete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                {/* Breakdown of income sources */}
+                <p className="text-4xl font-bold mb-2 text-white">
+                  R$ {totalMonthlyIncomeComplete.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
                 <div className="flex items-center space-x-2">
                   <div className="bg-white/20 px-3 py-1 rounded-full flex items-center space-x-1">
                     <span className="text-sm text-white">Todas as fontes</span>
@@ -196,17 +197,17 @@ export default function Dashboard() {
                 <div className="flex flex-wrap gap-1 mt-2">
                   {totalMonthlyIncome > 0 && (
                     <div className="bg-green-500/30 px-2 py-0.5 rounded-full text-xs text-white">
-                      Receitas: {((totalMonthlyIncome / totalMonthlyIncomeComplete) * 100).toFixed(0)}%
+                      Receitas: {totalMonthlyIncomeComplete > 0 ? ((totalMonthlyIncome / totalMonthlyIncomeComplete) * 100).toFixed(0) : '0'}%
                     </div>
                   )}
                   {totalInvestmentIncome > 0 && (
                     <div className="bg-blue-500/30 px-2 py-0.5 rounded-full text-xs text-white">
-                      Investimentos: {((totalInvestmentIncome / totalMonthlyIncomeComplete) * 100).toFixed(0)}%
+                      Investimentos: {totalMonthlyIncomeComplete > 0 ? ((totalInvestmentIncome / totalMonthlyIncomeComplete) * 100).toFixed(0) : '0'}%
                     </div>
                   )}
                   {totalRealEstateIncome > 0 && (
                     <div className="bg-purple-500/30 px-2 py-0.5 rounded-full text-xs text-white">
-                      Imóveis: {((totalRealEstateIncome / totalMonthlyIncomeComplete) * 100).toFixed(0)}%
+                      Imóveis: {totalMonthlyIncomeComplete > 0 ? ((totalRealEstateIncome / totalMonthlyIncomeComplete) * 100).toFixed(0) : '0'}%
                     </div>
                   )}
                 </div>
@@ -217,7 +218,7 @@ export default function Dashboard() {
           {/* Gastos Mensais */}
           <div 
             onClick={() => setSelectedBreakdown('expenses')}
-            className="group relative overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 rounded-3xl p-8 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105"
+            className="group relative overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 rounded-3xl p-6 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="relative z-10">
@@ -225,14 +226,24 @@ export default function Dashboard() {
                 <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
                   <TrendingDown className="h-8 w-8" />
                 </div>
-                <TrendingDown className="h-6 w-6 opacity-60" />
+                <Receipt className="h-6 w-6 opacity-60" />
               </div>
               <div>
                 <p className="text-red-100 text-sm font-medium mb-2">Gastos Mensais</p>
-                <p className="text-4xl font-bold mb-2 text-white">R$ {totalMonthlyExpensesComplete.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                <p className="text-4xl font-bold mb-2 text-white">
+                  R$ {totalMonthlyExpensesComplete.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
                 <div className="flex items-center space-x-2">
                   <div className="bg-white/20 px-3 py-1 rounded-full flex items-center space-x-1">
                     <span className="text-sm text-white">Todos os gastos</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  <div className="bg-red-500/30 px-2 py-0.5 rounded-full text-xs text-white">
+                    Fixos: {totalMonthlyExpensesComplete > 0 ? ((totalBills / totalMonthlyExpensesComplete) * 100).toFixed(0) : '0'}%
+                  </div>
+                  <div className="bg-orange-500/30 px-2 py-0.5 rounded-full text-xs text-white">
+                    Dívidas: {totalMonthlyExpensesComplete > 0 ? ((totalLoanPayments / totalMonthlyExpensesComplete) * 100).toFixed(0) : '0'}%
                   </div>
                 </div>
               </div>
@@ -242,7 +253,7 @@ export default function Dashboard() {
           {/* Saldo Mensal */}
           <div 
             onClick={() => setSelectedBreakdown('balance')}
-            className={`group relative overflow-hidden bg-gradient-to-br ${netMonthlyIncomeComplete >= 0 ? 'from-blue-500 to-indigo-600' : 'from-orange-500 to-red-600'} rounded-3xl p-8 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105`}
+            className={`group relative overflow-hidden bg-gradient-to-br ${netMonthlyIncomeComplete >= 0 ? 'from-blue-500 to-indigo-600' : 'from-orange-500 to-red-600'} rounded-3xl p-6 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105`}
           >
             <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
             <div className="relative z-10">
@@ -250,16 +261,22 @@ export default function Dashboard() {
                 <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
                   <DollarSign className="h-8 w-8" />
                 </div>
-                <DollarSign className="h-6 w-6 opacity-60" />
+                <Calendar className="h-6 w-6 opacity-60" />
               </div>
               <div>
                 <p className="text-white/80 text-sm font-medium mb-2">Saldo Mensal</p>
                 <p className="text-4xl font-bold mb-2">
-                  <span className="text-white">{netMonthlyIncomeComplete < 0 ? '-' : ''}R$ {Math.abs(netMonthlyIncomeComplete).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
+                  <span className="text-white">{netMonthlyIncomeComplete < 0 ? '-' : ''}R$ {Math.abs(netMonthlyIncomeComplete).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
                 </p>
                 <div className="flex items-center space-x-2">
                   <div className="bg-white/20 px-3 py-1 rounded-full flex items-center space-x-1">
                     <span className="text-sm text-white">{netMonthlyIncomeComplete >= 0 ? 'Positivo' : 'Negativo'}</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  <div className="bg-white/30 px-2 py-0.5 rounded-full text-xs text-white">
+                    Proporção: {totalMonthlyIncomeComplete > 0 ? 
+                      ((totalMonthlyExpensesComplete / totalMonthlyIncomeComplete) * 100).toFixed(0) : '100'}% da renda
                   </div>
                 </div>
               </div>
