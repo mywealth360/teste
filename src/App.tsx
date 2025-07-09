@@ -10,6 +10,7 @@ import AccessManagement from './components/AccessManagement';
 import Dashboard from './components/Dashboard';
 import AIChat from './components/AIChat';
 import Transactions from './components/Transactions';
+import SmartAlerts from './components/SmartAlerts';
 import Income from './components/Income';
 import BankAccounts from './components/BankAccounts';
 import Investments from './components/Investments';
@@ -96,6 +97,8 @@ function AppContent() {
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard />;
+      case 'smart-alerts':
+        return <SmartAlerts />;
       case 'access':
         return <AccessManagement />;
       case 'revenues':
@@ -161,7 +164,9 @@ function AppContent() {
       <main className="ml-72 p-8 text-gray-900">
         {renderContent()}
       </main>
-      <FloatingChatButton />
+      <div className="fixed bottom-6 right-6 flex flex-col space-y-2">
+        <FloatingChatButton />
+      </div>
       
       {/* Modals */}
       <TrialExpiredModal 

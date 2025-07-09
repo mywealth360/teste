@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { 
+  Bell,
   TrendingUp, 
   TrendingDown, 
   DollarSign, 
@@ -13,6 +14,7 @@ import {
   Shield,
   CreditCard,
   Banknote,
+  Clock,
   X,
   Receipt,
   Calendar,
@@ -27,6 +29,7 @@ import {
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useMonthlyRenewal } from '../hooks/useMonthlyRenewal';
 import { aiInsights } from '../data/mockData';
+import AlertsIndicator from './AlertsIndicator';
 import WealthEvolutionChart from './WealthEvolutionChart';
 import FinancialBreakdown from './FinancialBreakdown';
 
@@ -136,26 +139,33 @@ export default function Dashboard() {
       <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-3xl p-8 text-white">
         <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"></div>
         <div className="relative z-10">
-          <div className="flex justify-between items-start">
+          <div className="flex justify-between items-center">
             <div>
               <h1 className="text-4xl font-bold mb-2">Dashboard Financeiro</h1>
               <p className="text-slate-300 text-lg">Visão completa do seu patrimônio</p>
             </div>
-            <div className="text-right">
-              <p className="text-slate-300 text-sm mb-1">Patrimônio Líquido</p>
-              <p className={`text-4xl font-bold ${netWorth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                R$ {Math.abs(netWorth).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-              </p>
-              <div className="flex items-center justify-end mt-2">
-                <div className={`flex items-center space-x-1 px-3 py-1 rounded-full text-sm ${
-                  netWorth >= 0 ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
-                }`}>
-                  {netWorth >= 0 ? (
-                    <TrendingUp className="h-4 w-4" />
-                  ) : (
-                    <TrendingDown className="h-4 w-4" />
-                  )}
-                  <span>{netWorth >= 0 ? 'Positivo' : 'Negativo'}</span>
+            <div className="flex items-center space-x-6">
+              {/* Alert Indicator */}
+              <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm">
+                <AlertsIndicator />
+              </div>
+              
+              <div className="text-right">
+                <p className="text-slate-300 text-sm mb-1">Patrimônio Líquido</p>
+                <p className={`text-4xl font-bold ${netWorth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  R$ {Math.abs(netWorth).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+                <div className="flex items-center justify-end mt-2">
+                  <div className={`flex items-center space-x-1 px-3 py-1 rounded-full text-sm ${
+                    netWorth >= 0 ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
+                  }`}>
+                    {netWorth >= 0 ? (
+                      <TrendingUp className="h-4 w-4" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4" />
+                    )}
+                    <span>{netWorth >= 0 ? 'Positivo' : 'Negativo'}</span>
+                  </div>
                 </div>
               </div>
             </div>
@@ -673,10 +683,16 @@ export default function Dashboard() {
       {/* Insights da IA */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
         <div className="flex items-center space-x-3 mb-6">
-          <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-2 rounded-xl">
-            <Brain className="h-5 w-5 text-white" />
+          <div className="flex items-center space-x-3">
+            <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-2 rounded-xl">
+              <Brain className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-800">Insights da IA</h2>
           </div>
-          <h2 className="text-xl font-semibold text-gray-800">Insights da IA</h2>
+          <a href="/smart-alerts" className="text-sm text-blue-600 hover:text-blue-700 flex items-center ml-auto">
+            <Bell className="h-4 w-4 mr-1" />
+            <span>Ver todos os alertas</span>
+          </a>
         </div>
         
         <div className="space-y-4">

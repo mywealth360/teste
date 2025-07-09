@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { 
   LayoutDashboard, 
+  Bell,
   Receipt, 
   TrendingUp, 
   PiggyBank, 
@@ -43,7 +44,8 @@ interface SidebarProps {
 
 // Seções principais
 const mainSections = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, restricted: false }
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, restricted: false },
+  { id: 'smart-alerts', label: 'Alertas Inteligentes', icon: Bell, restricted: false }
 ];
 
 // Seção de Receitas
@@ -172,7 +174,10 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         <div className="space-y-1">
           {mainSections.map((item) => {
             const Icon = item.icon;
-            const isRestricted = item.restricted && userPlan === 'starter';
+            const isRestricted = item.restricted && userPlan === 'starter'; 
+            
+            // Add notification badge for smart alerts
+            const showNotificationBadge = item.id === 'smart-alerts';
             
             return (
               <button
@@ -189,7 +194,14 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
               >
                 <div className="flex items-center space-x-3">
                   <Icon className="h-4 w-4" />
-                  <span>{item.label}</span>
+                  <div className="flex items-center">
+                    <span>{item.label}</span>
+                    {showNotificationBadge && (
+                      <span className="ml-2 bg-red-500 text-white text-xs w-4 h-4 flex items-center justify-center rounded-full">
+                        3
+                      </span>
+                    )}
+                  </div>
                 </div>
                 {isRestricted && <Lock className="h-3 w-3 text-gray-400" />}
               </button>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Receipt, Calendar, Building, Bell, Edit, Trash2, AlertTriangle, Save, X, CheckCircle, Tag } from 'lucide-react';
+import { Plus, Receipt, Calendar, Building, Bell, Edit, Trash2, AlertTriangle, Save, X, CheckCircle, Tag, Home, Car, Users, CreditCard } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -16,12 +16,40 @@ interface Bill {
   next_due: string;
   created_at: string;
   updated_at: string;
+  associated_with?: 'property' | 'vehicle' | 'employee' | 'loan';
+  associated_id?: string;
+  associated_name?: string;
 }
 
-const categories = [
+interface BillCategory {
+  value: string;
+  label: string;
+  icon: React.ComponentType<any>;
+  color?: string;
+}
+
+const categories: BillCategory[] = [
+  { value: 'Utilidades', label: 'Utilidades', icon: Building },
+  { value: 'Telecomunicações', label: 'Telecomunicações', icon: Receipt },
+  { value: 'Cartão', label: 'Cartão', icon: CreditCard },
+  { value: 'Financiamento', label: 'Financiamento', icon: CreditCard },
+  { value: 'Seguro', label: 'Seguro', icon: Shield },
+  { value: 'Assinatura', label: 'Assinatura', icon: Calendar },
+  { value: 'Educação', label: 'Educação', icon: FileText },
+  { value: 'Saúde', label: 'Saúde', icon: Shield },
+  { value: 'Transporte', label: 'Transporte', icon: Car },
+  { value: 'Imóvel', label: 'Imóvel', icon: Home },
+  { value: 'Veículo', label: 'Veículo', icon: Car },
+  { value: 'Funcionário', label: 'Funcionário', icon: Users },
+  { value: 'Encargos Sociais', label: 'Encargos Sociais', icon: Users },
+  { value: 'Outros', label: 'Outros', icon: Receipt }
+];
+
+/* 
+Original categories array - keeping as a fallback
   'Utilidades', 'Telecomunicações', 'Cartão', 'Financiamento', 'Seguro',
   'Assinatura', 'Educação', 'Saúde', 'Transporte', 'Outros'
-];
+*/
 
 export default function Bills() {
   const { user } = useAuth();
@@ -33,9 +61,16 @@ export default function Bills() {
   const [error, setError] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
 
+  // Properties, Vehicles, and Employees for associating bills
+  const [properties, setProperties] = useState<any[]>([]);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [loans, setLoans] = useState<any[]>([]);
+
   useEffect(() => {
     if (user) {
       fetchBills();
+      fetchAssociatedEntities();
     }
   }, [user]);
 
@@ -66,6 +101,27 @@ export default function Bills() {
       setError('Erro ao carregar contas');
     } finally {
       setLoading(false);
+    }
+  };
+  
+  const fetchAssociatedEntities = async () => {
+    if (!user) return;
+    
+    try {
+      // Fetch properties, vehicles, and employees in parallel
+      const [propertiesResult, vehiclesResult, employeesResult, loansResult] = await Promise.all([
+        supabase.from('real_estate').select('id, address, type').eq('user_id', user.id),
+        supabase.from('vehicles').select('id, brand, model').eq('user_id', user.id),
+        supabase.from('employees').select('id, name, role').eq('user_id', user.id).eq('status', 'active'),
+        supabase.from('loans').select('id, bank, type').eq('user_id', user.id)
+      ]);
+      
+      if (propertiesResult.data) setProperties(propertiesResult.data);
+      if (vehiclesResult.data) setVehicles(vehiclesResult.data);
+      if (employeesResult.data) setEmployees(employeesResult.data);
+      if (loansResult.data) setLoans(loansResult.data);
+    } catch (err) {
+      console.error('Error fetching associated entities:', err);
     }
   };
 
@@ -552,6 +608,23 @@ export default function Bills() {
                           <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
                             {bill.category}
                           </span>
+                          
+                          {bill.associated_with && bill.associated_name && (
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              bill.associated_with === 'property' ? 'bg-orange-100 text-orange-700' :
+                              bill.associated_with === 'vehicle' ? 'bg-blue-100 text-blue-700' :
+                              bill.associated_with === 'employee' ? 'bg-purple-100 text-purple-700' :
+                              bill.associated_with === 'loan' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-700'
+                            } flex items-center space-x-1`}>
+                              {bill.associated_with === 'property' && <Home className="h-3 w-3" />}
+                              {bill.associated_with === 'vehicle' && <Car className="h-3 w-3" />}
+                              {bill.associated_with === 'employee' && <Users className="h-3 w-3" />}
+                              {bill.associated_with === 'loan' && <CreditCard className="h-3 w-3" />}
+                              <span>{bill.associated_name}</span>
+                            </span>
+                          )}
+                          
                           {isPending(bill) && (
                             <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 flex items-center space-x-1">
                               <Tag className="h-3 w-3" />
@@ -685,6 +758,100 @@ export default function Bills() {
                 />
               </div>
               
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Associar Conta (opcional)
+                </label>
+                
+                {properties.length > 0 && (
+                  <details className="mb-2">
+                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
+                      <Home className="h-4 w-4 mr-2 text-gray-600" />
+                      Imóveis
+                    </summary>
+                    <div className="ml-4 mt-2 space-y-2">
+                      {properties.map(property => (
+                        <label key={property.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="associated_with"
+                            value={`property-${property.id}`}
+                            className="rounded-full text-blue-600"
+                          />
+                          <span className="text-sm text-gray-700">{property.address}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                )}
+                
+                {vehicles.length > 0 && (
+                  <details className="mb-2">
+                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
+                      <Car className="h-4 w-4 mr-2 text-gray-600" />
+                      Veículos
+                    </summary>
+                    <div className="ml-4 mt-2 space-y-2">
+                      {vehicles.map(vehicle => (
+                        <label key={vehicle.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="associated_with"
+                            value={`vehicle-${vehicle.id}`}
+                            className="rounded-full text-blue-600"
+                          />
+                          <span className="text-sm text-gray-700">{vehicle.brand} {vehicle.model}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                )}
+                
+                {employees.length > 0 && (
+                  <details className="mb-2">
+                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
+                      <Users className="h-4 w-4 mr-2 text-gray-600" />
+                      Funcionários
+                    </summary>
+                    <div className="ml-4 mt-2 space-y-2">
+                      {employees.map(employee => (
+                        <label key={employee.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="associated_with"
+                            value={`employee-${employee.id}`}
+                            className="rounded-full text-blue-600"
+                          />
+                          <span className="text-sm text-gray-700">{employee.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                )}
+                
+                {loans.length > 0 && (
+                  <details className="mb-2">
+                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
+                      <CreditCard className="h-4 w-4 mr-2 text-gray-600" />
+                      Empréstimos
+                    </summary>
+                    <div className="ml-4 mt-2 space-y-2">
+                      {loans.map(loan => (
+                        <label key={loan.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="associated_with"
+                            value={`loan-${loan.id}`}
+                            className="rounded-full text-blue-600"
+                          />
+                          <span className="text-sm text-gray-700">{loan.bank} - {loan.type}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </div>
+              
               <select
                 name="category"
                 required
@@ -692,8 +859,8 @@ export default function Bills() {
               >
                 <option value="">Selecione uma categoria</option>
                 {categories.map(category => (
-                  <option key={category} value={category}>
-                    {category}
+                  <option key={category.value} value={category.value}>
+                    {category.label}
                   </option>
                 ))}
               </select>
