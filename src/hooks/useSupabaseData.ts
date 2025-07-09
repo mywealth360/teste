@@ -33,6 +33,8 @@ export function useSupabaseData() {
   const [totalAssets, setTotalAssets] = useState(0);
   const [netWorth, setNetWorth] = useState(0);
   const [totalTaxes, setTotalTaxes] = useState(0);
+  const [totalFinancialGoals, setTotalFinancialGoals] = useState(0);
+  const [totalFinancialGoalsProgress, setTotalFinancialGoalsProgress] = useState(0);
 
   useEffect(() => {
     if (user) {
@@ -57,9 +59,11 @@ export function useSupabaseData() {
         fetchRetirement(),
         fetchLoans(),
         fetchBills(),
+        financialGoalsData
         fetchBankAccounts(),
         fetchVehicles(),
         fetchExoticAssets(),
+        fetchFinancialGoals()
         fetchFinancialGoals()
         fetchFinancialGoals()
         fetchFinancialGoals()
@@ -73,6 +77,7 @@ export function useSupabaseData() {
         totalBankBalance +
         totalVehicleValue +
         totalExoticAssetsValue +
+        totalFinancialGoalsProgress;
         totalFinancialGoals;
         totalFinancialGoals;
         totalFinancialGoals;
@@ -487,6 +492,30 @@ export function useSupabaseData() {
     }
   };
 
+  const fetchFinancialGoals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('financial_goals')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('status', 'active');
+
+      if (error) throw error;
+
+      // Calculate total target and current amounts
+      const totalTarget = (data || []).reduce((sum, goal) => sum + goal.target_amount, 0);
+      const totalProgress = (data || []).reduce((sum, goal) => sum + goal.current_amount, 0);
+
+      setTotalFinancialGoals(totalTarget);
+      setTotalFinancialGoalsProgress(totalProgress);
+      
+      return { data, totalTarget, totalProgress };
+    } catch (err) {
+      console.error('Error fetching financial goals:', err);
+      return [];
+    }
+  };
+
   const calculateTotalTaxes = async () => {
     try {
       let totalTaxAmount = 0;
@@ -682,6 +711,8 @@ export function useSupabaseData() {
     totalVehicleExpenses,
     totalExoticAssetsValue,
     totalExoticAssetsAppreciation,
+    totalFinancialGoals,
+    totalFinancialGoalsProgress,
     totalFinancialGoals,
     totalFinancialGoals,
     totalFinancialGoals,

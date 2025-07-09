@@ -1,347 +1,488 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Target, 
   Plus, 
-  PiggyBank, 
+  Target, 
+  Trash2, 
+  Edit, 
   TrendingUp, 
+  Calendar, 
+  AlertTriangle, 
+  Info,
+  ChevronRight, 
+  ChevronDown, 
+  PiggyBank, 
+  Airplane, 
   Briefcase, 
-  Scissors,
-  Plane,
-  Home,
-  Trash2,
-  Edit,
-  Brain,
-  Save,
-  X,
-  Sparkles,
-  BarChart3,
-  Calendar,
+  Home, 
+  GraduationCap, 
+  Package, 
+  Calculator,
   DollarSign,
-  AlertTriangle,
-  FileText,
-  CheckCircle
+  Check,
+  Clock,
+  X,
+  Save,
+  File
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { useSupabaseData } from '../hooks/useSupabaseData';
+import { useNavigate } from 'react-router-dom';
 
-interface Goal {
+interface FinancialGoal {
   id: string;
-  user_id: string;
   name: string;
   target_amount: number;
   current_amount: number;
   target_date: string;
-  category: 'travel' | 'business' | 'wealth' | 'home' | 'education' | 'other';
-  description: string;
+  category: string;
+  description?: string;
   created_at: string;
   updated_at: string;
   status: 'active' | 'completed' | 'abandoned';
   priority: 'high' | 'medium' | 'low';
 }
 
-interface AIRecommendation {
+interface GoalContribution {
   id: string;
-  title: string;
-  description: string;
-  potentialSavings: number;
-  difficulty: 'easy' | 'medium' | 'hard';
-  category: string;
-  appliedToGoal?: string; // Goal ID if recommendation is applied
+  goal_id: string;
+  amount: number;
+  contribution_date: string;
+  notes?: string;
 }
 
-const GoalCategories = [
-  { value: 'travel', label: 'Viagem', icon: Plane, color: 'from-blue-500 to-cyan-600' },
-  { value: 'business', label: 'Negócio', icon: Briefcase, color: 'from-purple-500 to-indigo-600' },
-  { value: 'wealth', label: 'Patrimônio', icon: PiggyBank, color: 'from-green-500 to-emerald-600' },
-  { value: 'home', label: 'Imóvel', icon: Home, color: 'from-orange-500 to-amber-600' },
-  { value: 'education', label: 'Educação', icon: BarChart3, color: 'from-red-500 to-pink-600' },
-  { value: 'other', label: 'Outro', icon: Target, color: 'from-gray-500 to-gray-600' }
+interface GoalFormData {
+  name: string;
+  target_amount: string;
+  category: string;
+  target_date: string;
+  description: string;
+  priority: string;
+  monthly_contribution: string;
+}
+
+// Define goal categories with icons
+const goalCategories = [
+  { value: 'travel', label: 'Viagem', icon: Airplane, color: 'bg-blue-500' },
+  { value: 'business', label: 'Negócio', icon: Briefcase, color: 'bg-purple-500' },
+  { value: 'wealth', label: 'Patrimônio', icon: PiggyBank, color: 'bg-green-500' },
+  { value: 'home', label: 'Casa', icon: Home, color: 'bg-orange-500' },
+  { value: 'education', label: 'Educação', icon: GraduationCap, color: 'bg-red-500' },
+  { value: 'other', label: 'Outro', icon: Package, color: 'bg-gray-500' }
+];
+
+const goalPriorities = [
+  { value: 'high', label: 'Alta', color: 'bg-red-100 text-red-700' },
+  { value: 'medium', label: 'Média', color: 'bg-yellow-100 text-yellow-700' },
+  { value: 'low', label: 'Baixa', color: 'bg-blue-100 text-blue-700' }
 ];
 
 export default function FinancialGoals() {
   const { user } = useAuth();
-  const { totalMonthlyIncome, totalMonthlyExpenses } = useSupabaseData();
+  const navigate = useNavigate();
   
-  const [goals, setGoals] = useState<Goal[]>([]);
-  const [recommendations, setRecommendations] = useState<AIRecommendation[]>([]);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showAIModal, setShowAIModal] = useState(false);
-  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
-  const [editingGoal, setEditingGoal] = useState<Partial<Goal> | null>(null);
+  const [goals, setGoals] = useState<FinancialGoal[]>([]);
+  const [contributions, setContributions] = useState<Record<string, GoalContribution[]>>({});
   const [loading, setLoading] = useState(true);
-  const [aiLoading, setAiLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   
-  const [newGoalFormData, setNewGoalFormData] = useState({
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [deleteConfirmGoalId, setDeleteConfirmGoalId] = useState<string | null>(null);
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
+  const [expandedGoals, setExpandedGoals] = useState<Set<string>>(new Set());
+  
+  // Form state
+  const [formData, setFormData] = useState<GoalFormData>({
     name: '',
     target_amount: '',
+    category: 'travel',
     target_date: '',
-    category: 'wealth',
     description: '',
-    priority: 'medium'
+    priority: 'medium',
+    monthly_contribution: ''
+  });
+  
+  // Stats
+  const [stats, setStats] = useState({
+    totalAmount: 0,
+    savedAmount: 0,
+    remainingAmount: 0,
+    avgCompletion: 0,
+    nextDeadline: null as string | null,
+    monthlySavingsNeeded: 0
   });
 
   useEffect(() => {
     if (user) {
       fetchGoals();
-      generateRecommendations();
     }
   }, [user]);
 
   const fetchGoals = async () => {
     try {
       setLoading(true);
+      setError(null);
       
-      // Fetch goals from financial_goals table
       const { data, error } = await supabase
         .from('financial_goals')
         .select('*')
         .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-
+        .order('status', { ascending: false })
+        .order('target_date', { ascending: true });
+      
       if (error) throw error;
       
       setGoals(data || []);
+      
+      // Fetch contributions for each goal
+      await fetchAllContributions(data || []);
+      
+      // Calculate stats
+      calculateStats(data || []);
     } catch (err) {
       console.error('Error fetching goals:', err);
+      setError('Erro ao carregar metas financeiras');
     } finally {
       setLoading(false);
     }
   };
-
-  const generateRecommendations = async () => {
+  
+  const fetchAllContributions = async (goalsList: FinancialGoal[]) => {
     try {
-      setAiLoading(true);
+      // Get all contributions for all goals at once for better performance
+      if (goalsList.length === 0) return;
       
-      // Fetch recommendations from goal_recommendations table
+      const goalIds = goalsList.map(g => g.id);
+      
       const { data, error } = await supabase
-        .from('goal_recommendations')
+        .from('goal_contributions')
         .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-
+        .in('goal_id', goalIds)
+        .order('contribution_date', { ascending: false });
+      
       if (error) throw error;
       
-      // If no recommendations exist, create some mock data
-      if (!data || data.length === 0) {
-        const mockRecommendations: AIRecommendation[] = [
-          {
-            id: '1',
-            title: 'Reduza gastos com streaming',
-            description: 'Você gasta R$ 178/mês em serviços de streaming. Considere manter apenas os 2 mais usados, economizando R$ 89/mês.',
-            potentialSavings: 89,
-            difficulty: 'easy',
-            category: 'entretenimento'
-          },
-          {
-            id: '2',
-            title: 'Renegocie plano de telefonia',
-            description: 'Seu plano de telefonia parece caro para o uso. Renegociando ou trocando de operadora, você pode economizar R$ 75/mês.',
-            potentialSavings: 75,
-            difficulty: 'medium',
-            category: 'telecomunicações'
-          },
-          {
-            id: '3',
-            title: 'Otimize gastos com restaurantes',
-            description: 'Reduzindo refeições fora de casa em 30%, você pode economizar R$ 320/mês sem grandes sacrifícios.',
-            potentialSavings: 320,
-            difficulty: 'medium',
-            category: 'alimentação'
-          },
-          {
-            id: '4',
-            title: 'Elimine assinaturas não utilizadas',
-            description: 'Identificamos 3 assinaturas que você não utiliza há mais de 3 meses, totalizando R$ 135/mês.',
-            potentialSavings: 135,
-            difficulty: 'easy',
-            category: 'assinaturas'
-          },
-          {
-            id: '5',
-            title: 'Refinanciamento de empréstimo',
-            description: 'Seu empréstimo atual tem taxa alta. Refinanciando, você pode economizar R$ 250/mês.',
-            potentialSavings: 250,
-            difficulty: 'hard',
-            category: 'financeiro'
-          }
-        ];
-        
-        setRecommendations(mockRecommendations);
-      } else {
-        // Convert database format to component format
-        const formattedRecommendations = data.map(rec => ({
-          id: rec.id,
-          title: rec.title,
-          description: rec.description,
-          potentialSavings: rec.potential_savings,
-          difficulty: rec.difficulty as 'easy' | 'medium' | 'hard',
-          category: rec.category,
-          appliedToGoal: rec.goal_id || undefined
-        }));
-        
-        setRecommendations(formattedRecommendations);
-      }
+      // Group contributions by goal_id
+      const contributionsMap: Record<string, GoalContribution[]> = {};
+      
+      (data || []).forEach(contribution => {
+        if (!contributionsMap[contribution.goal_id]) {
+          contributionsMap[contribution.goal_id] = [];
+        }
+        contributionsMap[contribution.goal_id].push(contribution);
+      });
+      
+      setContributions(contributionsMap);
     } catch (err) {
-      console.error('Error generating AI recommendations:', err);
-    } finally {
-      setAiLoading(false);
+      console.error('Error fetching contributions:', err);
     }
+  };
+  
+  const calculateStats = (goalsList: FinancialGoal[]) => {
+    const activeGoals = goalsList.filter(g => g.status === 'active');
+    
+    if (activeGoals.length === 0) {
+      setStats({
+        totalAmount: 0,
+        savedAmount: 0,
+        remainingAmount: 0,
+        avgCompletion: 0,
+        nextDeadline: null,
+        monthlySavingsNeeded: 0
+      });
+      return;
+    }
+    
+    const totalAmount = activeGoals.reduce((sum, g) => sum + g.target_amount, 0);
+    const savedAmount = activeGoals.reduce((sum, g) => sum + g.current_amount, 0);
+    const remainingAmount = totalAmount - savedAmount;
+    
+    // Calculate average completion percentage
+    const avgCompletion = savedAmount / totalAmount * 100;
+    
+    // Find next deadline
+    const upcomingGoals = [...activeGoals].sort((a, b) => 
+      new Date(a.target_date).getTime() - new Date(b.target_date).getTime()
+    );
+    
+    const nextDeadline = upcomingGoals.length > 0 ? upcomingGoals[0].target_date : null;
+    
+    // Calculate total monthly savings needed
+    let totalMonthlySavingsNeeded = 0;
+    
+    activeGoals.forEach(goal => {
+      // Calculate months left until target date
+      const targetDate = new Date(goal.target_date);
+      const now = new Date();
+      
+      if (targetDate > now) {
+        // Months between dates
+        const monthsLeft = (targetDate.getFullYear() - now.getFullYear()) * 12 + 
+          (targetDate.getMonth() - now.getMonth());
+        
+        // If target date is in the future
+        if (monthsLeft > 0) {
+          // Remaining amount for this goal
+          const goalRemainingAmount = goal.target_amount - goal.current_amount;
+          
+          // Monthly savings needed for this goal
+          const monthlySavingsForGoal = goalRemainingAmount / monthsLeft;
+          
+          totalMonthlySavingsNeeded += monthlySavingsForGoal;
+        }
+      }
+    });
+    
+    setStats({
+      totalAmount,
+      savedAmount,
+      remainingAmount,
+      avgCompletion,
+      nextDeadline,
+      monthlySavingsNeeded: totalMonthlySavingsNeeded
+    });
   };
 
   const handleAddGoal = async () => {
     try {
-      // Calculate monthly savings needed
-      const targetDate = new Date(newGoalFormData.target_date);
-      const now = new Date();
-      const diffMs = targetDate.getTime() - now.getTime();
-      const diffMonths = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30)));
-      const targetAmount = parseFloat(newGoalFormData.target_amount);
-      const monthlySavingsNeeded = targetAmount / diffMonths;
+      // Validation
+      if (!formData.name || !formData.target_amount || !formData.target_date || !formData.category) {
+        setError('Por favor, preencha todos os campos obrigatórios');
+        return;
+      }
+
+      const targetAmount = parseFloat(formData.target_amount);
+      const monthlyContribution = parseFloat(formData.monthly_contribution || '0');
       
-      // Insert new goal
-      const { data, error } = await supabase
+      if (isNaN(targetAmount) || targetAmount <= 0) {
+        setError('O valor da meta deve ser maior que zero');
+        return;
+      }
+      
+      if (monthlyContribution < 0) {
+        setError('A contribuição mensal não pode ser negativa');
+        return;
+      }
+      
+      // Add goal to database
+      const { data: goalData, error: goalError } = await supabase
         .from('financial_goals')
-        .insert({
+        .insert([{
           user_id: user?.id,
-          name: newGoalFormData.name,
+          name: formData.name,
           target_amount: targetAmount,
           current_amount: 0,
-          target_date: newGoalFormData.target_date,
-          category: newGoalFormData.category,
-          description: newGoalFormData.description,
-          status: 'active',
-          priority: newGoalFormData.priority
-        })
-        .select();
-
-      if (error) throw error;
+          target_date: formData.target_date,
+          category: formData.category,
+          description: formData.description || null,
+          priority: formData.priority
+        }])
+        .select()
+        .single();
       
-      // Create a recurring bill for this goal
-      if (data && data.length > 0) {
-        const goalId = data[0].id;
-        
-        // Call the create_goal_contribution_bill database function
-        const { data: billData, error: billError } = await supabase.rpc('create_goal_contribution_bill', {
-          goal_id: goalId,
-          monthly_amount: monthlySavingsNeeded,
-          due_day: 5 // Default due day
+      if (goalError) throw goalError;
+      
+      // If monthly contribution is set, create a recurring bill
+      if (monthlyContribution > 0 && goalData) {
+        const { error: billError } = await supabase.rpc('create_goal_contribution_bill', {
+          goal_id: goalData.id,
+          monthly_amount: monthlyContribution,
+          due_day: 5, // Default to 5th of month
+          start_date: new Date().toISOString().split('T')[0]
         });
         
         if (billError) {
-          console.error('Error creating goal contribution bill:', billError);
+          console.error('Error creating bill for goal:', billError);
+          // Continue despite bill creation error
         }
       }
       
-      // Reset form
-      setNewGoalFormData({
+      // Reset form and close modal
+      setFormData({
         name: '',
         target_amount: '',
+        category: 'travel',
         target_date: '',
-        category: 'wealth',
         description: '',
-        priority: 'medium'
+        priority: 'medium',
+        monthly_contribution: ''
       });
       
       setShowAddModal(false);
-      fetchGoals(); // Refresh goals list
       
+      // Refresh goals
+      fetchGoals();
     } catch (err) {
       console.error('Error adding goal:', err);
-      alert('Erro ao adicionar meta: ' + (err as Error).message);
+      setError('Erro ao adicionar meta financeira');
     }
   };
-
-  const handleUpdateGoal = async (id: string, updates: Partial<Goal>) => {
+  
+  const handleUpdateGoal = async (goalId: string) => {
     try {
+      // Validation
+      if (!formData.name || !formData.target_amount || !formData.target_date || !formData.category) {
+        setError('Por favor, preencha todos os campos obrigatórios');
+        return;
+      }
+
+      const targetAmount = parseFloat(formData.target_amount);
+      const monthlyContribution = parseFloat(formData.monthly_contribution || '0');
+      
+      if (isNaN(targetAmount) || targetAmount <= 0) {
+        setError('O valor da meta deve ser maior que zero');
+        return;
+      }
+      
+      if (monthlyContribution < 0) {
+        setError('A contribuição mensal não pode ser negativa');
+        return;
+      }
+      
+      // Get current goal data
+      const { data: currentGoal, error: fetchError } = await supabase
+        .from('financial_goals')
+        .select('*')
+        .eq('id', goalId)
+        .single();
+        
+      if (fetchError) throw fetchError;
+      
       // Update goal in database
-      const { error } = await supabase
+      const { error: updateError } = await supabase
         .from('financial_goals')
         .update({
-          ...updates,
+          name: formData.name,
+          target_amount: targetAmount,
+          target_date: formData.target_date,
+          category: formData.category,
+          description: formData.description || null,
+          priority: formData.priority,
           updated_at: new Date().toISOString()
         })
-        .eq('id', id);
-
-      if (error) throw error;
+        .eq('id', goalId);
       
-      // Update local state
-      setGoals(
-        goals.map(goal => (goal.id === id ? { ...goal, ...updates, updated_at: new Date().toISOString() } : goal))
-      );
+      if (updateError) throw updateError;
       
-      setEditingGoal(null);
-      
-      // If the amount target changed, update the related bill
-      if (updates.target_amount) {
-        const goal = goals.find(g => g.id === id);
-        if (goal) {
-          const targetDate = new Date(updates.target_date || goal.target_date);
-          const now = new Date();
-          const diffMs = targetDate.getTime() - now.getTime();
-          const diffMonths = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30)));
-          const newAmount = updates.target_amount;
-          const currentAmount = updates.current_amount || goal.current_amount;
-          const monthlySavingsNeeded = (newAmount - currentAmount) / diffMonths;
-          
-          // Update the related bill
-          const { error: billError } = await supabase.rpc('update_goal_contribution_bill', {
-            goal_id: id,
-            monthly_amount: monthlySavingsNeeded
+      // Check if monthly contribution changed
+      if (monthlyContribution > 0) {
+        // Try to update existing contribution bill first
+        const updateResult = await supabase.rpc('update_goal_contribution_bill', {
+          goal_id: goalId,
+          monthly_amount: monthlyContribution
+        });
+        
+        // If update fails (no bill exists), create a new one
+        if (!updateResult.data) {
+          const { error: billError } = await supabase.rpc('create_goal_contribution_bill', {
+            goal_id: goalId,
+            monthly_amount: monthlyContribution,
+            due_day: 5, // Default to 5th of month
+            start_date: new Date().toISOString().split('T')[0]
           });
           
           if (billError) {
-            console.error('Error updating goal contribution bill:', billError);
+            console.error('Error creating bill for goal:', billError);
           }
         }
       }
+      
+      // Reset form and exit edit mode
+      setFormData({
+        name: '',
+        target_amount: '',
+        category: 'travel',
+        target_date: '',
+        description: '',
+        priority: 'medium',
+        monthly_contribution: ''
+      });
+      
+      setEditingGoalId(null);
+      
+      // Refresh goals
+      fetchGoals();
     } catch (err) {
       console.error('Error updating goal:', err);
-      alert('Erro ao atualizar meta: ' + (err as Error).message);
+      setError('Erro ao atualizar meta financeira');
     }
   };
-
-  const handleDeleteGoal = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta meta?')) return;
+  
+  const handleDeleteGoal = async () => {
+    if (!deleteConfirmGoalId) return;
     
     try {
-      // Delete goal
       const { error } = await supabase
         .from('financial_goals')
         .delete()
-        .eq('id', id);
-
+        .eq('id', deleteConfirmGoalId);
+      
       if (error) throw error;
       
-      // Update local state
-      setGoals(goals.filter(goal => goal.id !== id));
+      // Reset delete confirmation
+      setDeleteConfirmGoalId(null);
+      
+      // Refresh goals
+      fetchGoals();
     } catch (err) {
       console.error('Error deleting goal:', err);
-      alert('Erro ao excluir meta: ' + (err as Error).message);
+      setError('Erro ao excluir meta financeira');
     }
   };
-
-  const handleContribute = async (id: string) => {
-    const goal = goals.find(g => g.id === id);
-    if (!goal) return;
+  
+  const startEditGoal = (goal: FinancialGoal) => {
+    // Find associated bill for monthly contribution
+    const fetchBill = async () => {
+      const { data, error } = await supabase
+        .from('bills')
+        .select('amount')
+        .eq('financial_goal_id', goal.id)
+        .eq('is_goal_contribution', true)
+        .single();
+      
+      const monthlyContribution = data?.amount || '';
+      
+      setFormData({
+        name: goal.name,
+        target_amount: goal.target_amount.toString(),
+        category: goal.category,
+        target_date: goal.target_date,
+        description: goal.description || '',
+        priority: goal.priority,
+        monthly_contribution: monthlyContribution ? monthlyContribution.toString() : ''
+      });
+    };
     
-    const amount = parseFloat(prompt('Quanto deseja adicionar à sua meta?', '100') || '0');
-    if (amount <= 0) return;
-    
+    fetchBill();
+    setEditingGoalId(goal.id);
+  };
+  
+  const handleAddContribution = async (goalId: string) => {
     try {
+      const goal = goals.find(g => g.id === goalId);
+      if (!goal) return;
+      
+      const contributionAmount = prompt(`Quanto você deseja contribuir para a meta "${goal.name}"?`);
+      if (!contributionAmount) return;
+      
+      const amount = parseFloat(contributionAmount);
+      if (isNaN(amount) || amount <= 0) {
+        alert('Por favor, insira um valor válido maior que zero');
+        return;
+      }
+      
       // Add contribution
       const { error: contributionError } = await supabase
         .from('goal_contributions')
-        .insert({
-          goal_id: id,
+        .insert([{
+          goal_id: goalId,
           user_id: user?.id,
-          amount: amount,
+          amount,
           notes: 'Contribuição manual'
-        });
-
+        }]);
+      
       if (contributionError) throw contributionError;
       
-      // Update goal amount
+      // Update goal's current amount
       const newAmount = goal.current_amount + amount;
       const newStatus = newAmount >= goal.target_amount ? 'completed' : 'active';
       
@@ -352,137 +493,161 @@ export default function FinancialGoals() {
           status: newStatus,
           updated_at: new Date().toISOString()
         })
-        .eq('id', id);
-
+        .eq('id', goalId);
+      
       if (updateError) throw updateError;
       
-      // Update local state
-      handleUpdateGoal(id, { 
-        current_amount: newAmount,
-        status: newStatus
-      });
-      
+      // Refresh goals
+      fetchGoals();
     } catch (err) {
       console.error('Error adding contribution:', err);
-      alert('Erro ao adicionar contribuição: ' + (err as Error).message);
+      setError('Erro ao adicionar contribuição');
     }
   };
-
-  const applyRecommendation = async (goalId: string, recommendation: AIRecommendation) => {
-    const goal = goals.find(g => g.id === goalId);
-    if (!goal) return;
-    
-    try {
-      // Update recommendation status in database
-      const { error } = await supabase
-        .from('goal_recommendations')
-        .update({
-          goal_id: goalId,
-          is_applied: true,
-          applied_at: new Date().toISOString()
-        })
-        .eq('id', recommendation.id);
-
-      if (error) throw error;
-      
-      // Update local state
-      setRecommendations(
-        recommendations.map(rec => 
-          rec.id === recommendation.id ? { ...rec, appliedToGoal: goalId } : rec
-        )
-      );
-      
-      // Show success message
-      alert(`Recomendação aplicada: economize R$ ${recommendation.potentialSavings}/mês para atingir sua meta mais rápido!`);
-      
-      setShowAIModal(false);
-    } catch (err) {
-      console.error('Error applying recommendation:', err);
-      alert('Erro ao aplicar recomendação: ' + (err as Error).message);
-    }
+  
+  const toggleExpand = (goalId: string) => {
+    setExpandedGoals(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(goalId)) {
+        newSet.delete(goalId);
+      } else {
+        newSet.add(goalId);
+      }
+      return newSet;
+    });
   };
-
-  const getTimeRemaining = (targetDate: string) => {
-    const target = new Date(targetDate);
-    const now = new Date();
-    const diffMs = target.getTime() - now.getTime();
-    
-    if (diffMs <= 0) return 'Meta vencida';
-    
-    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
-    
-    if (diffDays < 30) return `${diffDays} dias restantes`;
-    
-    const diffMonths = Math.floor(diffDays / 30);
-    
-    if (diffMonths < 12) return `${diffMonths} meses restantes`;
-    
-    const years = Math.floor(diffMonths / 12);
-    const months = diffMonths % 12;
-    
-    return `${years} ${years === 1 ? 'ano' : 'anos'}${months > 0 ? ` e ${months} ${months === 1 ? 'mês' : 'meses'}` : ''} restantes`;
+  
+  const getCategoryInfo = (categoryValue: string) => {
+    return goalCategories.find(c => c.value === categoryValue) || goalCategories[0];
   };
-
-  const getProgressPercentage = (current: number, target: number) => {
-    return Math.min(100, Math.max(0, (current / target) * 100));
+  
+  const getPriorityInfo = (priorityValue: string) => {
+    return goalPriorities.find(p => p.value === priorityValue) || goalPriorities[1];
   };
-
-  const getMonthlySavingsNeeded = (goal: Goal) => {
+  
+  const calculateProgress = (current: number, target: number) => {
+    if (target === 0) return 0;
+    return Math.min(100, (current / target) * 100);
+  };
+  
+  const calculateMonthlyAmount = (goal: FinancialGoal) => {
     const targetDate = new Date(goal.target_date);
     const now = new Date();
-    const diffMs = targetDate.getTime() - now.getTime();
     
-    if (diffMs <= 0) return Infinity;
+    if (targetDate <= now) return 0;
     
-    const diffMonths = Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30));
+    const monthsLeft = (targetDate.getFullYear() - now.getFullYear()) * 12 + 
+      (targetDate.getMonth() - now.getMonth());
+    
+    if (monthsLeft <= 0) return 0;
+    
     const remainingAmount = goal.target_amount - goal.current_amount;
     
-    return remainingAmount / diffMonths;
+    return remainingAmount / monthsLeft;
+  };
+  
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(amount);
+  };
+  
+  const formatDate = (date: string) => {
+    return new Date(date).toLocaleDateString('pt-BR');
+  };
+  
+  const getMonthsUntil = (dateStr: string) => {
+    const targetDate = new Date(dateStr);
+    const now = new Date();
+    
+    if (targetDate <= now) return 0;
+    
+    return (targetDate.getFullYear() - now.getFullYear()) * 12 + 
+      (targetDate.getMonth() - now.getMonth());
+  };
+  
+  // Reset form for new goal
+  const openNewGoalModal = () => {
+    setFormData({
+      name: '',
+      target_amount: '',
+      category: 'travel',
+      target_date: '',
+      description: '',
+      priority: 'medium',
+      monthly_contribution: ''
+    });
+    setShowAddModal(true);
+  };
+  
+  // Close modal and reset form
+  const handleCloseModal = () => {
+    setShowAddModal(false);
+    setEditingGoalId(null);
+    setError(null);
+    setFormData({
+      name: '',
+      target_amount: '',
+      category: 'travel',
+      target_date: '',
+      description: '',
+      priority: 'medium',
+      monthly_contribution: ''
+    });
   };
 
-  const getCategoryInfo = (category: string) => {
-    return GoalCategories.find(c => c.value === category) || GoalCategories[0];
-  };
-
-  const formatCurrency = (value: number) => {
-    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
-  };
+  if (loading) {
+    return (
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">Metas Financeiras</h1>
+            <p className="text-gray-500 mt-1">Estabeleça metas claras e acompanhe seu progresso</p>
+          </div>
+        </div>
+        
+        <div className="animate-pulse space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="h-36 bg-gray-200 rounded-2xl"></div>
+            ))}
+          </div>
+          <div className="h-64 bg-gray-200 rounded-2xl"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Metas Financeiras</h1>
           <p className="text-gray-500 mt-1">Estabeleça metas claras e acompanhe seu progresso</p>
         </div>
-        <div className="flex space-x-3">
-          <button
-            onClick={() => setShowAIModal(true)}
-            className="flex items-center space-x-2 px-5 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 shadow-lg"
-          >
-            <Brain className="h-4 w-4" />
-            <span>Recomendações IA</span>
-          </button>
-          
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center space-x-2 px-5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Nova Meta</span>
-          </button>
-        </div>
+        <button 
+          onClick={openNewGoalModal}
+          className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md"
+        >
+          <Plus className="h-4 w-4" />
+          <span>Nova Meta</span>
+        </button>
       </div>
-      
-      {/* Summary Cards */}
+
+      {error && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-4 flex items-center space-x-3">
+          <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0" />
+          <p className="text-red-700">{error}</p>
+        </div>
+      )}
+
+      {/* Dashboard Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-2xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Total em Metas</p>
-              <p className="text-3xl font-bold mt-1">
-                {formatCurrency(goals.reduce((sum, goal) => sum + goal.target_amount, 0))}
+              <p className="text-indigo-100 text-sm font-medium">Total em Metas</p>
+              <p className="text-3xl font-bold mt-1">{formatCurrency(stats.totalAmount)}</p>
+              <p className="text-indigo-100 text-xs mt-1">
+                {goals.filter(g => g.status === 'active').length} metas ativas
               </p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl">
@@ -490,13 +655,14 @@ export default function FinancialGoals() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-sm font-medium">Já Economizado</p>
-              <p className="text-3xl font-bold mt-1">
-                {formatCurrency(goals.reduce((sum, goal) => sum + goal.current_amount, 0))}
+              <p className="text-3xl font-bold mt-1">{formatCurrency(stats.savedAmount)}</p>
+              <p className="text-green-100 text-xs mt-1">
+                {stats.avgCompletion.toFixed(1)}% do total
               </p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl">
@@ -504,654 +670,512 @@ export default function FinancialGoals() {
             </div>
           </div>
         </div>
-        
+
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-100 text-sm font-medium">Economia Mensal Sugerida</p>
-              <p className="text-3xl font-bold mt-1">
-                {formatCurrency(goals
-                  .filter(g => g.status === 'active')
-                  .reduce((sum, goal) => sum + getMonthlySavingsNeeded(goal), 0))}
+              <p className="text-3xl font-bold mt-1">{formatCurrency(stats.monthlySavingsNeeded)}</p>
+              <p className="text-purple-100 text-xs mt-1">
+                {stats.nextDeadline 
+                  ? `Próximo prazo: ${formatDate(stats.nextDeadline)}` 
+                  : 'Nenhum prazo próximo'}
               </p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl">
-              <TrendingUp className="h-6 w-6" />
+              <Calculator className="h-6 w-6" />
             </div>
           </div>
         </div>
       </div>
       
-      {/* Potential Savings from AI Recommendations */}
-      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100">
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-2 rounded-xl">
-            <Brain className="h-5 w-5 text-white" />
-          </div>
-          <h2 className="text-xl font-semibold text-gray-800">Economias Potenciais com IA</h2>
-        </div>
-        
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <p className="text-gray-700">Total identificado pela IA:</p>
-            <p className="font-bold text-purple-700">
-              {formatCurrency(recommendations.reduce((sum, rec) => sum + rec.potentialSavings, 0))}/mês
-            </p>
+      {/* Help Card */}
+      <div className="bg-blue-50 p-6 rounded-2xl border border-blue-100">
+        <div className="flex items-start space-x-4">
+          <div className="bg-blue-500 p-3 rounded-xl">
+            <Info className="h-5 w-5 text-white" />
           </div>
           
-          <div className="flex items-center justify-between">
-            <p className="text-gray-700">Sugestões disponíveis:</p>
-            <p className="font-medium text-gray-800">{recommendations.length}</p>
+          <div className="flex-1">
+            <h2 className="text-xl font-semibold text-blue-800 mb-2">Como funcionam as Metas Financeiras</h2>
+            <div className="text-blue-700 space-y-2">
+              <p>
+                Suas metas financeiras são tratadas como parte do seu patrimônio e também como um investimento 
+                mensal no seu fluxo de caixa.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-3">
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <h3 className="font-medium text-blue-800 flex items-center">
+                    <PiggyBank className="h-4 w-4 mr-2" /> 
+                    Alocação Patrimonial
+                  </h3>
+                  <p className="text-sm mt-1">O valor já economizado é considerado parte do seu patrimônio.</p>
+                </div>
+                <div className="bg-white/50 p-3 rounded-lg">
+                  <h3 className="font-medium text-blue-800 flex items-center">
+                    <Calendar className="h-4 w-4 mr-2" /> 
+                    Investimento Mensal
+                  </h3>
+                  <p className="text-sm mt-1">As contribuições são tratadas como despesas de investimento.</p>
+                </div>
+              </div>
+              <p className="text-sm text-blue-600 mt-2">
+                Quando você define uma contribuição mensal, o sistema cria automaticamente uma conta 
+                recorrente na seção de Contas.
+              </p>
+            </div>
           </div>
-          
-          <button
-            onClick={() => setShowAIModal(true)}
-            className="mt-3 w-full py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md flex items-center justify-center space-x-2"
-          >
-            <Sparkles className="h-4 w-4" />
-            <span>Ver Todas as Sugestões</span>
-          </button>
         </div>
       </div>
-      
-      {/* Goals List */}
-      {loading ? (
-        <div className="animate-pulse space-y-4">
-          {[1, 2].map((_, index) => (
-            <div key={index} className="bg-gray-100 h-40 rounded-2xl"></div>
-          ))}
+
+      {/* List of Financial Goals */}
+      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+        <div className="p-6 border-b border-gray-100">
+          <h2 className="text-xl font-semibold text-gray-800">Suas Metas Financeiras</h2>
         </div>
-      ) : goals.length === 0 ? (
-        <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
-          <Target className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-800 mb-2">Nenhuma meta financeira definida</h3>
-          <p className="text-gray-600 max-w-md mx-auto mb-6">
-            Defina metas financeiras claras para ajudar você a economizar para seus sonhos e objetivos.
-          </p>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md inline-flex items-center space-x-2"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Criar Primeira Meta</span>
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-6">
-          {goals.map((goal) => {
-            const CategoryIcon = getCategoryInfo(goal.category).icon;
-            const categoryInfo = getCategoryInfo(goal.category);
-            const colorClass = categoryInfo.color;
-            const progressPercentage = getProgressPercentage(goal.current_amount, goal.target_amount);
-            const monthlySavingsNeeded = getMonthlySavingsNeeded(goal);
-            const isEditing = editingGoal?.id === goal.id;
-            
-            return (
-              <div key={goal.id} className={`bg-white rounded-2xl shadow-lg overflow-hidden border-l-4 ${
-                goal.status === 'completed' ? 'border-green-500' : 
-                goal.status === 'abandoned' ? 'border-gray-400' :
-                goal.priority === 'high' ? 'border-red-500' :
-                goal.priority === 'medium' ? 'border-yellow-500' :
-                'border-blue-500'
-              }`}>
-                {isEditing ? (
-                  <div className="p-6 space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Meta</label>
-                        <input
-                          type="text"
-                          value={editingGoal.name || ''}
-                          onChange={(e) => setEditingGoal({...editingGoal, name: e.target.value})}
-                          className="w-full p-2 border border-gray-300 rounded-lg"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
-                        <select
-                          value={editingGoal.category || ''}
-                          onChange={(e) => setEditingGoal({...editingGoal, category: e.target.value as any})}
-                          className="w-full p-2 border border-gray-300 rounded-lg"
-                        >
-                          {GoalCategories.map(cat => (
-                            <option key={cat.value} value={cat.value}>{cat.label}</option>
-                          ))}
-                        </select>
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Valor Alvo (R$)</label>
-                        <input
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={editingGoal.target_amount || ''}
-                          onChange={(e) => setEditingGoal({...editingGoal, target_amount: parseFloat(e.target.value)})}
-                          className="w-full p-2 border border-gray-300 rounded-lg"
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-1">Data Alvo</label>
-                        <input
-                          type="date"
-                          value={editingGoal.target_date || ''}
-                          onChange={(e) => setEditingGoal({...editingGoal, target_date: e.target.value})}
-                          className="w-full p-2 border border-gray-300 rounded-lg"
-                        />
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
-                      <textarea
-                        value={editingGoal.description || ''}
-                        onChange={(e) => setEditingGoal({...editingGoal, description: e.target.value})}
-                        className="w-full p-2 border border-gray-300 rounded-lg"
-                        rows={2}
-                      />
-                    </div>
-                    
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Prioridade</label>
-                      <select
-                        value={editingGoal.priority || ''}
-                        onChange={(e) => setEditingGoal({...editingGoal, priority: e.target.value as any})}
-                        className="w-full p-2 border border-gray-300 rounded-lg"
-                      >
-                        <option value="high">Alta</option>
-                        <option value="medium">Média</option>
-                        <option value="low">Baixa</option>
-                      </select>
-                    </div>
-                    
-                    <div className="flex justify-end space-x-3">
-                      <button
-                        onClick={() => setEditingGoal(null)}
-                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                      >
-                        Cancelar
-                      </button>
-                      
-                      <button
-                        onClick={() => goal.id && handleUpdateGoal(goal.id, editingGoal)}
-                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                      >
-                        Salvar Alterações
-                      </button>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="p-6">
-                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                        <div className="flex items-start space-x-4">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-r ${colorClass} shadow-md`}>
+        
+        <div className="divide-y divide-gray-100">
+          {goals.length === 0 ? (
+            <div className="p-12 text-center">
+              <Target className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma meta financeira cadastrada</h3>
+              <p className="text-gray-500 mb-6">Adicione metas para acompanhar seu progresso financeiro e direcionar seus investimentos.</p>
+              <button
+                onClick={openNewGoalModal}
+                className="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200"
+              >
+                Criar Primeira Meta
+              </button>
+            </div>
+          ) : (
+            <>
+              {goals.map((goal) => {
+                const categoryInfo = getCategoryInfo(goal.category);
+                const priorityInfo = getPriorityInfo(goal.priority);
+                const progress = calculateProgress(goal.current_amount, goal.target_amount);
+                const monthlyAmount = calculateMonthlyAmount(goal);
+                const isExpanded = expandedGoals.has(goal.id);
+                const CategoryIcon = categoryInfo.icon;
+                
+                return (
+                  <div key={goal.id} className="p-6 hover:bg-gray-50 transition-colors duration-200">
+                    <div className="space-y-4">
+                      {/* Header */}
+                      <div className="flex justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${categoryInfo.color}`}>
                             <CategoryIcon className="h-6 w-6 text-white" />
                           </div>
                           
                           <div>
                             <div className="flex items-center space-x-3">
-                              <h3 className="text-xl font-semibold text-gray-800">{goal.name}</h3>
-                              <span className={`text-xs px-3 py-1 rounded-full ${
-                                goal.status === 'completed' ? 'bg-green-100 text-green-700' :
-                                goal.status === 'abandoned' ? 'bg-gray-100 text-gray-700' :
-                                goal.priority === 'high' ? 'bg-red-100 text-red-700' :
-                                goal.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                                'bg-blue-100 text-blue-700'
-                              }`}>
-                                {goal.status === 'completed' ? 'Concluída' :
-                                 goal.status === 'abandoned' ? 'Abandonada' :
-                                 goal.priority === 'high' ? 'Alta Prioridade' :
-                                 goal.priority === 'medium' ? 'Média Prioridade' :
-                                 'Baixa Prioridade'}
+                              <h3 className="font-medium text-gray-800">{goal.name}</h3>
+                              <span className={`text-xs px-2 py-0.5 rounded-full ${priorityInfo.color}`}>
+                                {priorityInfo.label}
                               </span>
+                              {goal.status === 'completed' && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-green-100 text-green-700">
+                                  Completa
+                                </span>
+                              )}
+                              {goal.status === 'abandoned' && (
+                                <span className="text-xs px-2 py-0.5 rounded-full bg-gray-100 text-gray-700">
+                                  Abandonada
+                                </span>
+                              )}
                             </div>
                             
-                            <p className="text-gray-600 mt-1">{goal.description}</p>
-
-                            <div className="flex flex-wrap items-center gap-4 mt-2 text-sm">
-                              <span className="flex items-center text-gray-700">
-                                <Calendar className="h-4 w-4 mr-1" />
-                                <span>{getTimeRemaining(goal.target_date)}</span>
-                              </span>
-                              
-                              <span className="flex items-center text-gray-700">
-                                <DollarSign className="h-4 w-4 mr-1" />
-                                <span className="font-medium">Meta: {formatCurrency(goal.target_amount)}</span>
-                              </span>
-
-                              <span className="flex items-center text-gray-700">
-                                <PiggyBank className="h-4 w-4 mr-1 text-green-600" />
-                                <span className="font-medium text-green-600">Economizado: {formatCurrency(goal.current_amount)}</span>
-                              </span>
+                            <div className="flex items-center space-x-2 mt-1 text-sm text-gray-500">
+                              <span>{formatCurrency(goal.target_amount)}</span>
+                              <span>•</span>
+                              <span>Prazo: {formatDate(goal.target_date)}</span>
+                              {goal.status === 'active' && getMonthsUntil(goal.target_date) > 0 && (
+                                <>
+                                  <span>•</span>
+                                  <span>{getMonthsUntil(goal.target_date)} meses restantes</span>
+                                </>
+                              )}
                             </div>
                           </div>
                         </div>
                         
-                        <div className="flex flex-col items-end space-y-2">
-                          <div className="text-right">
-                            <div className="flex items-center justify-end">
-                              <span className="text-2xl font-bold text-gray-800">
-                                {formatCurrency(goal.current_amount)}
-                              </span>
-                              <span className="ml-2 text-sm text-gray-500">
-                                de {formatCurrency(goal.target_amount)}
-                              </span>
+                        <div className="flex items-center space-x-2">
+                          {goal.status === 'active' && (
+                            <button
+                              onClick={() => handleAddContribution(goal.id)}
+                              className="p-2 text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors"
+                              title="Adicionar Contribuição"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </button>
+                          )}
+                          <button
+                            onClick={() => startEditGoal(goal)}
+                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                            title="Editar"
+                          >
+                            <Edit className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => setDeleteConfirmGoalId(goal.id)}
+                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                            title="Excluir"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={() => toggleExpand(goal.id)}
+                            className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                          >
+                            {isExpanded ? (
+                              <ChevronDown className="h-4 w-4" />
+                            ) : (
+                              <ChevronRight className="h-4 w-4" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                      
+                      {/* Progress Bar */}
+                      <div className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="text-gray-600">{formatCurrency(goal.current_amount)}</span>
+                          <span className="text-gray-600">{progress.toFixed(1)}%</span>
+                        </div>
+                        <div className="w-full bg-gray-200 rounded-full h-2.5">
+                          <div 
+                            className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2.5 rounded-full" 
+                            style={{ width: `${progress}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                      
+                      {/* Monthly Calculation */}
+                      {goal.status === 'active' && (
+                        <div className="bg-indigo-50 p-3 rounded-lg text-sm">
+                          <div className="flex justify-between items-center">
+                            <div className="flex items-center text-indigo-700">
+                              <Calculator className="h-4 w-4 mr-2" />
+                              <span>Economia mensal necessária:</span>
                             </div>
-                            <p className="text-sm text-gray-600">
-                              {progressPercentage.toFixed(1)}% concluído
-                            </p>
-                          </div>
-                          
-                          <div className="flex items-center space-x-2">
-                            <button
-                              onClick={() => handleContribute(goal.id)}
-                              disabled={goal.status === 'completed'}
-                              className={`px-3 py-1 text-sm rounded-lg flex items-center space-x-1 ${
-                                goal.status === 'completed' 
-                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                                  : 'bg-green-500 text-white hover:bg-green-600 transition-colors'
-                              }`}
-                            >
-                              <DollarSign className="h-3 w-3" />
-                              <span>Adicionar</span>
-                            </button>
-                            
-                            <button
-                              onClick={() => {
-                                setSelectedGoal(goal);
-                                setShowAIModal(true);
-                              }}
-                              disabled={goal.status === 'completed'}
-                              className={`px-3 py-1 text-sm rounded-lg ${
-                                goal.status === 'completed' 
-                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors'
-                              }`}
-                            >
-                              <span className="flex items-center space-x-1">
-                                <Brain className="h-3 w-3" />
-                                <span>Otimizar</span>
-                              </span>
-                            </button>
-                            
-                            <button
-                              onClick={() => setEditingGoal({...goal})}
-                              className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
-                            >
-                              <Edit className="h-4 w-4" />
-                            </button>
-                            
-                            <button
-                              onClick={() => handleDeleteGoal(goal.id)}
-                              className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </button>
+                            <span className="font-semibold text-indigo-900">
+                              {formatCurrency(monthlyAmount)}
+                            </span>
                           </div>
                         </div>
-                      </div>
-                    </div>
-                    
-                    {/* Progress Bar */}
-                    <div className="h-2 bg-gray-200">
-                      <div 
-                        className={`h-2 ${
-                          goal.status === 'completed' ? 'bg-green-500' : `bg-gradient-to-r ${colorClass}`
-                        }`} 
-                        style={{ width: `${progressPercentage}%` }}
-                      ></div>
-                    </div>
-                    
-                    {goal.status === 'active' && (
-                      <div className="bg-gray-50 px-6 py-3 flex justify-between items-center">
-                        <div>
-                          <span className="text-sm font-medium text-gray-700">
-                            Economia mensal necessária:
-                          </span>
-                          <span className="ml-2 text-sm font-semibold text-blue-700">
-                            {formatCurrency(monthlySavingsNeeded)}
-                          </span>
-                        </div>
-                        
-                        {monthlySavingsNeeded > (totalMonthlyIncome * 0.2) && (
-                          <div className="flex items-center text-amber-600 text-sm">
-                            <AlertTriangle className="h-4 w-4 mr-1" />
-                            <span>Meta desafiadora</span>
+                      )}
+                      
+                      {/* Details (expandable) */}
+                      {isExpanded && (
+                        <div className="pt-4 mt-2 border-t border-gray-100">
+                          <div className="space-y-4">
+                            {/* Goal Description */}
+                            {goal.description && (
+                              <div>
+                                <h4 className="text-sm font-medium text-gray-700 mb-1">Descrição</h4>
+                                <p className="text-gray-600 text-sm">{goal.description}</p>
+                              </div>
+                            )}
+                            
+                            {/* Contributions History */}
+                            <div>
+                              <h4 className="text-sm font-medium text-gray-700 mb-2">Histórico de Contribuições</h4>
+                              {contributions[goal.id] && contributions[goal.id].length > 0 ? (
+                                <div className="max-h-40 overflow-y-auto pr-2">
+                                  <table className="w-full text-sm">
+                                    <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+                                      <tr>
+                                        <th className="px-3 py-2 text-left">Data</th>
+                                        <th className="px-3 py-2 text-right">Valor</th>
+                                        <th className="px-3 py-2 text-left">Notas</th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-200">
+                                      {contributions[goal.id].map(contribution => (
+                                        <tr key={contribution.id} className="hover:bg-gray-50">
+                                          <td className="px-3 py-2 whitespace-nowrap">
+                                            {formatDate(contribution.contribution_date)}
+                                          </td>
+                                          <td className="px-3 py-2 text-right font-medium text-green-600">
+                                            {formatCurrency(contribution.amount)}
+                                          </td>
+                                          <td className="px-3 py-2 text-gray-500">
+                                            {contribution.notes || '-'}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              ) : (
+                                <p className="text-gray-500 text-sm">Nenhuma contribuição registrada</p>
+                              )}
+                            </div>
                           </div>
-                        )}
-                      </div>
-                    )}
-                  </>
-                )}
-              </div>
-            );
-          })}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </>
+          )}
         </div>
-      )}
-      
-      {/* Add Goal Modal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-2xl font-semibold text-gray-800">Nova Meta Financeira</h2>
+      </div>
+
+      {/* Add/Edit Goal Modal */}
+      {(showAddModal || editingGoalId) && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4 overflow-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md max-h-[90vh] overflow-y-auto">
+            <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+              <h2 className="text-xl font-semibold text-gray-800">
+                {editingGoalId ? 'Editar Meta Financeira' : 'Nova Meta Financeira'}
+              </h2>
+              <button 
+                onClick={handleCloseModal}
+                className="text-gray-400 hover:text-gray-600 p-1"
+              >
+                <X className="h-5 w-5" />
+              </button>
             </div>
             
-            <div className="p-6">
-              <form onSubmit={(e) => {
-                e.preventDefault();
-                handleAddGoal();
-              }} className="space-y-6">
-                {/* Goal Type Selection - More Compact Grid */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Tipo de Meta
-                  </label>
-                  <div className="grid grid-cols-3 gap-3">
-                    {GoalCategories.map((category) => {
-                      const isSelected = newGoalFormData.category === category.value;
-                      return (
-                        <button
-                          key={category.value}
-                          type="button"
-                          onClick={() => setNewGoalFormData({
-                            ...newGoalFormData,
-                            category: category.value as any
-                          })}
-                          className={`flex items-center space-x-2 p-3 rounded-xl border-2 transition-all ${
-                            isSelected 
-                              ? `border-blue-500 bg-blue-50 shadow-md` 
-                              : `border-gray-200 hover:border-gray-300`
-                          }`}
-                        >
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center bg-gradient-to-r ${category.color}`}>
-                            <category.icon className="h-4 w-4 text-white" />
-                          </div>
-                          <span className="font-medium text-gray-800 text-sm">{category.label}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
+            <div className="p-6 space-y-5">
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 rounded-lg p-3 text-sm text-red-700">
+                  {error}
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nome da Meta
-                    </label>
-                    <input
-                      type="text"
-                      value={newGoalFormData.name}
-                      onChange={(e) => setNewGoalFormData({...newGoalFormData, name: e.target.value})}
-                      placeholder="Ex: Viagem para Europa"
-                      required
-                      className="w-full p-2 border border-gray-300 rounded-lg"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Valor Alvo
-                    </label>
-                    <div className="relative">
-                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
-                      <input
-                        type="number"
-                        min="0"
-                        step="0.01"
-                        value={newGoalFormData.target_amount}
-                        onChange={(e) => setNewGoalFormData({...newGoalFormData, target_amount: e.target.value})}
-                        placeholder="10000"
-                        required
-                        className="w-full pl-9 pr-4 py-2 border border-gray-300 rounded-lg"
-                      />
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Data Alvo
-                    </label>
-                    <input
-                      type="date"
-                      value={newGoalFormData.target_date}
-                      onChange={(e) => setNewGoalFormData({...newGoalFormData, target_date: e.target.value})}
-                      required
-                      min={new Date().toISOString().split('T')[0]}
-                      className="w-full p-2 border border-gray-300 rounded-lg"
-                    />
-                  </div>
-                  
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Prioridade
-                    </label>
-                    <select
-                      value={newGoalFormData.priority}
-                      onChange={(e) => setNewGoalFormData({...newGoalFormData, priority: e.target.value as any})}
-                      className="w-full p-2 border border-gray-300 rounded-lg"
+              )}
+              
+              {/* Goal Type Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Tipo de Meta
+                </label>
+                <div className="grid grid-cols-3 gap-2">
+                  {goalCategories.map(category => (
+                    <div key={category.value} 
+                      className={`flex flex-col items-center p-3 cursor-pointer rounded-lg border-2 transition-all duration-200 ${
+                        formData.category === category.value 
+                          ? 'border-indigo-500 bg-indigo-50' 
+                          : 'border-gray-200 hover:border-gray-300 hover:bg-gray-50'
+                      }`}
+                      onClick={() => setFormData({...formData, category: category.value})}
                     >
-                      <option value="high">Alta</option>
-                      <option value="medium">Média</option>
-                      <option value="low">Baixa</option>
-                    </select>
+                      <div className={`w-8 h-8 rounded-lg flex items-center justify-center ${category.color}`}>
+                        <category.icon className="h-5 w-5 text-white" />
+                      </div>
+                      <span className="text-xs mt-1 text-center">{category.label}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              
+              {/* Goal Name */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome da Meta
+                </label>
+                <input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  placeholder="Ex: Viagem para Europa"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                />
+              </div>
+              
+              {/* Goal Amount & Target Date */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Valor Alvo
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                      R$
+                    </span>
+                    <input
+                      type="number"
+                      value={formData.target_amount}
+                      onChange={(e) => setFormData({...formData, target_amount: e.target.value})}
+                      placeholder="10000"
+                      className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      min="0"
+                      step="0.01"
+                    />
                   </div>
                 </div>
                 
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Descrição (opcional)
+                    Data Alvo
                   </label>
-                  <textarea
-                    value={newGoalFormData.description}
-                    onChange={(e) => setNewGoalFormData({...newGoalFormData, description: e.target.value})}
-                    placeholder="Descreva sua meta..."
-                    rows={2}
-                    className="w-full p-2 border border-gray-300 rounded-lg"
+                  <input
+                    type="date"
+                    value={formData.target_date}
+                    onChange={(e) => setFormData({...formData, target_date: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   />
                 </div>
-                
-                {newGoalFormData.target_amount && newGoalFormData.target_date && (
-                  <div className="bg-blue-50 p-3 rounded-xl border border-blue-100">
-                    <h3 className="font-medium text-blue-800 mb-1 text-sm">Simulação</h3>
-                    <div className="grid grid-cols-2 gap-2">
-                      <div className="text-xs text-blue-700">
-                        <p>Valor total: {formatCurrency(parseFloat(newGoalFormData.target_amount))}</p>
-                        <p>
-                          Percentual da renda: {
-                            totalMonthlyIncome > 0 
-                              ? `${(
-                                  (parseFloat(newGoalFormData.target_amount) / Math.max(1, Math.ceil(
-                                    (new Date(newGoalFormData.target_date).getTime() - new Date().getTime()) / 
-                                    (1000 * 60 * 60 * 24 * 30)
-                                  )) / totalMonthlyIncome) * 100
-                                ).toFixed(1)}%`
-                              : 'N/A'
-                          }
-                        </p>
-                      </div>
-                      <div className="text-xs text-blue-700">
-                        <p>
-                          Economia mensal: {
-                            formatCurrency(
-                              parseFloat(newGoalFormData.target_amount) / Math.max(1, Math.ceil(
-                                (new Date(newGoalFormData.target_date).getTime() - new Date().getTime()) / 
-                                (1000 * 60 * 60 * 24 * 30)
-                              ))
-                            )
-                          }
-                        </p>
-                        <p className="flex items-center">
-                          <FileText className="h-3 w-3 mr-1 text-blue-600" />
-                          <span>Conta recorrente será criada</span>
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddModal(false)}
-                    className="px-5 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              </div>
+              
+              {/* Priority & Monthly Contribution */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Prioridade
+                  </label>
+                  <select
+                    value={formData.priority}
+                    onChange={(e) => setFormData({...formData, priority: e.target.value})}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
                   >
-                    Cancelar
-                  </button>
-                  
-                  <button
-                    type="submit"
-                    className="px-5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md"
-                  >
-                    Criar Meta
-                  </button>
+                    {goalPriorities.map(p => (
+                      <option key={p.value} value={p.value}>{p.label}</option>
+                    ))}
+                  </select>
                 </div>
-              </form>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Contribuição Mensal
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">
+                      R$
+                    </span>
+                    <input
+                      type="number"
+                      value={formData.monthly_contribution}
+                      onChange={(e) => setFormData({...formData, monthly_contribution: e.target.value})}
+                      placeholder="Opcional"
+                      className="w-full pl-8 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                      min="0"
+                      step="0.01"
+                    />
+                  </div>
+                </div>
+              </div>
+              
+              {/* Description */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Descrição (opcional)
+                </label>
+                <textarea
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  placeholder="Detalhes adicionais sobre esta meta..."
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500"
+                  rows={3}
+                />
+              </div>
+              
+              {/* Simulação Section */}
+              {formData.target_amount && formData.target_date && (
+                <div className="bg-indigo-50 p-4 rounded-lg">
+                  <h3 className="font-medium text-indigo-800 mb-2">Simulação</h3>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-indigo-700">Valor total a economizar:</span>
+                      <span className="font-semibold text-indigo-900">
+                        {formatCurrency(parseFloat(formData.target_amount) || 0)}
+                      </span>
+                    </div>
+                    
+                    {/* Only show if date is in the future */}
+                    {new Date(formData.target_date) > new Date() && (
+                      <>
+                        <div className="flex justify-between">
+                          <span className="text-indigo-700">Economia mensal necessária:</span>
+                          <span className="font-semibold text-indigo-900">
+                            {formatCurrency((parseFloat(formData.target_amount) || 0) / 
+                              Math.max(1, getMonthsUntil(formData.target_date)))}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-indigo-700">Percentual da renda mensal:</span>
+                          <span className="font-semibold text-indigo-900">
+                            N/A
+                          </span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+              )}
+              
+              {/* Recurring Bill Notice */}
+              {formData.monthly_contribution && parseFloat(formData.monthly_contribution) > 0 && (
+                <div className="bg-blue-50 p-4 rounded-lg flex items-start">
+                  <File className="h-4 w-4 text-blue-600 mt-1 mr-2 flex-shrink-0" />
+                  <p className="text-sm text-blue-700">
+                    Será criada uma conta recorrente de R$ {parseFloat(formData.monthly_contribution).toLocaleString('pt-BR', {minimumFractionDigits: 2})}/mês para esta meta.
+                    Esta conta aparecerá na seção de Contas para você gerenciar.
+                  </p>
+                </div>
+              )}
+              
+              {/* Action Buttons */}
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={handleCloseModal}
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => editingGoalId ? handleUpdateGoal(editingGoalId) : handleAddGoal()}
+                  className="px-6 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors flex items-center"
+                >
+                  <Save className="h-4 w-4 mr-2" />
+                  {editingGoalId ? 'Atualizar' : 'Criar Meta'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
       
-      {/* AI Recommendations Modal */}
-      {showAIModal && (
+      {/* Delete Confirmation Modal */}
+      {deleteConfirmGoalId && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[80vh] overflow-y-auto">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
             <div className="p-6 border-b border-gray-100">
-              <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-3">
-                  <div className="p-2 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl">
-                    <Brain className="h-5 w-5 text-white" />
-                  </div>
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    {selectedGoal 
-                      ? `Recomendações para ${selectedGoal.name}`
-                      : 'Recomendações da IA'}
-                  </h2>
-                </div>
-                
-                <button
-                  onClick={() => {
-                    setShowAIModal(false);
-                    setSelectedGoal(null);
-                  }}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
+              <h2 className="text-xl font-semibold text-gray-800">Confirmar Exclusão</h2>
             </div>
             
-            <div className="p-6">
-              {selectedGoal && (
-                <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 mb-4">
-                  <h3 className="font-medium text-indigo-800 mb-2 text-sm">Meta Selecionada: {selectedGoal.name}</h3>
-                  <div className="grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <p className="text-indigo-700">Valor: {formatCurrency(selectedGoal.target_amount)}</p>
-                      <p className="text-indigo-700">Progresso: {formatCurrency(selectedGoal.current_amount)}</p>
-                    </div>
-                    <div>
-                      <p className="text-indigo-700">Falta: {formatCurrency(selectedGoal.target_amount - selectedGoal.current_amount)}</p>
-                      <p className="text-indigo-700">Economia mensal: {formatCurrency(getMonthlySavingsNeeded(selectedGoal))}</p>
-                    </div>
+            <div className="p-6 space-y-4">
+              <div className="bg-red-50 p-4 rounded-lg border border-red-100">
+                <div className="flex items-start space-x-3">
+                  <AlertTriangle className="h-5 w-5 text-red-500 flex-shrink-0 mt-0.5" />
+                  <div>
+                    <h3 className="font-medium text-red-800 mb-1">Tem certeza?</h3>
+                    <p className="text-red-700 text-sm">
+                      Esta ação não pode ser desfeita. Todos os dados desta meta financeira serão permanentemente removidos.
+                    </p>
                   </div>
                 </div>
-              )}
-              
-              <div className="mb-4">
-                <h3 className="font-semibold text-gray-800 text-sm mb-1">Sugestões personalizadas</h3>
-                <p className="text-gray-600 text-xs">
-                  A PROSPERA.AI analisou seus gastos e identificou estas oportunidades de economia.
-                </p>
               </div>
               
-              <div className="space-y-3">
-                {aiLoading ? (
-                  <div className="animate-pulse space-y-3">
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="bg-gray-100 h-16 rounded-xl"></div>
-                    ))}
-                  </div>
-                ) : recommendations.length === 0 ? (
-                  <div className="text-center py-4">
-                    <p className="text-gray-500 text-sm">Nenhuma recomendação disponível no momento.</p>
-                  </div>
-                ) : (
-                  recommendations.map((rec) => (
-                    <div key={rec.id} className={`p-3 rounded-xl border ${
-                      rec.appliedToGoal ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200 hover:border-purple-200 hover:shadow-md transition-all'
-                    }`}>
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <Scissors className="h-4 w-4 text-purple-600" />
-                            <h4 className="font-medium text-gray-800 text-sm">{rec.title}</h4>
-                            
-                            <span className={`text-xs px-2 py-0.5 rounded-full ${
-                              rec.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
-                              rec.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                              'bg-red-100 text-red-700'
-                            }`}>
-                              {rec.difficulty === 'easy' ? 'Fácil' :
-                               rec.difficulty === 'medium' ? 'Médio' : 'Difícil'}
-                            </span>
-                          </div>
-                          
-                          <p className="text-xs text-gray-600 mt-1">{rec.description}</p>
-                        </div>
-                        
-                        <div className="text-right">
-                          <p className="font-semibold text-green-600 text-sm">{formatCurrency(rec.potentialSavings)}/mês</p>
-                          
-                          {!rec.appliedToGoal && selectedGoal && (
-                            <button
-                              onClick={() => applyRecommendation(selectedGoal.id, rec)}
-                              className="mt-1 px-2 py-1 bg-purple-100 text-purple-700 text-xs rounded-lg hover:bg-purple-200 transition-colors"
-                            >
-                              Aplicar
-                            </button>
-                          )}
-                          
-                          {rec.appliedToGoal && (
-                            <p className="text-xs text-green-600 flex items-center justify-end mt-1">
-                              <CheckCircle className="h-3 w-3 mr-1" />
-                              <span>Aplicado</span>
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-              
-              <div className="mt-6 pt-4 border-t border-gray-100">
-                <div className="flex justify-end space-x-3">
-                  <button
-                    onClick={() => {
-                      setShowAIModal(false);
-                      setSelectedGoal(null);
-                    }}
-                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors text-sm"
-                  >
-                    Fechar
-                  </button>
-                  
-                  <button
-                    onClick={() => generateRecommendations()}
-                    className="px-4 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-lg hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 flex items-center space-x-2 text-sm"
-                  >
-                    <Sparkles className="h-3 w-3" />
-                    <span>Gerar Novas Sugestões</span>
-                  </button>
-                </div>
+              <div className="flex justify-end space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setDeleteConfirmGoalId(null)}
+                  className="px-6 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={handleDeleteGoal}
+                  className="px-6 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Confirmar Exclusão
+                </button>
               </div>
             </div>
           </div>
