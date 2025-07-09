@@ -4,7 +4,7 @@ import {
   Clock, Car, Home, Users, CreditCard, Shield, Gem, X,
   ChevronRight, FileText, Filter, Mail, Settings
 } from 'lucide-react';
-import { useSupabaseData } from '../hooks/useSupabaseData';
+import { useDashboardData } from '../hooks/useSupabaseData';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -41,7 +41,7 @@ export default function SmartAlerts() {
     totalLoanPayments,
     totalBills,
     netWorth,
-  } = useSupabaseData();
+  } = useDashboardData();
 
   // Function to generate smart alerts based on financial data
   const generateAlerts = async () => {
