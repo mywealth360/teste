@@ -11,7 +11,8 @@ import {
   CheckCircle,
   Info,
   Car,
-  Gem
+  Gem,
+  PiggyBank
 } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart as RechartsPieChart, Cell, Pie } from 'recharts';
