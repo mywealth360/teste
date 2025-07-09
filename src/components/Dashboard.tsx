@@ -1,1117 +1,493 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Bell,
+  BarChart, 
+  PieChart, 
   TrendingUp, 
   TrendingDown, 
-  DollarSign,
-  Target,
-  Brain,
-  AlertTriangle,
-  CheckCircle,
-  Lightbulb,
-  Home,
-  Building,
-  Shield,
-  CreditCard,
-  Banknote,
-  Clock,
-  X,
-  Receipt,
-  Calendar,
+  DollarSign, 
+  Calendar, 
+  CreditCard, 
+  AlertTriangle, 
+  Bell, 
   FileText,
-  Landmark,
-  Wallet,
-  BarChart3,
+  Home,
   Car,
   Gem,
   Users,
-  ChevronRight,
-  PiggyBank,
-  Briefcase
+  Target,
+  Building,
+  Shield,
+  Landmark
 } from 'lucide-react';
-import { useSupabaseData } from '../hooks/useSupabaseData';
-import { useDashboardData } from '../hooks/useSupabaseData';
-import { useMonthlyRenewal } from '../hooks/useMonthlyRenewal';
-import { aiInsights } from '../data/mockData';
-import { useNavigate } from 'react-router-dom';
-import AlertsIndicator from './AlertsIndicator';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 import WealthEvolutionChart from './WealthEvolutionChart';
 import FinancialBreakdown from './FinancialBreakdown';
+import { useDashboardData } from '../hooks/useSupabaseData';
 
 export default function Dashboard() {
-  const navigate = useNavigate();
-  const {
-    totalMonthlyIncome,
-    totalMonthlyExpenses,
-    netMonthlyIncome,
-    totalInvestmentValue,
-    totalInvestmentIncome,
-    totalRealEstateValue,
-    totalRealEstateIncome,
-    totalRealEstateExpenses,
-    totalRetirementSaved,
-    totalRetirementContribution,
-    totalDebt,
-    totalLoanPayments,
-    totalBills,
-    totalBankBalance,
-    totalVehicleValue,
-    totalVehicleDepreciation,
-    totalVehicleExpenses,
-    totalExoticAssetsValue,
-    totalExoticAssetsAppreciation,
-    totalFinancialGoals,
-    totalAssets,
-    netWorth,
-    totalTaxes,
-    loading,
-    error
-  } = useDashboardData();
-
-  // Ativar renovação automática mensal
-  useMonthlyRenewal();
-
-  const [selectedBreakdown, setSelectedBreakdown] = useState<string | null>(null);
-
-  // Load revenue categories from localStorage
-  const [revenueCategories, setRevenueCategories] = useState<Record<string, number>>({});
-  
-  useEffect(() => {
-    const savedCategories = localStorage.getItem('revenueCategories');
-    if (savedCategories) {
-      try {
-        setRevenueCategories(JSON.parse(savedCategories));
-      } catch (err) {
-        console.error('Error parsing revenue categories:', err);
-      }
-    }
-    
-    // Clear localStorage data older than 24 hours
-    const lastUpdate = localStorage.getItem('revenueCategoriesTimestamp');
-    if (lastUpdate && (Date.now() - parseInt(lastUpdate)) > 24 * 60 * 60 * 1000) {
-      localStorage.removeItem('revenueCategories');
-      localStorage.removeItem('revenuesByType');
-      localStorage.removeItem('revenueCategoriesTimestamp');
-    } else if (!lastUpdate) {
-      localStorage.setItem('revenueCategoriesTimestamp', Date.now().toString());
-    }
-  }, []);
-
-  // Calculate total monthly expenses including all categories
-  const totalMonthlyExpensesComplete = totalMonthlyExpenses + totalLoanPayments + totalBills + 
-    totalRetirementContribution + totalRealEstateExpenses + totalVehicleExpenses + 
-    totalTaxes;
-
-  // Calculate total monthly income (excluding the non-existent 'invest' category)
-  const totalMonthlyIncomeComplete = Math.max(0, totalMonthlyIncome + totalInvestmentIncome + totalRealEstateIncome);
-
-  // Calculate net monthly income
-  const netMonthlyIncomeComplete = totalMonthlyIncomeComplete - totalMonthlyExpensesComplete; 
-
-  // Calculate liquid assets (bank accounts + easily liquidated investments)
-  const liquidAssets = totalBankBalance + (totalInvestmentValue * 0.7); // Assuming 70% of investments are liquid
-
-  // Calculate immobilized assets (real estate + retirement + illiquid investments + vehicles + exotic assets)
-  const immobilizedAssets = totalRealEstateValue + totalRetirementSaved + (totalInvestmentValue * 0.3) + totalVehicleValue + totalExoticAssetsValue;
-
-  const getInsightIcon = (type: string) => {
-    switch (type) {
-      case 'warning': return AlertTriangle;
-      case 'achievement': return CheckCircle;
-      case 'suggestion': return Lightbulb;
-      default: return Brain;
-    }
-  };
-
-  const getInsightColor = (type: string) => {
-    switch (type) {
-      case 'warning': return 'text-orange-500 bg-orange-50';
-      case 'achievement': return 'text-green-500 bg-green-50';
-      case 'suggestion': return 'text-blue-500 bg-blue-50';
-      default: return 'text-gray-500 bg-gray-50';
-    }
-  };
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div className="animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/4 mb-2"></div>
-          <div className="h-4 bg-gray-200 rounded w-1/3"></div>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {[...Array(3)].map((_, i) => (
-            <div key={i} className="bg-gray-200 animate-pulse h-40 rounded-3xl"></div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="space-y-6">
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
-          <div className="flex items-center space-x-3">
-            <AlertTriangle className="h-6 w-6 text-red-600" />
-            <div>
-              <h3 className="text-lg font-semibold text-red-800">Erro ao carregar dados</h3>
-              <p className="text-red-600">{error}</p>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="space-y-8">
-      {/* Header com Patrimônio Líquido */}
-      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-3xl p-8 text-white">
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"></div>
-        <div className="relative z-10">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-4xl font-bold mb-2">Dashboard Financeiro</h1>
-              <p className="text-slate-300 text-lg">Visão completa do seu patrimônio</p>
-            </div>
-            <div className="flex items-center space-x-6">
-              {/* Alert Indicator */}
-              <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm">
-                <AlertsIndicator />
-              </div>
-              
-              <div className="text-right">
-                <p className="text-slate-300 text-sm mb-1">Patrimônio Líquido</p>
-                <p className={`text-4xl font-bold ${netWorth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
-                  R$ {Math.abs(netWorth).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                </p>
-                <div className="flex items-center justify-end mt-2">
-                  <div className={`flex items-center space-x-1 px-3 py-1 rounded-full text-sm ${
-                    netWorth >= 0 ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
-                  }`}>
-                    {netWorth >= 0 ? (
-                      <TrendingUp className="h-4 w-4" />
-                    ) : (
-                      <TrendingDown className="h-4 w-4" />
-                    )}
-                    <span>{netWorth >= 0 ? 'Positivo' : 'Negativo'}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Financial Goals Quick View */}
-      <div 
-        onClick={() => navigate('/?tab=financial-goals')} 
-        className="bg-white p-6 rounded-2xl shadow-lg border border-indigo-100 cursor-pointer hover:shadow-xl transition-all duration-200 mb-8"
-      >
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl">
-              <Target className="h-5 w-5 text-white" />
-            </div>
-            <h2 className="text-xl font-semibold text-gray-800">Metas Financeiras</h2>
-          </div>
-          <span className="text-sm text-blue-600 flex items-center">
-            Ver todas <ChevronRight className="h-4 w-4 ml-1" />
-          </span>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-indigo-50 p-3 rounded-lg">
-            <p className="text-sm text-indigo-600">Total de Metas</p>
-            <p className="text-xl font-bold text-indigo-700">R$ {totalFinancialGoals.toLocaleString('pt-BR')}</p>
-            <div className="flex items-center text-xs text-indigo-500 mt-1">
-              <PiggyBank className="h-3 w-3 mr-1" /> Alocação patrimonial
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Seção de Renda e Custos */}
-      <div className="space-y-6">
-        <div className="flex items-center space-x-3">
-          <div className="bg-gradient-to-r from-green-500 to-red-500 w-1 h-8 rounded-full"></div>
-          <h2 className="text-2xl font-bold text-gray-800">Fluxo de Caixa Mensal</h2>
-        </div>
-
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Renda Mensal */}
-          <div 
-            onClick={() => setSelectedBreakdown('income')} 
-            className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl p-6 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-6">
-                <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
-                  <TrendingUp className="h-8 w-8 text-white" />
-                </div>
-                <DollarSign className="h-6 w-6 opacity-60" />
-              </div>
-              <div>
-                <p className="text-green-100 text-sm font-medium mb-2">Renda Mensal</p>
-                <p className="text-4xl font-bold mb-2 text-white">
-                  R$ {totalMonthlyIncomeComplete.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-                <div className="flex items-center space-x-2">
-                  <div className="bg-white/20 px-3 py-1 rounded-full flex items-center space-x-1">
-                    <span className="text-sm text-white">Todas as fontes</span>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  {totalMonthlyIncome > 0 && (
-                    <div className="bg-green-500/30 px-2 py-0.5 rounded-full text-xs text-white">
-                      Receitas: {totalMonthlyIncomeComplete > 0 ? ((totalMonthlyIncome / totalMonthlyIncomeComplete) * 100).toFixed(0) : '0'}%
-                    </div>
-                  )}
-                  {totalInvestmentIncome > 0 && (
-                    <div className="bg-blue-500/30 px-2 py-0.5 rounded-full text-xs text-white">
-                      Investimentos: {totalMonthlyIncomeComplete > 0 ? ((totalInvestmentIncome / totalMonthlyIncomeComplete) * 100).toFixed(0) : '0'}%
-                    </div>
-                  )}
-                  {totalRealEstateIncome > 0 && (
-                    <div className="bg-purple-500/30 px-2 py-0.5 rounded-full text-xs text-white">
-                      Imóveis: {totalMonthlyIncomeComplete > 0 ? ((totalRealEstateIncome / totalMonthlyIncomeComplete) * 100).toFixed(0) : '0'}%
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Gastos Mensais */}
-          <div 
-            onClick={() => setSelectedBreakdown('expenses')}
-            className="group relative overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 rounded-3xl p-6 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-6">
-                <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
-                  <TrendingDown className="h-8 w-8 text-white" />
-                </div>
-                <Receipt className="h-6 w-6 opacity-60" />
-              </div>
-              <div>
-                <p className="text-red-100 text-sm font-medium mb-2">Gastos Mensais</p>
-                <p className="text-4xl font-bold mb-2 text-white">
-                  R$ {totalMonthlyExpensesComplete.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-                <div className="flex items-center space-x-2">
-                  <div className="bg-white/20 px-3 py-1 rounded-full flex items-center space-x-1">
-                    <span className="text-sm text-white">Todos os gastos</span>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  <div className="bg-red-500/30 px-2 py-0.5 rounded-full text-xs text-white">
-                    Fixos: {totalMonthlyExpensesComplete > 0 ? ((totalBills / totalMonthlyExpensesComplete) * 100).toFixed(0) : '0'}%
-                  </div>
-                  <div className="bg-orange-500/30 px-2 py-0.5 rounded-full text-xs text-white">
-                    Dívidas: {totalMonthlyExpensesComplete > 0 ? ((totalLoanPayments / totalMonthlyExpensesComplete) * 100).toFixed(0) : '0'}%
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Saldo Mensal */}
-          <div 
-            onClick={() => setSelectedBreakdown('balance')}
-            className={`group relative overflow-hidden bg-gradient-to-br ${netMonthlyIncomeComplete >= 0 ? 'from-blue-500 to-indigo-600' : 'from-orange-500 to-red-600'} rounded-3xl p-6 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105`}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-6">
-                <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
-                  <DollarSign className="h-8 w-8" />
-                </div>
-                <Calendar className="h-6 w-6 opacity-60" />
-              </div>
-              <div>
-                <p className="text-white/80 text-sm font-medium mb-2">Saldo Mensal</p>
-                <p className="text-4xl font-bold mb-2 text-white">
-                  {netMonthlyIncomeComplete < 0 ? '-' : ''}R$ {Math.abs(netMonthlyIncomeComplete).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                </p>
-                <div className="flex items-center space-x-2">
-                  <div className="bg-white/20 px-3 py-1 rounded-full flex items-center space-x-1">
-                    <span className="text-sm text-white">{netMonthlyIncomeComplete >= 0 ? 'Positivo' : 'Negativo'}</span>
-                  </div>
-                </div>
-                <div className="flex flex-wrap gap-1 mt-2">
-                  <div className="bg-white/30 px-2 py-0.5 rounded-full text-xs text-white">
-                    Proporção: {totalMonthlyIncomeComplete > 0 ? 
-                      ((totalMonthlyExpensesComplete / totalMonthlyIncomeComplete) * 100).toFixed(0) : '0'}% da renda
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Additional income details section */}
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <div className="mt-6 border-t border-gray-100 pt-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Detalhamento das Fontes de Renda</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {totalMonthlyIncome > 0 && (
-                <div className="bg-green-50 p-4 rounded-xl border border-green-100">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                      <DollarSign className="h-5 w-5 text-green-600" />
-                      <div>
-                        <p className="text-green-600 text-sm font-medium">Fontes de Renda</p>
-                        <p className="text-lg font-bold text-green-700">R$ {totalMonthlyIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                      </div>
-                    </div>
-                    <div className="text-xs text-green-500 bg-green-50 px-2 py-0.5 rounded-full">
-                      {totalMonthlyIncomeComplete > 0 ? ((totalMonthlyIncome / totalMonthlyIncomeComplete) * 100).toFixed(1) : '0'}%
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {totalInvestmentIncome > 0 && (
-                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                      <Building className="h-5 w-5 text-blue-600" />
-                      <div>
-                        <p className="text-blue-600 text-sm font-medium">Investimentos</p>
-                        <p className="text-lg font-bold text-blue-700">R$ {totalInvestmentIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                      </div>
-                    </div>
-                    <div className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
-                      {totalMonthlyIncomeComplete > 0 ? ((totalInvestmentIncome / totalMonthlyIncomeComplete) * 100).toFixed(1) : '0'}%
-                    </div>
-                  </div>
-                </div>
-              )}
-              
-              {totalRealEstateIncome > 0 && (
-                <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                  <div className="flex justify-between items-center">
-                    <div className="flex items-center space-x-3">
-                      <Home className="h-5 w-5 text-purple-600" />
-                      <div>
-                        <p className="text-purple-600 text-sm font-medium">Aluguéis</p>
-                        <p className="text-lg font-bold text-purple-700">R$ {totalRealEstateIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                      </div>
-                    </div>
-                    <div className="text-xs text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
-                      {totalMonthlyIncomeComplete > 0 ? ((totalRealEstateIncome / totalMonthlyIncomeComplete) * 100).toFixed(1) : '0'}%
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {/* Revenue Categories */}
-          <div className="mt-6 border-t border-gray-100 pt-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Receitas por Categoria</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-green-50 p-4 rounded-xl border border-green-100 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    <Briefcase className="h-5 w-5 text-green-600" />
-                    <h4 className="font-medium text-gray-800">Trabalho</h4>
-                  </div>
-                  <p className="text-xs text-green-500 bg-green-100 px-2 py-0.5 rounded-full">
-                    {totalMonthlyIncome > 0 ? ((totalMonthlyIncome * 0.7) / totalMonthlyIncome * 100).toFixed(0) : '0'}%
-                  </p>
-                </div>
-                <p className="text-xl font-bold text-gray-900">R$ {(totalMonthlyIncome * 0.7).toLocaleString('pt-BR')}</p>
-              </div>
-              
-              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    <Building className="h-5 w-5 text-blue-600" />
-                    <h4 className="font-medium text-gray-800">Investimentos</h4>
-                  </div>
-                  <p className="text-xs text-blue-500 bg-blue-100 px-2 py-0.5 rounded-full">
-                    {totalMonthlyIncomeComplete > 0 ? ((totalInvestmentIncome / totalMonthlyIncomeComplete) * 100).toFixed(0) : '0'}%
-                  </p>
-                </div>
-                <p className="text-xl font-bold text-gray-900">R$ {totalInvestmentIncome.toLocaleString('pt-BR')}</p>
-              </div>
-              
-              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100 shadow-sm">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center space-x-2">
-                    <Home className="h-5 w-5 text-purple-600" />
-                    <h4 className="font-medium text-gray-800">Imóveis</h4>
-                  </div>
-                  <p className="text-xs text-purple-500 bg-purple-100 px-2 py-0.5 rounded-full">
-                    {totalMonthlyIncomeComplete > 0 ? ((totalRealEstateIncome / totalMonthlyIncomeComplete) * 100).toFixed(0) : '0'}%
-                  </p>
-                </div>
-                <p className="text-xl font-bold text-gray-900">R$ {totalRealEstateIncome.toLocaleString('pt-BR')}</p>
-              </div>
-            </div>
-            
-            {/* View Details Button */}
-            <div className="mt-4 text-center">
-              <button 
-                onClick={() => navigate('/?tab=revenues')} 
-                className="inline-flex items-center text-blue-600 hover:text-blue-800 transition-colors"
-              >
-                <span>Ver detalhamento completo</span>
-                <ChevronRight className="h-4 w-4 ml-1" />
-              </button>
-            </div>
-          </div>
-          
-          <div className="mt-6 border-t border-gray-100 pt-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Detalhamento dos Custos Mensais</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Receipt className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="text-blue-600 text-sm font-medium">Transações</p>
-                      <p className="text-lg font-bold text-blue-700">R$ {totalMonthlyExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
-                  </div>
-                  <div className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
-                    {((totalMonthlyExpenses / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
-                  </div>
-                </div>
-              </div>
-              
-              <div className="bg-red-50 p-4 rounded-xl border border-red-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <CreditCard className="h-5 w-5 text-red-600" />
-                    <div>
-                      <p className="text-red-600 text-sm font-medium">Empréstimos</p>
-                      <p className="text-lg font-bold text-red-700">R$ {totalLoanPayments.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
-                  </div>
-                  <div className="text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
-                    {((totalLoanPayments / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <FileText className="h-5 w-5 text-orange-600" />
-                    <div>
-                      <p className="text-orange-600 text-sm font-medium">Contas</p>
-                      <p className="text-lg font-bold text-orange-700">R$ {totalBills.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
-                  </div>
-                  <div className="text-xs text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">
-                    {((totalBills / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Shield className="h-5 w-5 text-blue-600" />
-                    <div>
-                      <p className="text-blue-600 text-sm font-medium">Previdência</p>
-                      <p className="text-lg font-bold text-blue-700">R$ {totalRetirementContribution.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
-                  </div>
-                  <div className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
-                    {((totalRetirementContribution / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Home className="h-5 w-5 text-purple-600" />
-                    <div>
-                      <p className="text-purple-600 text-sm font-medium">Imóveis</p>
-                      <p className="text-lg font-bold text-purple-700">R$ {totalRealEstateExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
-                  </div>
-                  <div className="text-xs text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
-                    {((totalRealEstateExpenses / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-teal-50 p-4 rounded-xl border border-teal-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Car className="h-5 w-5 text-teal-600" />
-                    <div>
-                      <p className="text-teal-600 text-sm font-medium">Veículos</p>
-                      <p className="text-lg font-bold text-teal-700">R$ {totalVehicleExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
-                  </div>
-                  <div className="text-xs text-teal-500 bg-teal-50 px-2 py-0.5 rounded-full">
-                    {((totalVehicleExpenses / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Landmark className="h-5 w-5 text-indigo-600" />
-                    <div>
-                      <p className="text-indigo-600 text-sm font-medium">Impostos</p>
-                      <p className="text-lg font-bold text-indigo-700">R$ {totalTaxes.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                    </div>
-                  </div>
-                  <div className="text-xs text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">
-                    {((totalTaxes / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-pink-50 p-4 rounded-xl border border-pink-100">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <Users className="h-5 w-5 text-pink-600" />
-                    <div>
-                      <p className="text-pink-600 text-sm font-medium">Funcionários</p>
-                      <p className="text-lg font-bold text-pink-700">R$ {(0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                    </div>
-                  </div>
-                  <div className="text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">
-                    0%
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="mt-6 border-t border-gray-100 pt-4">
-            <h3 className="text-lg font-semibold text-gray-800 mb-4">Receitas por Categoria</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {Object.keys(revenueCategories).length > 0 ? (
-                Object.entries(revenueCategories).map(([category, amount]) => (
-                  <div key={category} className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-100">
-                    <div className="flex justify-between items-center mb-2">
-                      <h4 className="font-medium text-gray-800 capitalize">{category}</h4>
-                      <span className="text-sm text-green-600">
-                        {totalMonthlyIncome > 0 ? `${((amount / totalMonthlyIncome) * 100).toFixed(1)}%` : '0%'}
-                      </span>
-                    </div>
-                    <p className="text-xl font-bold text-green-700">
-                      R$ {amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
-                    </p>
-                    <div className="w-full bg-green-200 rounded-full h-2 mt-2">
-                      <div
-                        className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full"
-                        style={{ width: totalMonthlyIncome > 0 ? `${(amount / totalMonthlyIncome) * 100}%` : '0%' }}
-                      ></div>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <div className="col-span-3 bg-blue-50 p-4 rounded-xl border border-blue-100 text-center">
-                  <p className="text-blue-700">Visite a seção de "Gestão de Receitas" para ver suas fontes de renda por categoria.</p>
-                  <button
-                    onClick={() => setActiveTab('revenues')}
-                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                  >
-                    Ver Receitas
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-          
-          {/* Investment Expenses Section */}
-          <div className="mt-6">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">Alocação para Investimentos</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex items-center space-x-2">
-                    <Target className="h-5 w-5 text-indigo-600" />
-                    <h4 className="font-medium text-gray-800">Metas Financeiras</h4>
-                  </div>
-                  <button 
-                    onClick={(e) => { 
-                      e.stopPropagation(); 
-                      navigate('/?tab=financial-goals');
-                    }}
-                    className="text-xs text-indigo-600 hover:text-indigo-700 hover:underline"
-                  >
-                    Ver detalhes
-                  </button>
-                </div>
-                <p className="text-xl font-bold text-indigo-700">
-                  R$ {totalFinancialGoals > 0 ? (totalFinancialGoals / 12).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}/mês
-                </p>
-                <div className="flex items-center mt-2">
-                  <span className="text-xs text-indigo-600">Poupança direcionada a objetivos</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Seção de Patrimônio */}
-      <div className="space-y-6">
-        <div className="flex items-center space-x-3">
-          <div className="bg-gradient-to-r from-blue-500 to-purple-500 w-1 h-8 rounded-full"></div>
-          <h2 className="text-2xl font-bold text-gray-800">Gestão de Patrimônio</h2>
-        </div>
-
-        {/* Cards Secundários - Ativos */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Ativos Líquidos */}
-          <div 
-            onClick={() => setSelectedBreakdown('liquid-assets')}
-            className="group relative overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-8 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-6">
-                <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
-                  <Wallet className="h-8 w-8" />
-                </div>
-                <BarChart3 className="h-6 w-6 opacity-60" />
-              </div>
-              <div>
-                <p className="text-emerald-100 text-sm font-medium mb-2">Ativos Líquidos</p>
-                <p className="text-4xl font-bold mb-2">R$ {liquidAssets.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
-                <div className="flex items-center space-x-2">
-                  <div className="bg-white/20 px-3 py-1 rounded-full">
-                    <span className="text-sm">Disponível</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div 
-            onClick={() => setSelectedBreakdown('financial-goals')}
-            className="group relative overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-6">
-                <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
-                  <Target className="h-8 w-8" />
-                </div>
-                <DollarSign className="h-6 w-6 opacity-60" />
-              </div>
-              <div>
-                <p className="text-indigo-100 text-sm font-medium mb-2">Metas Financeiras</p>
-                <p className="text-4xl font-bold mb-2">R$ {totalFinancialGoals.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
-                <div className="flex items-center space-x-1 mt-2">
-                  <PiggyBank className="h-4 w-4 text-indigo-200" />
-                  <span className="text-sm text-indigo-100">Alocação para objetivos</span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Ativos Imobilizados */}
-          <div 
-            onClick={() => setSelectedBreakdown('immobilized-assets')}
-            className="group relative overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105"
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-            <div className="relative z-10">
-              <div className="flex items-center justify-between mb-6">
-                <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
-                  <Landmark className="h-8 w-8" />
-                </div>
-                <Building className="h-6 w-6 opacity-60" />
-              </div>
-              <div>
-                <p className="text-blue-100 text-sm font-medium mb-2">Ativos Imobilizados</p>
-                <p className="text-4xl font-bold mb-2">R$ {immobilizedAssets.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
-                <div className="flex items-center space-x-2">
-                  <div className="bg-white/20 px-3 py-1 rounded-full">
-                    <span className="text-sm">Longo Prazo</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Métricas Detalhadas */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
-          <div 
-            onClick={() => setSelectedBreakdown('investments')}
-            className="bg-white p-6 rounded-2xl shadow-lg border border-purple-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-purple-600 text-sm font-medium">Investimentos</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">
-                  R$ {totalInvestmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
-                </p>
-                <p className="text-sm text-green-600 mt-1">
-                  +R$ {totalInvestmentIncome.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}/mês
-                </p>
-              </div>
-              <div className="bg-purple-100 p-3 rounded-xl">
-                <Building className="h-6 w-6 text-purple-600" />
-              </div>
-            </div>
-          </div>
-
-          <div 
-            onClick={() => setSelectedBreakdown('real-estate')}
-            className="bg-white p-6 rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-orange-600 text-sm font-medium">Imóveis</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">
-                  R$ {totalRealEstateValue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
-                </p>
-                <p className="text-sm text-green-600 mt-1">
-                  +R$ {totalRealEstateIncome.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}/mês
-                </p>
-              </div>
-              <div className="bg-orange-100 p-3 rounded-xl">
-                <Home className="h-6 w-6 text-orange-600" />
-              </div>
-            </div>
-          </div>
-          
-          <div 
-            onClick={() => setSelectedBreakdown('financial-goals')}
-            className="bg-white p-6 rounded-2xl shadow-lg border border-indigo-200 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-indigo-600 text-sm font-medium">Metas Financeiras</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">
-                  R$ {totalFinancialGoals.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
-                </p>
-                <p className="text-sm text-indigo-600 mt-1">
-                  Economia direcionada
-                </p>
-              </div>
-              <div className="bg-indigo-100 p-3 rounded-xl">
-                <Target className="h-6 w-6 text-indigo-600" />
-              </div>
-            </div>
-          </div>
-
-          <div 
-            onClick={() => setSelectedBreakdown('retirement')}
-            className="bg-white p-6 rounded-2xl shadow-lg border border-green-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-green-600 text-sm font-medium">Previdência</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">
-                  R$ {totalRetirementSaved.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
-                </p>
-                <p className="text-sm text-blue-600 mt-1">
-                  R$ {totalRetirementContribution.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}/mês
-                </p>
-              </div>
-              <div className="bg-green-100 p-3 rounded-xl">
-                <Shield className="h-6 w-6 text-green-600" />
-              </div>
-            </div>
-          </div>
-
-          <div 
-            onClick={() => setSelectedBreakdown('vehicles')}
-            className="bg-white p-6 rounded-2xl shadow-lg border border-blue-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-blue-600 text-sm font-medium">Veículos</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">
-                  R$ {totalVehicleValue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
-                </p>
-                <p className="text-sm text-red-600 mt-1">
-                  -R$ {totalVehicleDepreciation.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
-                </p>
-              </div>
-              <div className="bg-blue-100 p-3 rounded-xl">
-                <Car className="h-6 w-6 text-blue-600" />
-              </div>
-            </div>
-          </div>
-
-          <div 
-            onClick={() => setSelectedBreakdown('exotic-assets')}
-            className="bg-white p-6 rounded-2xl shadow-lg border border-indigo-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-indigo-600 text-sm font-medium">Ativos Exóticos</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">
-                  R$ {totalExoticAssetsValue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
-                </p>
-                <p className={`text-sm ${totalExoticAssetsAppreciation >= 0 ? 'text-green-600' : 'text-red-600'} mt-1`}>
-                  {totalExoticAssetsAppreciation >= 0 ? '+' : ''}R$ {totalExoticAssetsAppreciation.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
-                </p>
-              </div>
-              <div className="bg-indigo-100 p-3 rounded-xl">
-                <Gem className="h-6 w-6 text-indigo-600" />
-              </div>
-            </div>
-          </div>
-
-          <div 
-            onClick={() => setSelectedBreakdown('taxes')}
-            className="bg-white p-6 rounded-2xl shadow-lg border border-indigo-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-indigo-600 text-sm font-medium">Impostos</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">
-                  R$ {totalTaxes.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
-                </p>
-                <p className="text-sm text-indigo-600 mt-1">
-                  Mensal
-                </p>
-              </div>
-              <div className="bg-indigo-100 p-3 rounded-xl">
-                <Landmark className="h-6 w-6 text-indigo-600" />
-              </div>
-            </div>
-          </div>
-
-          <div 
-            onClick={() => setSelectedBreakdown('debts')}
-            className="bg-white p-6 rounded-2xl shadow-lg border border-red-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-red-600 text-sm font-medium">Dívidas</p>
-                <p className="text-2xl font-bold text-gray-800 mt-1">
-                  R$ {totalDebt.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
-                </p>
-                <p className="text-sm text-red-600 mt-1">
-                  R$ {totalLoanPayments.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}/mês
-                </p>
-              </div>
-              <div className="bg-red-100 p-3 rounded-xl">
-                <CreditCard className="h-6 w-6 text-red-600" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Gráfico de Evolução Patrimonial */}
-      <WealthEvolutionChart />
-
-      {/* Insights da IA */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 mt-8">
-        <div className="flex items-center space-x-3 mb-6">
-          <div className="flex items-center space-x-3">
-            <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-2 rounded-xl">
-              <Brain className="h-5 w-5 text-white" />
-            </div>
-            <h2 className="text-xl font-semibold text-gray-800">Insights da IA</h2>
-          </div>
-          <a href="/smart-alerts" className="text-sm text-blue-600 hover:text-blue-700 flex items-center ml-auto">
-            <Bell className="h-4 w-4 mr-1" />
-            <span>Ver todos os alertas</span>
-          </a>
-        </div>
-        
-        <div className="space-y-4">
-          {aiInsights.slice(0, 3).map((insight) => {
-            const Icon = getInsightIcon(insight.type);
-            const colorClass = getInsightColor(insight.type);
-            
-            return (
-              <div key={insight.id} className="flex items-start space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-colors duration-200">
-                <div className={`p-2 rounded-lg ${colorClass}`}>
-                  <Icon className="h-5 w-5" />
-                </div>
-                <div className="flex-1">
-                  <h3 className="font-medium text-gray-800">{insight.title}</h3>
-                  <p className="text-gray-600 text-sm mt-1">{insight.description}</p>
-                  <div className="flex items-center space-x-2 mt-2">
-                    <span className={`text-xs px-2 py-1 rounded-full ${
-                      insight.impact === 'high' ? 'bg-red-100 text-red-700' :
-                      insight.impact === 'medium' ? 'bg-yellow-100 text-yellow-700' :
-                      'bg-green-100 text-green-700'
-                    }`}>
-                      Impacto {insight.impact === 'high' ? 'Alto' : insight.impact === 'medium' ? 'Médio' : 'Baixo'}
-                    </span>
-                    <span className="text-xs text-gray-500">{insight.date}</span>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-      {/* Modal de Ficha Técnica */}
-      {selectedBreakdown && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
-            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
-              <h2 className="text-2xl font-semibold text-gray-800">
-                Ficha Técnica - {
-                  selectedBreakdown === 'liquid-assets' ? 'Ativos Líquidos' :
-                  selectedBreakdown === 'immobilized-assets' ? 'Ativos Imobilizados' :
-                  selectedBreakdown === 'income' ? 'Renda Mensal' :
-                  selectedBreakdown === 'expenses' ? 'Gastos Mensais' :
-                  selectedBreakdown === 'balance' ? 'Saldo Mensal' :
-                  selectedBreakdown === 'assets' ? 'Total de Ativos' :
-                  selectedBreakdown === 'investments' ? 'Investimentos' :
-                  selectedBreakdown === 'real-estate' ? 'Imóveis' :
-                  selectedBreakdown === 'retirement' ? 'Previdência' :
-                  selectedBreakdown === 'bank-accounts' ? 'Contas Bancárias' :
-                  selectedBreakdown === 'vehicles' ? 'Veículos' :
-                  selectedBreakdown === 'exotic-assets' ? 'Ativos Exóticos' :
-                  selectedBreakdown === 'taxes' ? 'Impostos' :
-                  selectedBreakdown === 'financial-goals' ? 'Metas Financeiras' :
-                  selectedBreakdown === 'debts' ? 'Dívidas' : ''
-                }
-              </h2>
-              <button
-                onClick={() => setSelectedBreakdown(null)}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
-              >
-                <X className="h-6 w-6" />
-              </button>
-            </div>
-            
-            <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
-              <FinancialBreakdown type={selectedBreakdown} />
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// Financial Goals Breakdown Component
-function FinancialGoalsBreakdown() {
-  const navigate = useNavigate();
-  const [goals, setGoals] = useState([]);
+  const { user } = useAuth();
+  const [activeBreakdown, setActiveBreakdown] = useState<string | null>(null);
+  const [expenseCategories, setExpenseCategories] = useState<{category: string, amount: number, percentage: number}[]>([]);
+  const [incomeCategories, setIncomeCategories] = useState<{category: string, amount: number, percentage: number}[]>([]);
   const [loading, setLoading] = useState(true);
   
+  // Use the dashboard data hook
+  const dashboardData = useDashboardData();
+
   useEffect(() => {
-    // Fetch goals data - in a real implementation this would come from supabase
-    // For now we'll use static data
-    setLoading(true);
-    
-    const mockGoals = [
-      {
-        id: '1',
-        name: 'Viagem para Europa',
-        targetAmount: 15000,
-        currentAmount: 5000,
-        targetDate: '2025-12-20',
-        category: 'travel',
-        progress: 33.33
-      },
-      {
-        id: '2',
-        name: 'Abrir consultoria financeira',
-        targetAmount: 50000,
-        currentAmount: 12500,
-        targetDate: '2026-06-30',
-        category: 'business',
-        progress: 25
-      }
-    ];
-    
-    setTimeout(() => {
-      setGoals(mockGoals);
+    if (user) {
+      fetchExpenseCategories();
+      fetchIncomeCategories();
+    }
+  }, [user]);
+
+  const fetchExpenseCategories = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('transactions')
+        .select('category, amount')
+        .eq('user_id', user?.id)
+        .eq('type', 'expense');
+
+      if (error) throw error;
+
+      // Group by category and sum amounts
+      const categories: Record<string, number> = {};
+      data?.forEach(transaction => {
+        categories[transaction.category] = (categories[transaction.category] || 0) + transaction.amount;
+      });
+
+      // Calculate total
+      const total = Object.values(categories).reduce((sum, amount) => sum + amount, 0);
+
+      // Format data for display
+      const formattedCategories = Object.entries(categories).map(([category, amount]) => ({
+        category,
+        amount,
+        percentage: total > 0 ? (amount / total) * 100 : 0
+      }));
+
+      // Sort by amount descending
+      formattedCategories.sort((a, b) => b.amount - a.amount);
+
+      setExpenseCategories(formattedCategories);
+    } catch (err) {
+      console.error('Error fetching expense categories:', err);
+    } finally {
       setLoading(false);
-    }, 500);
-    
-  }, []);
-  
+    }
+  };
+
+  const fetchIncomeCategories = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('income_sources')
+        .select('category, amount')
+        .eq('user_id', user?.id)
+        .eq('is_active', true);
+
+      if (error) throw error;
+
+      // Group by category and sum amounts
+      const categories: Record<string, number> = {};
+      data?.forEach(source => {
+        categories[source.category] = (categories[source.category] || 0) + source.amount;
+      });
+
+      // Calculate total
+      const total = Object.values(categories).reduce((sum, amount) => sum + amount, 0);
+
+      // Format data for display
+      const formattedCategories = Object.entries(categories).map(([category, amount]) => ({
+        category,
+        amount,
+        percentage: total > 0 ? (amount / total) * 100 : 0
+      }));
+
+      // Sort by amount descending
+      formattedCategories.sort((a, b) => b.amount - a.amount);
+
+      setIncomeCategories(formattedCategories);
+    } catch (err) {
+      console.error('Error fetching income categories:', err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', {
+      style: 'currency',
+      currency: 'BRL'
+    }).format(value);
+  };
+
+  const formatPercentage = (value: number) => {
+    return `${value.toFixed(1)}%`;
+  };
+
+  // Define expense categories with colors
+  const expenseCategoryColors = {
+    'Utilidades': { color: 'bg-blue-500', icon: Building },
+    'Empréstimos': { color: 'bg-orange-500', icon: CreditCard },
+    'Encargos Sociais': { color: 'bg-purple-500', icon: Landmark },
+    'Assinatura': { color: 'bg-green-500', icon: FileText },
+    'Investimentos': { color: 'bg-indigo-500', icon: TrendingUp },
+    'Previdência': { color: 'bg-teal-500', icon: Shield },
+    'Veículos': { color: 'bg-red-500', icon: Car },
+    'Funcionários': { color: 'bg-pink-500', icon: Users },
+    'Impostos': { color: 'bg-yellow-500', icon: Landmark },
+    // Default for any other category
+    'default': { color: 'bg-gray-500', icon: FileText }
+  };
+
+  // Get color and icon for a category
+  const getCategoryStyle = (category: string) => {
+    return expenseCategoryColors[category as keyof typeof expenseCategoryColors] || expenseCategoryColors.default;
+  };
+
   return (
-    <div className="p-6 space-y-6">
-      <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-        <div className="flex items-center justify-between">
-          <div>
-            <h3 className="font-semibold text-indigo-800 mb-1">Total em Metas Financeiras</h3>
-            <p className="text-3xl font-bold text-indigo-700">
-              R$ {goals.reduce((sum, g) => sum + g.targetAmount, 0).toLocaleString('pt-BR')}
-            </p>
-          </div>
-          <Target className="h-8 w-8 text-indigo-600" />
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+          <p className="text-gray-500 mt-1">Visão geral das suas finanças</p>
+        </div>
+        <div className="flex space-x-2">
+          <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">
+            <Calendar className="h-5 w-5" />
+          </button>
+          <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">
+            <Bell className="h-5 w-5" />
+          </button>
         </div>
       </div>
-      
-      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-100 mb-4">
-        <h3 className="font-medium text-indigo-800 mb-2">Sobre Metas Financeiras</h3>
-        <p className="text-gray-700">
-          Metas financeiras são consideradas uma alocação do seu patrimônio, pois representam capital que você está 
-          reservando para objetivos específicos. Ao mesmo tempo, as contribuições mensais para estas metas entram como 
-          despesas de investimento no seu fluxo de caixa.
-        </p>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-green-100 text-sm font-medium">Receita Mensal</p>
+              <p className="text-3xl font-bold mt-1">{formatCurrency(dashboardData.totalMonthlyIncome || 0)}</p>
+            </div>
+            <div className="bg-white/20 p-3 rounded-xl">
+              <TrendingUp className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-red-500 to-red-600 p-6 rounded-2xl text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-red-100 text-sm font-medium">Despesa Mensal</p>
+              <p className="text-3xl font-bold mt-1">{formatCurrency(dashboardData.totalMonthlyExpenses || 0)}</p>
+            </div>
+            <div className="bg-white/20 p-3 rounded-xl">
+              <TrendingDown className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        <div className={`bg-gradient-to-br ${dashboardData.netMonthlyIncome >= 0 ? 'from-blue-500 to-blue-600' : 'from-orange-500 to-orange-600'} p-6 rounded-2xl text-white shadow-lg`}>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-white/80 text-sm font-medium">Saldo Mensal</p>
+              <p className="text-3xl font-bold mt-1">{formatCurrency(Math.abs(dashboardData.netMonthlyIncome || 0))}</p>
+              <p className="text-white/80 text-sm">{dashboardData.netMonthlyIncome >= 0 ? 'Positivo' : 'Negativo'}</p>
+            </div>
+            <div className="bg-white/20 p-3 rounded-xl">
+              <DollarSign className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
       </div>
-      
-      <div className="space-y-4">
-        <h3 className="font-semibold text-gray-800">Suas Metas Financeiras</h3>
+
+      {/* Wealth Evolution Chart */}
+      <WealthEvolutionChart />
+
+      {/* Breakdown Sections */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Expense Categories */}
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-6">Despesas por Categoria</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {expenseCategories.map((category, index) => {
+              const { color, icon: Icon } = getCategoryStyle(category.category);
+              return (
+                <div key={index} className="bg-gray-50 p-4 rounded-xl">
+                  <div className="flex items-center space-x-3 mb-2">
+                    <div className={`w-8 h-8 ${color} rounded-lg flex items-center justify-center`}>
+                      <Icon className="h-4 w-4 text-white" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">{category.category}</p>
+                    </div>
+                    <div className="text-xs text-gray-500">{formatPercentage(category.percentage)}</div>
+                  </div>
+                  <p className="text-lg font-bold text-gray-900">{formatCurrency(category.amount)}</p>
+                  <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                    <div className={`${color} h-1.5 rounded-full`} style={{ width: `${Math.min(100, category.percentage)}%` }}></div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Income Categories */}
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-6">Receitas por Categoria</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {incomeCategories.map((category, index) => (
+              <div key={index} className="bg-gray-50 p-4 rounded-xl">
+                <div className="flex items-center justify-between mb-2">
+                  <p className="text-sm font-medium text-gray-900">{category.category}</p>
+                  <p className="text-xs text-gray-500">{formatPercentage(category.percentage)}</p>
+                </div>
+                <p className="text-lg font-bold text-green-600">{formatCurrency(category.amount)}</p>
+                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                  <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, category.percentage)}%` }}></div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* Asset Breakdown */}
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-6">Composição do Patrimônio</h2>
         
-        {loading ? (
-          <div className="animate-pulse space-y-3">
-            <div className="h-16 bg-gray-200 rounded-lg"></div>
-            <div className="h-16 bg-gray-200 rounded-lg"></div>
-          </div>
-        ) : goals.length === 0 ? (
-          <div className="text-center py-8">
-            <p className="text-gray-500">Nenhuma meta financeira configurada.</p>
-            <button
-              onClick={() => navigate('/?tab=financial-goals')}
-              className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              Configurar Metas
-            </button>
-          </div>
-        ) : (
-          goals.map((goal, index) => (
-            <div key={index} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
-              <div className="flex justify-between mb-2">
-                <h4 className="font-medium text-gray-800">{goal.name}</h4>
-                <span className="text-indigo-600 font-medium">
-                  {goal.progress}% concluído
-                </span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <button
+            onClick={() => setActiveBreakdown(activeBreakdown === 'investments' ? null : 'investments')}
+            className={`p-4 rounded-xl border-2 transition-all ${
+              activeBreakdown === 'investments' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-indigo-100 p-2 rounded-lg">
+                <Building className="h-5 w-5 text-indigo-600" />
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Meta: R$ {goal.targetAmount.toLocaleString('pt-BR')}</span>
-                <span className="text-green-600">
-                  Economizado: R$ {goal.currentAmount.toLocaleString('pt-BR')}
-                </span>
-              </div>
-              <div className="mt-2 w-full bg-gray-100 rounded-full h-2">
-                <div 
-                  className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full" 
-                  style={{ width: `${goal.progress}%` }}
-                ></div>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900">Investimentos</h3>
               </div>
             </div>
-          ))
+            <p className="text-2xl font-bold text-gray-900">{formatCurrency(dashboardData.totalInvestmentValue || 0)}</p>
+            <p className="text-sm text-gray-500 mt-1">Renda: {formatCurrency(dashboardData.totalInvestmentIncome || 0)}/mês</p>
+          </button>
+          
+          <button
+            onClick={() => setActiveBreakdown(activeBreakdown === 'real-estate' ? null : 'real-estate')}
+            className={`p-4 rounded-xl border-2 transition-all ${
+              activeBreakdown === 'real-estate' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-orange-100 p-2 rounded-lg">
+                <Home className="h-5 w-5 text-orange-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900">Imóveis</h3>
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{formatCurrency(dashboardData.totalRealEstateValue || 0)}</p>
+            <p className="text-sm text-gray-500 mt-1">Renda: {formatCurrency(dashboardData.totalRealEstateIncome || 0)}/mês</p>
+          </button>
+          
+          <button
+            onClick={() => setActiveBreakdown(activeBreakdown === 'retirement' ? null : 'retirement')}
+            className={`p-4 rounded-xl border-2 transition-all ${
+              activeBreakdown === 'retirement' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-green-100 p-2 rounded-lg">
+                <Shield className="h-5 w-5 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900">Previdência</h3>
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{formatCurrency(dashboardData.totalRetirementSaved || 0)}</p>
+            <p className="text-sm text-gray-500 mt-1">Contribuição: {formatCurrency(dashboardData.totalRetirementContribution || 0)}/mês</p>
+          </button>
+          
+          <button
+            onClick={() => setActiveBreakdown(activeBreakdown === 'vehicles' ? null : 'vehicles')}
+            className={`p-4 rounded-xl border-2 transition-all ${
+              activeBreakdown === 'vehicles' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <Car className="h-5 w-5 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900">Veículos</h3>
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{formatCurrency(dashboardData.totalVehicleValue || 0)}</p>
+            <p className="text-sm text-gray-500 mt-1">Despesas: {formatCurrency(dashboardData.totalVehicleExpenses || 0)}/mês</p>
+          </button>
+          
+          <button
+            onClick={() => setActiveBreakdown(activeBreakdown === 'exotic-assets' ? null : 'exotic-assets')}
+            className={`p-4 rounded-xl border-2 transition-all ${
+              activeBreakdown === 'exotic-assets' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-purple-100 p-2 rounded-lg">
+                <Gem className="h-5 w-5 text-purple-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900">Ativos Exóticos</h3>
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{formatCurrency(dashboardData.totalExoticAssetsValue || 0)}</p>
+            <p className="text-sm text-gray-500 mt-1">Apreciação: {formatCurrency(dashboardData.totalExoticAssetsAppreciation || 0)}</p>
+          </button>
+          
+          <button
+            onClick={() => setActiveBreakdown(activeBreakdown === 'financial-goals' ? null : 'financial-goals')}
+            className={`p-4 rounded-xl border-2 transition-all ${
+              activeBreakdown === 'financial-goals' ? 'border-indigo-500 bg-indigo-50' : 'border-gray-200 hover:border-gray-300'
+            }`}
+          >
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-indigo-100 p-2 rounded-lg">
+                <Target className="h-5 w-5 text-indigo-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900">Metas Financeiras</h3>
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">{formatCurrency(dashboardData.totalFinancialGoals || 0)}</p>
+          </button>
+        </div>
+        
+        {/* Detailed breakdown */}
+        {activeBreakdown && (
+          <div className="mt-6 bg-gray-50 rounded-xl p-4">
+            <FinancialBreakdown type={activeBreakdown} />
+          </div>
         )}
       </div>
-      
-      <div className="mt-6 flex justify-center">
-        <button
-          onClick={() => navigate('/?tab=financial-goals')}
-          className="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200 flex items-center space-x-2"
-        >
-          <Target className="h-4 w-4" />
-          <span>Gerenciar Metas Financeiras</span>
-        </button>
+
+      {/* Debt Overview */}
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-6">Visão Geral de Dívidas</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-red-50 p-4 rounded-xl border border-red-100">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-red-100 p-2 rounded-lg">
+                <CreditCard className="h-5 w-5 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900">Dívida Total</h3>
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-red-600">{formatCurrency(dashboardData.totalDebt || 0)}</p>
+            <p className="text-sm text-gray-500 mt-1">Pagamento: {formatCurrency(dashboardData.totalLoanPayments || 0)}/mês</p>
+          </div>
+          
+          <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-orange-100 p-2 rounded-lg">
+                <FileText className="h-5 w-5 text-orange-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900">Contas Mensais</h3>
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-orange-600">{formatCurrency(dashboardData.totalBills || 0)}</p>
+          </div>
+          
+          <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-indigo-100 p-2 rounded-lg">
+                <Landmark className="h-5 w-5 text-indigo-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900">Impostos</h3>
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-indigo-600">{formatCurrency(dashboardData.totalTaxes || 0)}</p>
+            <button
+              onClick={() => setActiveBreakdown(activeBreakdown === 'taxes' ? null : 'taxes')}
+              className="text-xs text-indigo-600 mt-2 hover:underline"
+            >
+              Ver detalhes
+            </button>
+          </div>
+        </div>
+        
+        {activeBreakdown === 'taxes' && (
+          <div className="mt-6 bg-gray-50 rounded-xl p-4">
+            <FinancialBreakdown type="taxes" />
+          </div>
+        )}
+      </div>
+
+      {/* Net Worth */}
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-6">Patrimônio Líquido</h2>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-green-50 p-4 rounded-xl border border-green-100">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-green-100 p-2 rounded-lg">
+                <TrendingUp className="h-5 w-5 text-green-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900">Total de Ativos</h3>
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-green-600">{formatCurrency(dashboardData.totalAssets || 0)}</p>
+          </div>
+          
+          <div className="bg-red-50 p-4 rounded-xl border border-red-100">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-red-100 p-2 rounded-lg">
+                <TrendingDown className="h-5 w-5 text-red-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900">Total de Passivos</h3>
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-red-600">{formatCurrency(dashboardData.totalDebt || 0)}</p>
+          </div>
+          
+          <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+            <div className="flex items-center space-x-3 mb-2">
+              <div className="bg-blue-100 p-2 rounded-lg">
+                <DollarSign className="h-5 w-5 text-blue-600" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-medium text-gray-900">Patrimônio Líquido</h3>
+              </div>
+            </div>
+            <p className="text-2xl font-bold text-blue-600">{formatCurrency(dashboardData.netWorth || 0)}</p>
+            <button
+              onClick={() => setActiveBreakdown(activeBreakdown === 'balance' ? null : 'balance')}
+              className="text-xs text-blue-600 mt-2 hover:underline"
+            >
+              Ver detalhes
+            </button>
+          </div>
+        </div>
+        
+        {activeBreakdown === 'balance' && (
+          <div className="mt-6 bg-gray-50 rounded-xl p-4">
+            <FinancialBreakdown type="balance" />
+          </div>
+        )}
       </div>
     </div>
   );
