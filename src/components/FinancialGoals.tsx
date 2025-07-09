@@ -745,7 +745,15 @@ export default function FinancialGoals() {
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl">
             <div className="p-6 border-b border-gray-100">
-              <h2 className="text-2xl font-semibold text-gray-800">Nova Meta Financeira</h2>
+              <div className="flex justify-between items-center">
+                <h2 className="text-2xl font-semibold text-gray-800">Nova Meta Financeira</h2>
+                <button 
+                  onClick={() => setShowAddModal(false)} 
+                  className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
             </div>
             
             <div className="p-6">
@@ -867,7 +875,7 @@ export default function FinancialGoals() {
                 {newGoalFormData.target_amount && newGoalFormData.target_date && (
                   <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
                     <h3 className="font-medium text-blue-800 mb-1">Simulação</h3>
-                    <div className="text-sm text-blue-700 space-y-1">
+                    <div className="text-sm text-blue-700 space-y-2">
                       <p>Valor total a economizar: {formatCurrency(parseFloat(newGoalFormData.target_amount))}</p>
                       <p>
                         Economia mensal necessária: {
@@ -895,22 +903,31 @@ export default function FinancialGoals() {
                   </div>
                 )}
                 
-                <div className="mt-4 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
-                  <h3 className="font-medium text-indigo-800 mb-2">Conta Recorrente</h3>
-                  <p className="text-sm text-indigo-700 mb-3">
-                    Será criada uma conta recorrente de R$ {
-                      newGoalFormData.target_amount && newGoalFormData.target_date
-                        ? (parseFloat(newGoalFormData.target_amount) / Math.max(1, Math.ceil(
+                <div className="mt-4 bg-indigo-50 p-4 rounded-xl border border-indigo-100 shadow-sm">
+                  <div className="flex items-center space-x-2 mb-2">
+                    <FileText className="h-5 w-5 text-indigo-600" />
+                    <h3 className="font-medium text-indigo-800">Conta Recorrente</h3>
+                  </div>
+                  {newGoalFormData.target_amount && newGoalFormData.target_date ? (
+                    <>
+                      <p className="text-sm text-indigo-700 mb-3">
+                        Será criada uma conta recorrente de R$ {
+                          (parseFloat(newGoalFormData.target_amount) / Math.max(1, Math.ceil(
                             (new Date(newGoalFormData.target_date).getTime() - new Date().getTime()) / 
                             (1000 * 60 * 60 * 24 * 30)
                           ))).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
-                        : '0,00'
-                    }/mês para esta meta.
-                  </p>
-                  <div className="flex items-center text-sm text-indigo-600">
-                    <FileText className="h-4 w-4 mr-2" />
-                    <span>Esta conta aparecerá na seção de Contas para você gerenciar</span>
-                  </div>
+                        }/mês para esta meta.
+                      </p>
+                      <div className="flex items-center text-sm text-indigo-600 bg-indigo-100 p-2 rounded-lg">
+                        <FileText className="h-4 w-4 mr-2" />
+                        <span>Esta conta aparecerá na seção de Contas para você gerenciar</span>
+                      </div>
+                    </>
+                  ) : (
+                    <p className="text-sm text-indigo-700">
+                      Preencha o valor e a data alvo para ver o valor da contribuição mensal.
+                    </p>
+                  )}
                 </div>
                 
                 <div className="flex justify-end space-x-3 pt-4">
