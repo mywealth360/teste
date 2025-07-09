@@ -10,7 +10,7 @@ export default function SubscriptionPage() {
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
       <div className="text-center">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">Planos de Assinatura</h1>
+        <h1 className="text-3xl font-bold text-blue-600 mb-4">Planos de Assinatura</h1>
         <p className="text-gray-600 max-w-3xl mx-auto">
           Escolha o plano ideal para transformar seu patrimônio e alcançar seus objetivos financeiros
         </p>
@@ -39,12 +39,12 @@ export default function SubscriptionPage() {
         {/* Starter Plan */}
         <div className="bg-white rounded-2xl shadow-lg border border-gray-200">
           <div className="p-8 border-b border-gray-200">
-            <h3 className="font-bold text-xl text-gray-800">Starter</h3>
+            <h3 className="font-bold text-xl text-blue-600">Starter</h3>
             <p className="text-gray-600 mt-2">Controle financeiro essencial</p>
-            <p className="text-3xl mt-4 font-bold text-gray-800">R$ 79,90<span className="text-sm text-gray-500">/mês</span></p>
+            <p className="text-3xl mt-4 font-bold text-blue-600">R$ 79,90<span className="text-sm text-gray-500">/mês</span></p>
             <div className="mt-2 text-green-700 text-sm flex items-center">
               <CheckCircle className="h-4 w-4 mr-1" />
-              <span>7 dias grátis sem cartão, depois R$ 79,90/mês</span>
+              <span>7 dias grátis, sem cartão necessário</span>
             </div>
           </div>
           
@@ -111,7 +111,7 @@ export default function SubscriptionPage() {
             <SubscriptionButton
               priceId={products[0].priceId}
               mode="subscription"
-              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-blue-500 text-white hover:bg-blue-600"
+              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-blue-500 text-white hover:bg-blue-600 shadow-md hover:shadow-lg"
             >
               Começar Gratuitamente
             </SubscriptionButton>
@@ -130,9 +130,9 @@ export default function SubscriptionPage() {
           </div>
           
           <div className="p-8 border-b border-gray-200">
-            <h3 className="font-bold text-xl text-gray-800">Family</h3>
+            <h3 className="font-bold text-xl text-blue-600">Family</h3>
             <p className="text-gray-600 mt-2">Controle patrimonial completo</p>
-            <p className="text-3xl mt-4 font-bold text-gray-800">R$ 129,90<span className="text-sm text-gray-500">/mês</span></p>
+            <p className="text-3xl mt-4 font-bold text-blue-600">R$ 129,90<span className="text-sm text-gray-500">/mês</span></p>
           </div>
           
           <div className="p-8">
@@ -184,7 +184,7 @@ export default function SubscriptionPage() {
             <SubscriptionButton
               priceId={products[1].priceId}
               mode="subscription"
-              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700"
+              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-md hover:shadow-lg"
             >
               Assinar Agora
             </SubscriptionButton>

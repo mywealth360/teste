@@ -218,7 +218,7 @@ export default function PhoneVerification({ onVerified, className = '' }: PhoneV
               value={phone}
               onChange={handlePhoneChange}
               placeholder="(99) 99999-9999"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
               maxLength={15}
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -229,7 +229,7 @@ export default function PhoneVerification({ onVerified, className = '' }: PhoneV
           <button
             type="submit"
             disabled={loading || !phone}
-            className="w-full py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2"
+            className="w-full py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-sm"
           >
             <Send className="h-4 w-4" />
             <span>{loading ? 'Enviando...' : 'Enviar Código de Verificação'}</span>
@@ -247,7 +247,7 @@ export default function PhoneVerification({ onVerified, className = '' }: PhoneV
               value={verificationCode}
               onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
               placeholder="Digite o código de 6 dígitos"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
               maxLength={6}
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -259,14 +259,14 @@ export default function PhoneVerification({ onVerified, className = '' }: PhoneV
             <button
               type="button"
               onClick={() => setShowCodeInput(false)}
-              className="flex-1 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+              className="flex-1 py-2 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
             >
               Voltar
             </button>
             <button
               type="submit"
               disabled={loading || verificationCode.length !== 6}
-              className="flex-1 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
             >
               {loading ? 'Verificando...' : 'Verificar Código'}
             </button>

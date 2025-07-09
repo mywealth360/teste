@@ -96,7 +96,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
 
   const handleTabClick = (tabId: string, isRestricted: boolean) => {
     // If trial days left is 0, only allow subscription tab
-    if (trialDaysLeft === 0 && tabId !== 'subscription') {
+    if (!isAdmin && trialDaysLeft === 0 && tabId !== 'subscription') {
       setActiveTab('subscription');
       return;
     }
@@ -161,7 +161,10 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   return (
     <div className="w-64 bg-white shadow-xl border-r border-gray-100 h-screen fixed left-0 top-0 z-30 overflow-y-auto flex flex-col">
       <div className="p-2 border-b border-gray-100">
-        <h1 className="text-xl font-bold text-center text-gray-800 py-4">MyWealth 360</h1>
+        <div className="flex flex-col items-center justify-center py-4">
+          <h1 className="text-xl font-bold text-blue-600">MyWealth 360</h1>
+          <p className="text-xs text-gray-500">Gestão Financeira Familiar</p>
+        </div>
       </div>
       
       {/* Subscription Status */}
@@ -348,9 +351,9 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           <button
             onClick={() => setActiveTab('subscription')}
             className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
-              activeTab === 'subscription'
-                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600'
+              activeTab === 'subscription' 
+                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
+                : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600' 
             }`}
           >
             <Crown className="h-4 w-4" />

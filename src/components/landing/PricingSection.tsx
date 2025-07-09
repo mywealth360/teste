@@ -96,8 +96,8 @@ export default function PricingSection() {
                 <p className="text-3xl mt-4 font-bold">{plan.price}<span className="text-sm text-gray-500">{plan.period}</span></p>
                 {plan.name === 'Starter' && (
                   <div className="mt-2 text-green-700 text-sm flex items-center justify-center">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    <span>7 dias grátis sem cartão</span>
+                    <CheckCircle className="h-4 w-4 mr-1" />
+                    <span>7 dias grátis, sem cartão necessário</span>
                   </div>
                 )}
               </div>
@@ -131,9 +131,9 @@ export default function PricingSection() {
                 <button
                   onClick={handlePlanClick}
                   className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 ${
-                    plan.popular 
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700'
-                      : 'bg-blue-500 text-white hover:bg-blue-600'
+                    plan.popular
+                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-md hover:shadow-lg'
+                      : 'bg-blue-500 text-white hover:bg-blue-600 shadow-md hover:shadow-lg'
                   }`}
                 >
                   {plan.name === 'Starter' ? 'Começar Gratuitamente' : 'Assinar Agora'}

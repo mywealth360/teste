@@ -372,8 +372,8 @@ export default function RegisterWithPhone({ onSuccess, onBack }: RegisterWithPho
                 onChange={handleInputChange}
                 placeholder="Digite o código de 6 dígitos"
                 required
-                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors duration-200 text-center text-2xl tracking-widest"
-                maxLength={6}
+                className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors duration-200 bg-white"
+                className="w-full pl-10 pr-12 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors duration-200 bg-white"
               />
             </div>
             

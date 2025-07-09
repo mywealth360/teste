@@ -198,13 +198,13 @@ export default function UserProfile() {
                 <div className="flex items-center mt-1">
                   <CreditCard className="h-4 w-4 text-blue-600 mr-2" />
                   <div className="flex items-center">
-                    <p className="font-semibold text-gray-900 capitalize">
+                    <p className="font-semibold text-blue-600 capitalize">
                       {userPlan === 'family' ? 'Family' : 'Starter'}
                       {isInTrial && <span className="ml-2 text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full">Trial</span>}
                     </p>
                     <button 
                       onClick={() => navigate('/?tab=subscription')}
-                      className="ml-2 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                      className="ml-2 text-xs text-blue-600 hover:text-blue-800 hover:underline font-medium"
                     >
                       Alterar
                     </button>
@@ -393,7 +393,7 @@ export default function UserProfile() {
                   <h3 className="text-lg font-semibold text-gray-900">Compartilhamento de Acesso</h3>
                   <button
                     onClick={() => setShowInviteModal(true)}
-                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                    className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-sm"
                   >
                     Convidar Usuário
                   </button>
@@ -413,12 +413,12 @@ export default function UserProfile() {
                     <p className="text-sm text-gray-600">Compartilhamento de Acesso</p>
                     <p className="font-medium text-gray-800">Disponível no plano Family</p>
                   </div>
-                  <button
+                  <Link
                     onClick={() => navigate('/?tab=subscription')}
-                    className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors"
+                    className="px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-sm"
                   >
                     Fazer Upgrade
-                  </button>
+                  </Link>
                 </div>
               </div>
             )}
@@ -460,7 +460,7 @@ export default function UserProfile() {
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="email@exemplo.com"
                   required
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
                 />
               </div>
               
@@ -469,7 +469,7 @@ export default function UserProfile() {
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
                 >
                   <option value="viewer">Visualizador (somente leitura)</option>
                   <option value="editor">Editor (pode editar)</option>

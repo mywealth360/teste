@@ -19,8 +19,8 @@ export default function HeroSection({ onRegisterClick }: HeroSectionProps) {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold text-gray-800 mb-6">
-            Controle Patrimonial
-            <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent"> Familiar Inteligente</span>
+            <span className="text-blue-600">MyWealth 360</span>
+            <span className="block">Controle Patrimonial Familiar Inteligente</span>
           </h1>
           
           <p className="text-xl text-gray-700 mb-8 max-w-3xl mx-auto leading-relaxed">
