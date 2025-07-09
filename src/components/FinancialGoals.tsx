@@ -743,7 +743,7 @@ export default function FinancialGoals() {
       {/* Add Goal Modal */}
       {showAddModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-100">
               <div className="flex justify-between items-center">
                 <h2 className="text-2xl font-semibold text-gray-800">Nova Meta Financeira</h2>
@@ -756,17 +756,17 @@ export default function FinancialGoals() {
               </div>
             </div>
             
-            <div className="p-6">
+            <div className="p-6 pb-8">
               <form onSubmit={(e) => {
                 e.preventDefault();
                 handleAddGoal();
               }} className="space-y-6">
                 {/* Goal Type Selection */}
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
                     Tipo de Meta
                   </label>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
                     {GoalCategories.map((category) => {
                       const isSelected = newGoalFormData.category === category.value;
                       return (
@@ -796,7 +796,7 @@ export default function FinancialGoals() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Nome da Meta
+                      Nome
                     </label>
                     <input
                       type="text"
@@ -810,7 +810,7 @@ export default function FinancialGoals() {
                   
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Valor Alvo
+                      Valor
                     </label>
                     <div className="relative">
                       <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
@@ -830,8 +830,8 @@ export default function FinancialGoals() {
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Data Alvo
+                    <label className="block text-sm font-medium text-gray-700 mb-1 whitespace-nowrap">
+                      Data Limite
                     </label>
                     <input
                       type="date"
@@ -903,7 +903,7 @@ export default function FinancialGoals() {
                   </div>
                 )}
                 
-                <div className="mt-4 bg-indigo-50 p-4 rounded-xl border border-indigo-100 shadow-sm">
+                <div className="mt-3 bg-indigo-50 p-4 rounded-xl border border-indigo-100 shadow-sm">
                   <div className="flex items-center space-x-2 mb-2">
                     <FileText className="h-5 w-5 text-indigo-600 flex-shrink-0" />
                     <h3 className="font-medium text-indigo-800">Conta Recorrente</h3>
@@ -930,21 +930,23 @@ export default function FinancialGoals() {
                   )}
                 </div>
                 
-                <div className="flex space-x-3 pt-6 mt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowAddModal(false)}
-                    className="flex-1 px-5 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
-                  >
-                    Cancelar
-                  </button>
-                  
-                  <button
-                    type="submit"
-                    className="flex-1 px-5 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md"
-                  >
-                    Criar Meta
-                  </button>
+                <div className="sticky bottom-0 pt-4 mt-2 bg-white pb-1">
+                  <div className="flex space-x-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddModal(false)}
+                      className="flex-1 px-5 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                    >
+                      Cancelar
+                    </button>
+                    
+                    <button
+                      type="submit"
+                      className="flex-1 px-5 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md"
+                    >
+                      Criar Meta
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>
