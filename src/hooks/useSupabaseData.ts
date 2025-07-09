@@ -373,6 +373,24 @@ export function useDashboardData() {
   const totalExoticAssetsValue = exoticAssets.data.reduce((sum, asset) => sum + (asset.current_value || asset.purchase_price), 0);
   const totalExoticAssetsAppreciation = exoticAssets.data.reduce((sum, asset) => sum + ((asset.current_value || asset.purchase_price) - asset.purchase_price), 0);
 
+  // Calculate returns and depreciation percentages
+  const investmentReturn = totalInvestmentValue > 0 ? 12.5 : 0; // Placeholder value
+  const realEstateReturn = totalRealEstateValue > 0 ? 8.2 : 0; // Placeholder value
+  const vehicleDepreciation = totalVehicleValue > 0 ? -10.3 : 0; // Placeholder value
+  const exoticAssetsReturn = totalExoticAssetsValue > 0 ? 15.7 : 0; // Placeholder value
+  
+  // Calculate fixed income and other income
+  const fixedIncomeReturn = investments.data
+    .filter(inv => inv.type === 'renda-fixa')
+    .reduce((sum, inv) => {
+      if (inv.interest_rate && inv.amount) {
+        return sum + ((inv.amount * inv.interest_rate) / 100 / 12);
+      }
+      return sum + (inv.monthly_income || 0);
+    }, 0);
+    
+  const otherIncome = totalMonthlyIncome - totalInvestmentIncome - totalRealEstateIncome - fixedIncomeReturn;
+
   const totalFinancialGoals = financialGoals.data
     .filter(goal => goal.status === 'active')
     .reduce((sum, goal) => sum + goal.current_amount, 0); // Only count current amount, not target amount
@@ -433,6 +451,12 @@ export function useDashboardData() {
     totalExoticAssetsValue,
     totalExoticAssetsAppreciation,
     totalFinancialGoals,
+    investmentReturn,
+    realEstateReturn,
+    vehicleDepreciation,
+    exoticAssetsReturn,
+    fixedIncomeReturn,
+    otherIncome,
     totalAssets,
     netWorth,
     totalTaxes,
