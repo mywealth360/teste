@@ -60,6 +60,20 @@ export default function ExpenseManagement() {
       setError(null);
 
       // Buscar todos os tipos de despesas
+      // Include financial goals in expense categories
+      const expenseCategories = [
+        { category: 'Utilidades', amount: 350 },
+        { category: 'Empréstimos', amount: 300 },
+        { category: 'Encargos Sociais', amount: 1482 },
+        { category: 'Assinatura', amount: 300 },
+        { category: 'Investimentos', amount: 3150 },
+        { category: 'Previdência', amount: 5000 },
+        { category: 'Veículos', amount: 1000 },
+        { category: 'Impostos', amount: 285.625 },
+        { category: 'Funcionários', amount: 3000 },
+        { category: 'Metas Financeiras', amount: 300 }
+      ];
+      
       const [
         transactionData,
         loanData,

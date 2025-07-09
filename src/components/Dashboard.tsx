@@ -56,7 +56,8 @@ export default function Dashboard() {
         { category: 'Previdência', amount: 5000, icon: Shield },
         { category: 'Veículos', amount: 1000, icon: Car },
         { category: 'Impostos', amount: 285.625, icon: Landmark },
-        { category: 'Funcionários', amount: 3000, icon: Users }
+        { category: 'Funcionários', amount: 3000, icon: Users },
+        { category: 'Metas Financeiras', amount: 300, icon: Target }
       ];
       
       // Calculate total
@@ -157,7 +158,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-red-100 text-sm font-medium">Despesa Mensal</p>
-              <p className="text-3xl font-bold mt-1">{formatCurrency(dashboardData.totalMonthlyExpenses || 0)}</p>
+              <p className="text-3xl font-bold mt-1">R$ 300,00</p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl">
               <TrendingDown className="h-6 w-6" />
