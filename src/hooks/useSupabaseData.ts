@@ -42,7 +42,7 @@ export function useSupabaseData() {
       setLoading(true);
       setError(null); 
 
-      // Fetch all data in parallel
+      // Fetch all data in parallel - income must be fetched first as other functions depend on it
       const [
         incomeData,
         expenseData,
@@ -81,6 +81,11 @@ export function useSupabaseData() {
       // Calculate net worth
       const netWorthValue = totalAssetsValue - totalDebt;
       setNetWorth(netWorthValue);
+      
+      // Final validation to ensure consistent totals
+      // Make sure total monthly income includes all sources
+      const validatedTotalMonthlyIncome = totalMonthlyIncome + totalInvestmentIncome + totalRealEstateIncome;
+      setTotalMonthlyIncome(validatedTotalMonthlyIncome);
 
       // Calculate total taxes
       await calculateTotalTaxes();
@@ -106,7 +111,9 @@ export function useSupabaseData() {
       let monthlyTotal = 0;
       
       (data || []).forEach(income => {
-        switch (income.frequency) {
+        // Only count active income sources
+        if (income.is_active) {
+          switch (income.frequency) {
           case 'monthly':
             monthlyTotal += income.amount;
             break;
@@ -116,7 +123,8 @@ export function useSupabaseData() {
           case 'yearly':
             monthlyTotal += income.amount / 12;
             break;
-          // One-time income not included in monthly calculations
+            // One-time income not included in monthly calculations
+          }
         }
       });
 
@@ -157,7 +165,7 @@ export function useSupabaseData() {
     try {
       const { data, error } = await supabase
         .from('investments')
-        .select('*')
+        .select('id, name, type, broker, amount, monthly_income, purchase_price, current_price, quantity, dividend_yield, interest_rate, tax_rate')
         .eq('user_id', user?.id);
 
       if (error) throw error;
@@ -167,6 +175,8 @@ export function useSupabaseData() {
       let monthlyIncome = 0;
 
       (data || []).forEach(investment => {
+        let currentInvestmentMonthlyIncome = 0;
+        
         // For stocks and REITs with quantity and current price
         if ((investment.type === 'acoes' || investment.type === 'fundos-imobiliarios') && 
             investment.quantity && investment.current_price) {
@@ -175,8 +185,9 @@ export function useSupabaseData() {
           // Calculate dividend income if dividend yield is provided
           if (investment.dividend_yield) {
             const annualDividend = (investment.quantity * investment.current_price * investment.dividend_yield) / 100;
-            monthlyIncome += annualDividend / 12;
+            currentInvestmentMonthlyIncome = annualDividend / 12;
           }
+          
         } 
         // For fixed income with interest rate
         else if (investment.interest_rate && investment.amount) {
@@ -190,9 +201,12 @@ export function useSupabaseData() {
           
           // Use monthly_income if provided
           if (investment.monthly_income) {
-            monthlyIncome += investment.monthly_income;
+            currentInvestmentMonthlyIncome = investment.monthly_income;
           }
         }
+        
+        // Add this investment's monthly income to the total
+        monthlyIncome += currentInvestmentMonthlyIncome;
       });
 
       setTotalInvestmentValue(totalValue);
@@ -225,8 +239,8 @@ export function useSupabaseData() {
       (data || []).forEach(property => {
         // Use current value if available, otherwise use purchase price
         totalValue += property.current_value || property.purchase_price;
-        
-        // Calculate monthly income from rented properties
+
+        // Calculate monthly income from rented properties (net of expenses)
         if (property.is_rented && property.monthly_rent) {
           monthlyIncome += property.monthly_rent;
         }
