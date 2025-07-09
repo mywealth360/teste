@@ -125,11 +125,11 @@ export default function Income() {
     const value = e.target.value;
     const rate = Number(value);
     
-    setFormData(prev => ({ ...prev, taxRate: value }));
+    setFormData({ ...formData, taxRate: value });
     
     if (rate >= 0 && rate <= 100) {
       setTaxRate(rate);
-      const amount = Number(formData.amount);
+      const amount = Number(formData.amount || 0);
       if (amount > 0) {
         const taxValue = (amount * rate) / 100;
         setTaxAmount(taxValue);

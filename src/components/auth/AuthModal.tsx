@@ -30,7 +30,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
               </h2>
               <p className="text-gray-500 text-sm mt-1">
                 {mode === 'login' 
-                  ? 'Acesse sua conta Finance AI' 
+                  ? 'Acesse sua conta PROSPERA.AI' 
                   : 'Comece a controlar suas finanças'
                 }
               </p>

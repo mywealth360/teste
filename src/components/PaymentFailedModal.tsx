@@ -64,7 +64,7 @@ export default function PaymentFailedModal({ isOpen, onClose }: PaymentFailedMod
           
           <div className="text-center text-sm text-gray-500">
             <p>
-              Se precisar de ajuda, entre em contato com nosso suporte em <a href="mailto:suporte@mywealth360.com" className="text-blue-600 hover:underline">suporte@mywealth360.com</a>
+              Se precisar de ajuda, entre em contato com nosso suporte em <a href="mailto:suporte@prospera.ai" className="text-blue-600 hover:underline">suporte@prospera.ai</a>
             </p>
           </div>
         </div>
