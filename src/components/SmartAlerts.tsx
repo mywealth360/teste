@@ -49,6 +49,7 @@ export default function SmartAlerts() {
 
     try {
       setLoading(true);
+      const today = new Date();
       const alerts: Alert[] = [];
 
       // Fetch bills that are due soon (next 7 days)

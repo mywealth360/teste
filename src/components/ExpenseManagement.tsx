@@ -484,6 +484,12 @@ export default function ExpenseManagement() {
     .filter(expense => expense.category === 'Encargos Sociais')
     .reduce((sum, expense) => sum + expense.amount, 0);
 
+  // Calcular totais por tipo
+  const totalsByType = filteredExpenses.reduce((acc, expense) => {
+    acc[expense.type] = (acc[expense.type] || 0) + expense.amount;
+    return acc;
+  }, {} as Record<string, number>);
+
   if (loading) {
     return (
       <div className="space-y-6">
