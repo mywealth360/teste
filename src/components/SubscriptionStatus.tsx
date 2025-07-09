@@ -11,8 +11,15 @@ interface SubscriptionData {
   cancel_at_period_end: boolean;
 }
 
+interface SubscriptionData {
+  subscription_status: string | null;
+  price_id: string | null;
+  current_period_end: number | null;
+  cancel_at_period_end: boolean;
+}
+
 export default function SubscriptionStatus() {
-  const { user, isInTrial, trialExpiresAt } = useAuth();
+  const { user, isInTrial, trialExpiresAt, trialDaysLeft } = useAuth();
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -69,14 +76,12 @@ export default function SubscriptionStatus() {
   }
 
   // Show trial information if user is in trial period
-  if (isInTrial && trialExpiresAt) {
-    const daysLeft = Math.ceil((trialExpiresAt.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-    
+  if (isInTrial) {
     return (
       <div className="text-white text-sm">
-        <p className="text-xs text-white/80 mt-1 flex items-center">
-          <span className="bg-green-500 h-2 w-2 rounded-full mr-1"></span>
-          Período de Teste: {daysLeft} dias restantes
+        <p className={`text-xs text-white/80 mt-1 flex items-center ${trialDaysLeft === 0 ? 'text-red-300' : ''}`}>
+          <span className={`${trialDaysLeft > 0 ? 'bg-green-500' : 'bg-red-500'} h-2 w-2 rounded-full mr-1`}></span>
+          Período de Teste: {trialDaysLeft > 0 ? `${trialDaysLeft} dias restantes` : 'Expirado'}
         </p>
       </div>
     );

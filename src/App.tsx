@@ -40,6 +40,9 @@ function AppContent() {
   const [showTrialExpiredModal, setShowTrialExpiredModal] = useState(false);
   const [showPaymentFailedModal, setShowPaymentFailedModal] = useState(false);
   
+  // Force subscription page when trial days left is 0
+  const { trialDaysLeft } = useAuth();
+  
   // Check if trial has expired
   React.useEffect(() => {
     if (isInTrial && trialExpiresAt) {
@@ -73,8 +76,9 @@ function AppContent() {
 
   // Check if we should show subscription page
   const shouldShowSubscriptionPage = () => {
-    // If trial has expired or subscription has ended, only show subscription page
-    if ((isInTrial && trialExpiresAt && trialExpiresAt < new Date()) || 
+    // If trial days left is 0 or trial has expired or subscription has ended, only show subscription page
+    if (trialDaysLeft === 0 ||
+        (isInTrial && trialExpiresAt && trialExpiresAt < new Date()) || 
         (!isInTrial && !userPlan)) {
       return true;
     }
@@ -173,7 +177,7 @@ function AppContent() {
 
 function AuthenticatedApp() {
   return (
-    <ProtectedRoute redirectToSubscription={true}>
+    <ProtectedRoute>
       <AppContent />
     </ProtectedRoute>
   );

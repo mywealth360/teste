@@ -5,7 +5,7 @@ import SubscriptionButton from './subscription/SubscriptionButton';
 import { products } from '../stripe-config';
 
 export default function SubscriptionPage() {
-  const { userPlan, isInTrial, trialExpiresAt } = useAuth();
+  const { userPlan, isInTrial, trialExpiresAt, trialDaysLeft } = useAuth();
   
   return (
     <div className="space-y-8 max-w-5xl mx-auto">
@@ -14,6 +14,14 @@ export default function SubscriptionPage() {
         <p className="text-gray-600 max-w-3xl mx-auto">
           Escolha o plano ideal para transformar seu patrimônio e alcançar seus objetivos financeiros
         </p>
+
+        {isInTrial && trialDaysLeft === 0 && (
+          <div className="mt-4 bg-red-50 border border-red-200 rounded-xl p-4 max-w-md mx-auto">
+            <p className="text-red-700 font-medium">
+              Seu período de teste expirou. Escolha um plano para continuar.
+            </p>
+          </div>
+        )}
         
         {userPlan && (
           <div className="mt-4 inline-block">

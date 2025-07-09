@@ -80,7 +80,7 @@ const otherSections = [
 ];
 
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
-  const { user, signOut, isAdmin, userPlan, isInTrial } = useAuth();
+  const { user, signOut, isAdmin, userPlan, isInTrial, trialDaysLeft } = useAuth();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [restrictedFeature, setRestrictedFeature] = useState<string | undefined>(undefined);
   const [expandedSections, setExpandedSections] = useState({
@@ -95,6 +95,12 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   };
 
   const handleTabClick = (tabId: string, isRestricted: boolean) => {
+    // If trial days left is 0, only allow subscription tab
+    if (trialDaysLeft === 0 && tabId !== 'subscription') {
+      setActiveTab('subscription');
+      return;
+    }
+    
     if (isRestricted && userPlan === 'starter') {
       // Get the feature name from the tab ID
       const feature = 
@@ -155,7 +161,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   return (
     <div className="w-64 bg-white shadow-xl border-r border-gray-100 h-screen fixed left-0 top-0 z-30 overflow-y-auto flex flex-col">
       <div className="p-2 border-b border-gray-100">
-        <h1 className="text-xl font-bold text-center text-gray-800">MyWealth 360</h1>
+        <h1 className="text-xl font-bold text-center text-gray-800 py-4">MyWealth 360</h1>
       </div>
       
       {/* Subscription Status */}
@@ -165,7 +171,11 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
             <div className="flex-1 cursor-pointer" onClick={() => setActiveTab('subscription')}>
               <h2 className="text-sm font-bold text-white">
                 Plano {userPlan === 'family' ? 'Family' : 'Starter'} 
-                {isInTrial && <span className="ml-1 text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full">Trial</span>}
+                {isInTrial && (
+                  <span className={`ml-1 text-xs ${trialDaysLeft > 0 ? 'bg-green-500' : 'bg-red-500'} text-white px-1.5 py-0.5 rounded-full`}>
+                    {trialDaysLeft > 0 ? 'Trial' : 'Expirado'}
+                  </span>
+                )}
               </h2>
               <SubscriptionStatus />
             </div>

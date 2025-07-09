@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { User, Settings, Phone, Calendar, MapPin, Mail, Shield, CreditCard, CheckCircle, AlertTriangle } from 'lucide-react';
 import PhoneVerification from './PhoneVerification';
+import { useNavigate } from 'react-router-dom';
 import { Link } from 'react-router-dom';
 
 interface Profile {
@@ -25,6 +26,7 @@ interface Profile {
 
 export default function UserProfile() {
   const { user, isAdmin, userPlan, isInTrial, trialExpiresAt } = useAuth();
+  const navigate = useNavigate();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -148,6 +150,14 @@ export default function UserProfile() {
                     <p className="font-semibold text-gray-900 capitalize">
                       {userPlan === 'family' ? 'Family' : 'Starter'}
                       {isInTrial && <span className="ml-2 text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full">Trial</span>}
+                    </p>
+                    <button 
+                      onClick={() => navigate('/?tab=subscription')}
+                      className="ml-2 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      Alterar
+                    </button>
+                  </div>
                     </p>
                     <Link 
                       to="#" 

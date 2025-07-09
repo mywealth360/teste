@@ -4,11 +4,10 @@ import AuthModal from './AuthModal';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  redirectToSubscription?: boolean;
 }
 
-export default function ProtectedRoute({ children, redirectToSubscription = false }: ProtectedRouteProps) {
-  const { user, loading, isInTrial, trialExpiresAt } = useAuth();
+export default function ProtectedRoute({ children }: ProtectedRouteProps) {
+  const { user, loading, trialDaysLeft } = useAuth();
 
   if (loading) {
     return (
@@ -25,8 +24,7 @@ export default function ProtectedRoute({ children, redirectToSubscription = fals
     return <AuthModal isOpen={true} onClose={() => {}} />;
   }
 
-  // If redirectToSubscription is true and we're coming from a registration,
-  // we'll let the App component handle the redirect to subscription page
+  // If trial days left is 0, the App component will handle showing only the subscription page
   
   return <>{children}</>;
 }

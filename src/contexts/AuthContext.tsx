@@ -14,6 +14,7 @@ interface AuthContextType {
   userPlan: 'starter' | 'family';
   isInTrial: boolean;
   trialExpiresAt: Date | null;
+  trialDaysLeft: number;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -31,6 +32,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [userPlan, setUserPlan] = useState<'starter' | 'family'>('starter');
   const [isInTrial, setIsInTrial] = useState(false);
   const [trialExpiresAt, setTrialExpiresAt] = useState<Date | null>(null);
+  const [trialDaysLeft, setTrialDaysLeft] = useState<number>(7);
 
   useEffect(() => {
     // Get initial session
@@ -54,6 +56,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUserPlan('starter');
         setIsInTrial(false);
         setTrialExpiresAt(null);
+        setTrialDaysLeft(0);
       }
       setLoading(false);
     });
@@ -68,7 +71,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const { data, error } = await supabase
         .from('profiles')
-        .select('is_admin, plan, is_in_trial, trial_expires_at')
+        .select('is_admin, plan, is_in_trial, trial_expires_at, trial_days_left')
         .eq('user_id', userId)
         .single();
 
@@ -82,6 +85,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
         setUserPlan(data.plan as 'starter' | 'family' || 'starter');
         setIsInTrial(data.is_in_trial || false);
         setTrialExpiresAt(data.trial_expires_at ? new Date(data.trial_expires_at) : null);
+        setTrialDaysLeft(data.trial_days_left || 0);
       }
     } catch (err) {
       console.error('Error in fetchUserProfile:', err);
@@ -198,7 +202,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isAdmin,
     userPlan,
     isInTrial,
-    trialExpiresAt
+    trialExpiresAt,
+    trialDaysLeft
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
