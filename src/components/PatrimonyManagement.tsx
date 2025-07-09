@@ -303,9 +303,11 @@ export default function PatrimonyManagement() {
           {tabConfig.find(tab => tab.id === activeTab)?.data.length === 0 && (
             <div className="text-center py-12">
               <div className="text-gray-400 mb-4">
-                {tabConfig.find(tab => tab.id === activeTab)?.icon && (
-                  <tabConfig.find(tab => tab.id === activeTab)!.icon className="h-12 w-12 mx-auto" />
-                )}
+                {(() => {
+                  const currentTab = tabConfig.find(tab => tab.id === activeTab);
+                  const IconComponent = currentTab?.icon;
+                  return IconComponent ? <IconComponent className="h-12 w-12 mx-auto" /> : null;
+                })()}
               </div>
               <h3 className="text-lg font-medium text-gray-900 mb-2">
                 Nenhum item encontrado
