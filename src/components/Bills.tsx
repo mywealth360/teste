@@ -926,55 +926,9 @@ export default function Bills() {
             </div>
             
             <form onSubmit={(e) => {
-              // Prevent default form submission behavior
               e.preventDefault();
-              
-              // Extract form data
               const formData = new FormData(e.currentTarget);
-              
-              // Get financial goal ID if bill is associated with a goal
-              let associated_with = null;
-              let associated_id = null;
-              let associated_name = null;
-              let financial_goal_id = null;
-              let is_goal_contribution = false;
-              
-              const associatedValue = formData.get('associated_with');
-              if (associatedValue) {
-                const [type, id] = (associatedValue as string).split('-');
-                
-                if (type === 'goal') {
-                  financial_goal_id = id;
-                  is_goal_contribution = true;
-                  
-                  // Find the goal for associated name
-                  const goal = financialGoals.find(g => g.id === id);
-                  if (goal) {
-                    associated_name = goal.name;
-                  }
-                } else {
-                  associated_with = type;
-                  associated_id = id;
-                  
-                  // Find proper name based on entity type
-                  if (type === 'property') {
-                    const property = properties.find(p => p.id === id);
-                    if (property) associated_name = property.address;
-                  } else if (type === 'vehicle') {
-                    const vehicle = vehicles.find(v => v.id === id);
-                    if (vehicle) associated_name = `${vehicle.brand} ${vehicle.model}`;
-                  } else if (type === 'employee') {
-                    const employee = employees.find(e => e.id === id);
-                    if (employee) associated_name = employee.name;
-                  } else if (type === 'loan') {
-                    const loan = loans.find(l => l.id === id);
-                    if (loan) associated_name = `${loan.type} - ${loan.bank}`;
-                  }
-                }
-              }
-              
-              // Create bill data
-              const billData = {
+              handleAddBill({
                 name: formData.get('name') as string,
                 company: formData.get('company') as string,
                 amount: Number(formData.get('amount')),
@@ -983,17 +937,7 @@ export default function Bills() {
                 is_recurring: formData.has('is_recurring'),
                 is_active: true,
                 last_paid: undefined,
-                next_due: undefined,
-                associated_with,
-                associated_id,
-                associated_name,
-                financial_goal_id,
-                is_goal_contribution
-              };
-              
-              // Handle bill creation
-              handleAddBill(billData);
-              
+              });
             }} className="p-6 space-y-4">
               <input
                 type="text"
@@ -1184,139 +1128,17 @@ export default function Bills() {
                 className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
               >
                 <option value="">Selecione uma categoria</option>
-                <option value="Utilidades">Utilidades</option>
-                <option value="Telecomunicações">Telecomunicações</option>
-                <option value="Cartão">Cartão</option>
-                <option value="Investimentos">Investimentos</option>
-                <option value="Financiamento">Financiamento</option>
-                <option value="Seguro">Seguro</option>
-                <option value="Assinatura">Assinatura</option>
-                <option value="Educação">Educação</option>
-                <option value="Saúde">Saúde</option>
-                <option value="Transporte">Transporte</option>
-                <option value="Outros">Outros</option>
+                {categories.map(category => (
+                  <option key={category.value} value={category.value}>
+                    {category.label}
+                  </option>
+                ))}
               </select>
               
               <label className="flex items-center space-x-2">
                 <input type="checkbox" name="is_recurring" className="rounded text-blue-600" defaultChecked />
                 <span className="text-gray-700">Conta recorrente (mensal)</span>
-              </label> 
-
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Associar Conta (opcional)
-                </label>
-
-                {financialGoals.length > 0 && (
-                  <details className="mb-2">
-                    <summary className="cursor-pointer py-2 px-3 bg-indigo-50 rounded-lg text-indigo-700 flex items-center">
-                      <Target className="h-4 w-4 mr-2 text-indigo-600" />
-                      Metas Financeiras
-                    </summary>
-                    <div className="ml-4 mt-2 space-y-2">
-                      {financialGoals.map(goal => (
-                        <label key={goal.id} className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="associated_with"
-                            value={`goal-${goal.id}`}
-                            className="rounded-full text-indigo-600"
-                          />
-                          <span className="text-sm text-gray-700">{goal.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </details>
-                )}
-                
-                {properties.length > 0 && (
-                  <details className="mb-2">
-                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
-                      <Home className="h-4 w-4 mr-2 text-gray-600" />
-                      Imóveis
-                    </summary>
-                    <div className="ml-4 mt-2 space-y-2">
-                      {properties.map(property => (
-                        <label key={property.id} className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="associated_with"
-                            value={`property-${property.id}`}
-                            className="rounded-full text-blue-600"
-                          />
-                          <span className="text-sm text-gray-700">{property.address}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </details>
-                )}
-                
-                {vehicles.length > 0 && (
-                  <details className="mb-2">
-                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
-                      <Car className="h-4 w-4 mr-2 text-gray-600" />
-                      Veículos
-                    </summary>
-                    <div className="ml-4 mt-2 space-y-2">
-                      {vehicles.map(vehicle => (
-                        <label key={vehicle.id} className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="associated_with"
-                            value={`vehicle-${vehicle.id}`}
-                            className="rounded-full text-blue-600"
-                          />
-                          <span className="text-sm text-gray-700">{vehicle.brand} {vehicle.model}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </details>
-                )}
-                
-                {employees.length > 0 && (
-                  <details className="mb-2">
-                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
-                      <Users className="h-4 w-4 mr-2 text-gray-600" />
-                      Funcionários
-                    </summary>
-                    <div className="ml-4 mt-2 space-y-2">
-                      {employees.map(employee => (
-                        <label key={employee.id} className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="associated_with"
-                            value={`employee-${employee.id}`}
-                            className="rounded-full text-blue-600"
-                          />
-                          <span className="text-sm text-gray-700">{employee.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </details>
-                )}
-                
-                {loans.length > 0 && (
-                  <details className="mb-2">
-                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
-                      <CreditCard className="h-4 w-4 mr-2 text-gray-600" />
-                      Empréstimos
-                    </summary>
-                    <div className="ml-4 mt-2 space-y-2">
-                      {loans.map(loan => (
-                        <label key={loan.id} className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="associated_with"
-                            value={`loan-${loan.id}`}
-                            className="rounded-full text-blue-600"
-                          />
-                          <span className="text-sm text-gray-700">{loan.bank} - {loan.type}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </details>
-                )}
-              </div>
+              </label>
               
               <div className="flex items-center space-x-2 mt-4">
                 <input type="checkbox" name="send_email_reminder" className="rounded text-blue-600" defaultChecked />
