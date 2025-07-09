@@ -226,7 +226,7 @@ export default function FinancialGoals() {
     setGoals(goals.filter(goal => goal.id !== id));
   };
 
-  const handleContribute = (id: string) => {
+  const handleContribute = async (id: string) => {
     const goal = goals.find(g => g.id === id);
     if (!goal) return;
 
