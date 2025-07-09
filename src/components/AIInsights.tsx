@@ -9,13 +9,32 @@ import {
   DollarSign,
   Target,
   Calendar,
-  Zap
+  Zap,
+  Users,
+  Share2,
+  Lock
 } from 'lucide-react';
 import { aiInsights } from '../data/mockData';
 
 const additionalInsights = [
   {
-    id: '4',
+    id: '4', 
+    type: 'feature',
+    title: 'Novo recurso: Compartilhamento Familiar',
+    description: 'Agora você pode compartilhar o acesso à sua conta com até 5 membros da família no plano Family.',
+    impact: 'high',
+    date: '2025-07-09',
+  },
+  {
+    id: '5',
+    type: 'feature',
+    title: 'Novo recurso: Convites por Email',
+    description: 'Envie convites por email para compartilhar sua conta com níveis de acesso personalizados.',
+    impact: 'medium',
+    date: '2025-07-09',
+  },
+  {
+    id: '6',
     type: 'suggestion',
     title: 'Otimize seus investimentos',
     description: 'Com base no seu perfil, considere diversificar 15% da sua poupança em fundos de índice.',
@@ -23,7 +42,7 @@ const additionalInsights = [
     date: '2024-01-12',
   },
   {
-    id: '5',
+    id: '7',
     type: 'warning',
     title: 'Padrão de gastos identificado',
     description: 'Seus gastos com entretenimento aumentam 40% nos finais de semana.',
@@ -31,7 +50,7 @@ const additionalInsights = [
     date: '2024-01-11',
   },
   {
-    id: '6',
+    id: '8',
     type: 'achievement',
     title: 'Hábito financeiro melhorado',
     description: 'Você manteve gastos dentro do orçamento por 3 meses consecutivos!',
@@ -43,7 +62,7 @@ const additionalInsights = [
 const allInsights = [...aiInsights, ...additionalInsights];
 
 export default function AIInsights() {
-  const [selectedFilter, setSelectedFilter] = useState<'all' | 'warning' | 'suggestion' | 'achievement'>('all');
+  const [selectedFilter, setSelectedFilter] = useState<'all' | 'warning' | 'suggestion' | 'achievement' | 'feature'>('all');
 
   const filteredInsights = selectedFilter === 'all' 
     ? allInsights 
@@ -54,6 +73,7 @@ export default function AIInsights() {
       case 'warning': return AlertTriangle;
       case 'achievement': return CheckCircle;
       case 'suggestion': return Lightbulb;
+      case 'feature': return Zap;
       default: return Brain;
     }
   };
@@ -78,6 +98,12 @@ export default function AIInsights() {
         border: 'border-blue-200',
         button: 'bg-blue-500 hover:bg-blue-600'
       };
+      case 'feature': return {
+        bg: 'bg-indigo-50',
+        text: 'text-indigo-600',
+        border: 'border-indigo-200',
+        button: 'bg-indigo-500 hover:bg-indigo-600'
+      };
       default: return {
         bg: 'bg-gray-50',
         text: 'text-gray-600',
@@ -92,6 +118,7 @@ export default function AIInsights() {
       case 'warning': return 'Alertas';
       case 'achievement': return 'Conquistas';
       case 'suggestion': return 'Sugestões';
+      case 'feature': return 'Novidades';
       default: return 'Todos';
     }
   };
@@ -152,6 +179,20 @@ export default function AIInsights() {
           </div>
         </div>
 
+        <div className="bg-white p-6 rounded-2xl shadow-lg border border-indigo-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-indigo-600 text-sm font-medium">Novos Recursos</p>
+              <p className="text-2xl font-bold text-gray-800 mt-1">
+                {allInsights.filter(i => i.type === 'feature').length}
+              </p>
+            </div>
+            <div className="bg-indigo-100 p-3 rounded-xl">
+              <Zap className="h-6 w-6 text-indigo-600" />
+            </div>
+          </div>
+        </div>
+
         <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-6 rounded-2xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
@@ -168,7 +209,7 @@ export default function AIInsights() {
       {/* Filtros */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
         <div className="flex flex-wrap gap-3">
-          {['all', 'warning', 'suggestion', 'achievement'].map((filter) => (
+          {['all', 'feature', 'warning', 'suggestion', 'achievement'].map((filter) => (
             <button
               key={filter}
               onClick={() => setSelectedFilter(filter as any)}
@@ -244,10 +285,10 @@ export default function AIInsights() {
       {/* Seção de análise avançada */}
       <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-8 border border-indigo-100">
         <div className="text-center mb-6">
-          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <Brain className="h-8 w-8 text-white" />
+          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-4">
+            <Brain className="h-10 w-10 text-white" />
           </div>
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Análise Financeira Avançada</h2>
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">IA Financial Insights</h2>
           <p className="text-gray-600">Nossa IA analisa continuamente seus hábitos para fornecer insights personalizados</p>
         </div>
         
@@ -262,6 +303,14 @@ export default function AIInsights() {
           
           <div className="text-center">
             <div className="bg-white p-4 rounded-xl shadow-sm mb-3">
+              <Share2 className="h-8 w-8 text-indigo-600 mx-auto" />
+            </div>
+            <h3 className="font-semibold text-gray-800 mb-1">Compartilhamento Familiar</h3>
+            <p className="text-sm text-gray-600">Compartilhe acesso com membros da família e colaboradores</p>
+          </div>
+          
+          <div className="text-center">
+            <div className="bg-white p-4 rounded-xl shadow-sm mb-3">
               <Target className="h-8 w-8 text-blue-600 mx-auto" />
             </div>
             <h3 className="font-semibold text-gray-800 mb-1">Metas Inteligentes</h3>
@@ -270,7 +319,7 @@ export default function AIInsights() {
           
           <div className="text-center">
             <div className="bg-white p-4 rounded-xl shadow-sm mb-3">
-              <DollarSign className="h-8 w-8 text-purple-600 mx-auto" />
+              <Lock className="h-8 w-8 text-purple-600 mx-auto" />
             </div>
             <h3 className="font-semibold text-gray-800 mb-1">Oportunidades</h3>
             <p className="text-sm text-gray-600">Encontramos oportunidades de economia e investimento personalizadas</p>

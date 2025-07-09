@@ -1,5 +1,13 @@
 export const aiInsights = [
   {
+    id: '0',
+    type: 'feature',
+    title: 'Novo recurso: Gerenciamento de Acessos',
+    description: 'O plano Family agora permite compartilhar acesso à sua conta com familiares e colaboradores.',
+    impact: 'high',
+    date: '2025-07-09',
+  },
+  {
     id: '1',
     type: 'warning',
     title: 'Gastos acima do orçamento',
@@ -16,7 +24,7 @@ export const aiInsights = [
     date: '2024-01-14',
   },
   {
-    id: '3',
+    id: '3', 
     type: 'suggestion',
     title: 'Oportunidade de investimento',
     description: 'Com base no seu perfil, você poderia diversificar mais seus investimentos em renda variável.',
