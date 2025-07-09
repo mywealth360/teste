@@ -1,538 +1,408 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Plus, 
   Target, 
-  Plane, 
+  Plus, 
+  PiggyBank, 
+  TrendingUp, 
   Briefcase, 
-  Home, 
-  GraduationCap,
-  Package, 
-  Trash2, 
+  Scissors,
+  Plane,
+  Home,
+  Trash2,
   Edit,
-  AlertTriangle,
-  PiggyBank,
-  Calendar,
-  Lightbulb,
-  Check,
+  Brain,
+  Save,
   X,
-  TrendingUp,
-  CheckCircle,
+  Sparkles,
+  BarChart3,
+  Calendar,
   DollarSign,
-  Clock
+  AlertTriangle,
+  FileText,
+  CheckCircle
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import { useSupabaseData } from '../hooks/useSupabaseData';
 
-interface FinancialGoal {
+interface Goal {
   id: string;
+  user_id: string;
   name: string;
   target_amount: number;
   current_amount: number;
   target_date: string;
-  category: string;
-  description: string | null;
-  status: 'active' | 'completed' | 'abandoned';
-  priority: 'high' | 'medium' | 'low';
+  category: 'travel' | 'business' | 'wealth' | 'home' | 'education' | 'other';
+  description: string;
   created_at: string;
   updated_at: string;
+  status: 'active' | 'completed' | 'abandoned';
+  priority: 'high' | 'medium' | 'low';
 }
 
-interface GoalContribution {
+interface AIRecommendation {
   id: string;
-  goal_id: string;
-  amount: number;
-  contribution_date: string;
-  notes: string | null;
-}
-
-interface GoalRecommendation {
-  id: string;
-  goal_id: string | null;
   title: string;
   description: string;
-  potential_savings: number;
+  potentialSavings: number;
   difficulty: 'easy' | 'medium' | 'hard';
   category: string;
-  is_applied: boolean;
-  created_at: string;
-  applied_at: string | null;
+  appliedToGoal?: string; // Goal ID if recommendation is applied
 }
 
-interface LinkedBill {
-  id: string;
-  name: string;
-  amount: number;
-  due_day: number;
-  next_due: string;
-  is_active: boolean;
-}
-
-const goalTypes = [
-  { value: 'travel', label: 'Viagem', icon: Plane, color: 'bg-blue-500' },
-  { value: 'business', label: 'Negócio', icon: Briefcase, color: 'bg-purple-500' },
-  { value: 'wealth', label: 'Patrimônio', icon: PiggyBank, color: 'bg-green-500' },
-  { value: 'home', label: 'Casa', icon: Home, color: 'bg-orange-500' },
-  { value: 'education', label: 'Educação', icon: GraduationCap, color: 'bg-red-500' },
-  { value: 'other', label: 'Outro', icon: Package, color: 'bg-gray-500' }
+const GoalCategories = [
+  { value: 'travel', label: 'Viagem', icon: Plane, color: 'from-blue-500 to-cyan-600' },
+  { value: 'business', label: 'Negócio', icon: Briefcase, color: 'from-purple-500 to-indigo-600' },
+  { value: 'wealth', label: 'Patrimônio', icon: PiggyBank, color: 'from-green-500 to-emerald-600' },
+  { value: 'home', label: 'Imóvel', icon: Home, color: 'from-orange-500 to-amber-600' },
+  { value: 'education', label: 'Educação', icon: BarChart3, color: 'from-red-500 to-pink-600' },
+  { value: 'other', label: 'Outro', icon: Target, color: 'from-gray-500 to-gray-600' }
 ];
 
-const priorityOptions = [
-  { value: 'high', label: 'Alta', color: 'bg-red-100 text-red-800' },
-  { value: 'medium', label: 'Média', color: 'bg-yellow-100 text-yellow-800' },
-  { value: 'low', label: 'Baixa', color: 'bg-blue-100 text-blue-800' }
-];
-
-const FinancialGoals: React.FC = () => {
+export default function FinancialGoals() {
   const { user } = useAuth();
-  const [goals, setGoals] = useState<FinancialGoal[]>([]);
-  const [contributions, setContributions] = useState<{[goalId: string]: GoalContribution[]}>({});
-  const [recommendations, setRecommendations] = useState<GoalRecommendation[]>([]);
-  const [linkedBills, setLinkedBills] = useState<{[goalId: string]: LinkedBill[]}>({});
-  const [loading, setLoading] = useState(true);
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showDetailModal, setShowDetailModal] = useState(false);
-  const [selectedGoal, setSelectedGoal] = useState<FinancialGoal | null>(null);
-  const [totalMonthlyIncome, setTotalMonthlyIncome] = useState(0);
+  const { totalMonthlyIncome, totalMonthlyExpenses } = useSupabaseData();
   
-  const [formData, setFormData] = useState({
-    type: '',
+  const [goals, setGoals] = useState<Goal[]>([]);
+  const [recommendations, setRecommendations] = useState<AIRecommendation[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [showAIModal, setShowAIModal] = useState(false);
+  const [selectedGoal, setSelectedGoal] = useState<Goal | null>(null);
+  const [editingGoal, setEditingGoal] = useState<Partial<Goal> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [aiLoading, setAiLoading] = useState(false);
+  
+  const [newGoalFormData, setNewGoalFormData] = useState({
     name: '',
     target_amount: '',
     target_date: '',
-    priority: 'medium',
+    category: 'wealth',
     description: '',
-    monthly_contribution: '',
-    due_day: '5'
+    priority: 'medium'
   });
-  
-  const [deleteConfirmation, setDeleteConfirmation] = useState('');
-  const [showDeleteModal, setShowDeleteModal] = useState(false);
-  const [goalToDelete, setGoalToDelete] = useState<FinancialGoal | null>(null);
-  const [showRecommendationsModal, setShowRecommendationsModal] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchGoals();
-      fetchMonthlyIncome();
+      generateRecommendations();
     }
   }, [user]);
 
   const fetchGoals = async () => {
     try {
       setLoading(true);
-      // Fetch goals
-      const { data: goalsData, error: goalsError } = await supabase
-        .from('financial_goals')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-
-      if (goalsError) throw goalsError;
       
-      if (goalsData) {
-        setGoals(goalsData);
-        
-        // Fetch contributions for each goal
-        const contributionsMap: {[goalId: string]: GoalContribution[]} = {};
-        const billsMap: {[goalId: string]: LinkedBill[]} = {};
-        
-        for (const goal of goalsData) {
-          // Fetch contributions
-          const { data: contributionsData, error: contributionsError } = await supabase
-            .from('goal_contributions')
-            .select('*')
-            .eq('goal_id', goal.id)
-            .order('contribution_date', { ascending: false });
-            
-          if (!contributionsError) {
-            contributionsMap[goal.id] = contributionsData || [];
-          }
-          
-          // Fetch linked bills
-          const { data: billsData, error: billsError } = await supabase
-            .from('bills')
-            .select('id, name, amount, due_day, next_due, is_active')
-            .eq('financial_goal_id', goal.id)
-            .eq('is_goal_contribution', true);
-            
-          if (!billsError) {
-            billsMap[goal.id] = billsData || [];
-          }
+      // In a real implementation, you would fetch from a "goals" table
+      // For this demo, we'll use mock data
+      
+      // Simulate a delay
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      const mockGoals: Goal[] = [
+        {
+          id: '1',
+          user_id: user?.id || '',
+          name: 'Viagem para Europa',
+          target_amount: 15000,
+          current_amount: 5000,
+          target_date: '2025-12-20',
+          category: 'travel',
+          description: 'Viagem de 15 dias pela Europa visitando 5 países',
+          created_at: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000).toISOString(),
+          updated_at: new Date().toISOString(),
+          status: 'active',
+          priority: 'high'
+        },
+        {
+          id: '2',
+          user_id: user?.id || '',
+          name: 'Abrir consultoria financeira',
+          target_amount: 50000,
+          current_amount: 12500,
+          target_date: '2026-06-30',
+          category: 'business',
+          description: 'Capital inicial para abrir escritório de consultoria financeira',
+          created_at: new Date(Date.now() - 90 * 24 * 60 * 60 * 1000).toISOString(),
+          updated_at: new Date().toISOString(),
+          status: 'active',
+          priority: 'medium'
         }
-        
-        setContributions(contributionsMap);
-        setLinkedBills(billsMap);
-        
-        // Fetch recommendations
-        const { data: recommendationsData, error: recommendationsError } = await supabase
-          .from('goal_recommendations')
-          .select('*')
-          .eq('user_id', user?.id)
-          .order('created_at', { ascending: false });
-          
-        if (!recommendationsError) {
-          setRecommendations(recommendationsData || []);
-        }
-      }
-    } catch (error) {
-      console.error('Error fetching goals:', error);
+      ];
+      
+      setGoals(mockGoals);
+    } catch (err) {
+      console.error('Error fetching goals:', err);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchMonthlyIncome = async () => {
+  const generateRecommendations = async () => {
     try {
-      // Fetch total monthly income for calculation
-      const { data: incomeData, error: incomeError } = await supabase
-        .from('income_sources')
-        .select('amount, frequency')
-        .eq('user_id', user?.id)
-        .eq('is_active', true);
-        
-      if (incomeError) throw incomeError;
+      setAiLoading(true);
       
-      let totalMonthly = 0;
+      // In a real implementation, you would call an AI service
+      // For this demo, we'll use mock recommendations
       
-      if (incomeData) {
-        incomeData.forEach(income => {
-          switch (income.frequency) {
-            case 'monthly':
-              totalMonthly += income.amount;
-              break;
-            case 'weekly':
-              totalMonthly += income.amount * 4.33; // Average weeks per month
-              break;
-            case 'yearly':
-              totalMonthly += income.amount / 12;
-              break;
-          }
-        });
-      }
+      // Simulate API call delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
-      setTotalMonthlyIncome(totalMonthly);
-    } catch (error) {
-      console.error('Error fetching income:', error);
+      const mockRecommendations: AIRecommendation[] = [
+        {
+          id: '1',
+          title: 'Reduza gastos com streaming',
+          description: 'Você gasta R$ 178/mês em serviços de streaming. Considere manter apenas os 2 mais usados, economizando R$ 89/mês.',
+          potentialSavings: 89,
+          difficulty: 'easy',
+          category: 'entretenimento'
+        },
+        {
+          id: '2',
+          title: 'Renegocie plano de telefonia',
+          description: 'Seu plano de telefonia parece caro para o uso. Renegociando ou trocando de operadora, você pode economizar R$ 75/mês.',
+          potentialSavings: 75,
+          difficulty: 'medium',
+          category: 'telecomunicações'
+        },
+        {
+          id: '3',
+          title: 'Otimize gastos com restaurantes',
+          description: 'Reduzindo refeições fora de casa em 30%, você pode economizar R$ 320/mês sem grandes sacrifícios.',
+          potentialSavings: 320,
+          difficulty: 'medium',
+          category: 'alimentação'
+        },
+        {
+          id: '4',
+          title: 'Elimine assinaturas não utilizadas',
+          description: 'Identificamos 3 assinaturas que você não utiliza há mais de 3 meses, totalizando R$ 135/mês.',
+          potentialSavings: 135,
+          difficulty: 'easy',
+          category: 'assinaturas'
+        },
+        {
+          id: '5',
+          title: 'Refinanciamento de empréstimo',
+          description: 'Seu empréstimo atual tem taxa alta. Refinanciando, você pode economizar R$ 250/mês.',
+          potentialSavings: 250,
+          difficulty: 'hard',
+          category: 'financeiro'
+        }
+      ];
+      
+      setRecommendations(mockRecommendations);
+    } catch (err) {
+      console.error('Error generating AI recommendations:', err);
+    } finally {
+      setAiLoading(false);
     }
   };
 
   const handleAddGoal = async () => {
     try {
-      // Validate form data
-      if (!formData.type || !formData.name || !formData.target_amount || !formData.target_date) {
-        alert('Por favor, preencha todos os campos obrigatórios.');
-        return;
-      }
+      // Calculate monthly savings needed
+      const targetDate = new Date(newGoalFormData.target_date);
+      const now = new Date();
+      const diffMs = targetDate.getTime() - now.getTime();
+      const diffMonths = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30)));
+      const targetAmount = parseFloat(newGoalFormData.target_amount);
+      const monthlySavingsNeeded = targetAmount / diffMonths;
       
-      const targetAmount = parseFloat(formData.target_amount);
-      const monthlyContribution = parseFloat(formData.monthly_contribution || '0');
-      const dueDay = parseInt(formData.due_day || '5', 10);
+      const newGoal: Omit<Goal, 'id' | 'user_id' | 'created_at' | 'updated_at'> = {
+        name: newGoalFormData.name,
+        target_amount: targetAmount,
+        current_amount: 0,
+        target_date: newGoalFormData.target_date,
+        category: newGoalFormData.category as 'travel' | 'business' | 'wealth' | 'home' | 'education' | 'other',
+        description: newGoalFormData.description,
+        status: 'active',
+        priority: newGoalFormData.priority as 'high' | 'medium' | 'low'
+      };
       
-      // Add the goal
-      const { data: goalData, error: goalError } = await supabase
-        .from('financial_goals')
-        .insert([{
-          user_id: user?.id,
-          name: formData.name,
-          target_amount: targetAmount,
-          current_amount: 0,
-          target_date: formData.target_date,
-          category: formData.type,
-          description: formData.description,
-          priority: formData.priority as 'high' | 'medium' | 'low',
-          status: 'active'
-        }])
-        .select('*')
-        .single();
-        
-      if (goalError) throw goalError;
+      // In a real implementation, you would save to database
+      // For demo, we'll just update the state
       
-      // If monthly contribution is set, create a recurring bill
-      if (goalData && monthlyContribution > 0) {
-        // Call the create_goal_contribution_bill function
-        const { data: functionResult, error: functionError } = await supabase
-          .rpc('create_goal_contribution_bill', {
-            goal_id: goalData.id,
-            monthly_amount: monthlyContribution,
-            due_day: dueDay,
-            start_date: new Date().toISOString().split('T')[0]
-          });
-          
-        if (functionError) throw functionError;
-      }
+      const mockId = Date.now().toString();
       
-      // Reset form and close modal
-      setFormData({
-        type: '',
+      // In a real implementation, you would also create a recurring bill for this goal
+      // For demo purposes, we'll just simulate this
+      
+      // This would call the create_goal_contribution_bill function
+      /*
+      await supabase.rpc('create_goal_contribution_bill', {
+        goal_id: mockId,
+        monthly_amount: monthlySavingsNeeded,
+        due_day: 5 // Default due day
+      });
+      */
+      
+      // For demo, we'll log what would happen
+      console.log(`Would create recurring bill: R$ ${monthlySavingsNeeded.toFixed(2)}/month for goal: ${newGoalFormData.name}`);
+      
+      setGoals([
+        ...goals,
+        {
+          ...newGoal,
+          id: mockId,
+          user_id: user?.id || '',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString()
+        }
+      ]);
+      
+      // Reset form
+      setNewGoalFormData({
         name: '',
         target_amount: '',
         target_date: '',
-        priority: 'medium',
+        category: 'wealth',
         description: '',
-        monthly_contribution: '',
-        due_day: '5'
+        priority: 'medium'
       });
+      
       setShowAddModal(false);
       
-      // Refresh goals
-      fetchGoals();
-    } catch (error) {
-      console.error('Error adding goal:', error);
-      alert('Erro ao adicionar meta. Por favor, tente novamente.');
+    } catch (err) {
+      console.error('Error adding goal:', err);
     }
   };
 
-  const handleDeleteGoal = async () => {
-    if (!goalToDelete) return;
+  const handleUpdateGoal = (id: string, updates: Partial<Goal>) => {
+    setGoals(
+      goals.map(goal => (goal.id === id ? { ...goal, ...updates, updated_at: new Date().toISOString() } : goal))
+    );
+    setEditingGoal(null);
+  };
+
+  const handleDeleteGoal = (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta meta?')) return;
+    setGoals(goals.filter(goal => goal.id !== id));
+  };
+
+  const handleContribute = (id: string) => {
+    const goal = goals.find(g => g.id === id);
+    if (!goal) return;
     
-    if (deleteConfirmation !== goalToDelete.name) {
-      alert('O nome da meta não corresponde. Tente novamente.');
-      return;
-    }
+    const amount = parseFloat(prompt('Quanto deseja adicionar à sua meta?', '100') || '0');
+    if (amount <= 0) return;
     
-    try {
-      // Delete the goal (will cascade to contributions and unlink bills)
-      const { error } = await supabase
-        .from('financial_goals')
-        .delete()
-        .eq('id', goalToDelete.id);
-        
-      if (error) throw error;
-      
-      // Close modal and refresh goals
-      setShowDeleteModal(false);
-      setGoalToDelete(null);
-      setDeleteConfirmation('');
-      fetchGoals();
-    } catch (error) {
-      console.error('Error deleting goal:', error);
-      alert('Erro ao excluir meta. Por favor, tente novamente.');
-    }
+    handleUpdateGoal(id, { 
+      current_amount: goal.current_amount + amount,
+      status: goal.current_amount + amount >= goal.target_amount ? 'completed' : 'active'
+    });
   };
 
-  const handleViewDetails = (goal: FinancialGoal) => {
-    setSelectedGoal(goal);
-    setShowDetailModal(true);
+  const applyRecommendation = (goalId: string, recommendation: AIRecommendation) => {
+    const goal = goals.find(g => g.id === goalId);
+    if (!goal) return;
+    
+    setRecommendations(
+      recommendations.map(rec => 
+        rec.id === recommendation.id ? { ...rec, appliedToGoal: goalId } : rec
+      )
+    );
+    
+    // Show success message
+    alert(`Recomendação aplicada: economize R$ ${recommendation.potentialSavings}/mês para atingir sua meta mais rápido!`);
+    
+    setShowAIModal(false);
   };
 
-  const calculateProgress = (goal: FinancialGoal) => {
-    const progress = (goal.current_amount / goal.target_amount) * 100;
-    return Math.min(progress, 100); // Cap at 100%
+  const getTimeRemaining = (targetDate: string) => {
+    const target = new Date(targetDate);
+    const now = new Date();
+    const diffMs = target.getTime() - now.getTime();
+    
+    if (diffMs <= 0) return 'Meta vencida';
+    
+    const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+    
+    if (diffDays < 30) return `${diffDays} dias restantes`;
+    
+    const diffMonths = Math.floor(diffDays / 30);
+    
+    if (diffMonths < 12) return `${diffMonths} meses restantes`;
+    
+    const years = Math.floor(diffMonths / 12);
+    const months = diffMonths % 12;
+    
+    return `${years} ${years === 1 ? 'ano' : 'anos'}${months > 0 ? ` e ${months} ${months === 1 ? 'mês' : 'meses'}` : ''} restantes`;
   };
 
-  const calculateTimeProgress = (goal: FinancialGoal) => {
-    const startDate = new Date(goal.created_at);
+  const getProgressPercentage = (current: number, target: number) => {
+    return Math.min(100, Math.max(0, (current / target) * 100));
+  };
+
+  const getMonthlySavingsNeeded = (goal: Goal) => {
     const targetDate = new Date(goal.target_date);
-    const today = new Date();
+    const now = new Date();
+    const diffMs = targetDate.getTime() - now.getTime();
     
-    const totalDays = (targetDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
-    const daysElapsed = (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24);
+    if (diffMs <= 0) return Infinity;
     
-    const progress = (daysElapsed / totalDays) * 100;
-    return Math.min(Math.max(progress, 0), 100); // Clamp between 0 and 100
-  };
-
-  const isGoalAhead = (goal: FinancialGoal) => {
-    const moneyProgress = calculateProgress(goal);
-    const timeProgress = calculateTimeProgress(goal);
-    
-    return moneyProgress > timeProgress;
-  };
-
-  const calculateMonthlyRequired = (goal: FinancialGoal) => {
-    const targetDate = new Date(goal.target_date);
-    const today = new Date();
-    
-    // If target date is in the past, return 0
-    if (targetDate < today) return 0;
-    
+    const diffMonths = Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30));
     const remainingAmount = goal.target_amount - goal.current_amount;
     
-    // Calculate months between now and target date
-    const months = (targetDate.getFullYear() - today.getFullYear()) * 12 + 
-                 (targetDate.getMonth() - today.getMonth());
-    
-    // If less than a month, return full remaining amount
-    if (months < 1) return remainingAmount;
-    
-    return remainingAmount / months;
+    return remainingAmount / diffMonths;
   };
 
-  const getStatusColor = (goal: FinancialGoal) => {
-    if (goal.status === 'completed') return 'bg-green-500';
-    if (goal.status === 'abandoned') return 'bg-red-500';
-    
-    // Active goals
-    if (isGoalAhead(goal)) return 'bg-blue-500';
-    
-    // Calculate if on track
-    const moneyProgress = calculateProgress(goal);
-    const timeProgress = calculateTimeProgress(goal);
-    
-    if (timeProgress - moneyProgress > 20) return 'bg-red-500'; // Seriously behind
-    if (timeProgress - moneyProgress > 10) return 'bg-yellow-500'; // Slightly behind
-    return 'bg-green-500'; // On track
+  const getCategoryInfo = (category: string) => {
+    return GoalCategories.find(c => c.value === category) || GoalCategories[0];
   };
 
-  const getPriorityColor = (priority: string) => {
-    switch (priority) {
-      case 'high': return 'bg-red-100 text-red-800';
-      case 'medium': return 'bg-yellow-100 text-yellow-800';
-      case 'low': return 'bg-blue-100 text-blue-800';
-      default: return 'bg-gray-100 text-gray-800';
-    }
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   };
-
-  const getGoalTypeInfo = (type: string) => {
-    return goalTypes.find(t => t.value === type) || goalTypes[5]; // Default to 'other'
-  };
-
-  const getRemainingDays = (goal: FinancialGoal) => {
-    const targetDate = new Date(goal.target_date);
-    const today = new Date();
-    
-    const diffTime = targetDate.getTime() - today.getTime();
-    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-  };
-
-  const getDifficultyColor = (difficulty: string) => {
-    switch (difficulty) {
-      case 'easy': return 'text-green-600 bg-green-50';
-      case 'medium': return 'text-yellow-600 bg-yellow-50';
-      case 'hard': return 'text-red-600 bg-red-50';
-      default: return 'text-gray-600 bg-gray-50';
-    }
-  };
-
-  const handleApplyRecommendation = async (recommendation: GoalRecommendation) => {
-    try {
-      // Mark recommendation as applied
-      const { error } = await supabase
-        .from('goal_recommendations')
-        .update({
-          is_applied: true,
-          applied_at: new Date().toISOString()
-        })
-        .eq('id', recommendation.id);
-        
-      if (error) throw error;
-      
-      // Refresh recommendations
-      const { data: updatedRecommendations, error: recommendationsError } = await supabase
-        .from('goal_recommendations')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
-        
-      if (recommendationsError) throw recommendationsError;
-      setRecommendations(updatedRecommendations || []);
-    } catch (error) {
-      console.error('Error applying recommendation:', error);
-    }
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('pt-BR', {
-      style: 'currency',
-      currency: 'BRL',
-    }).format(amount);
-  };
-
-  // For form validation
-  const calculateSimulation = () => {
-    if (!formData.target_amount || !formData.target_date) return { 
-      totalAmount: 0,
-      monthlyAmount: 0,
-      percentOfIncome: 0
-    };
-    
-    const targetAmount = parseFloat(formData.target_amount);
-    const targetDate = new Date(formData.target_date);
-    const today = new Date();
-    
-    // Calculate months between now and target date
-    const months = (targetDate.getFullYear() - today.getFullYear()) * 12 + 
-                 (targetDate.getMonth() - today.getMonth());
-    
-    // If target date is in the past or less than a month away
-    if (months < 1) return {
-      totalAmount: targetAmount,
-      monthlyAmount: targetAmount,
-      percentOfIncome: totalMonthlyIncome > 0 ? (targetAmount / totalMonthlyIncome) * 100 : 0
-    };
-    
-    const monthlyAmount = targetAmount / months;
-    
-    return {
-      totalAmount: targetAmount,
-      monthlyAmount,
-      percentOfIncome: totalMonthlyIncome > 0 ? (monthlyAmount / totalMonthlyIncome) * 100 : 0
-    };
-  };
-
-  // UI Helper to get a compact modal size
-  const getModalMaxHeight = () => {
-    // Get viewport height
-    const vh = Math.max(document.documentElement.clientHeight || 0, window.innerHeight || 0);
-    // Use 90% of viewport height
-    return `${vh * 0.9}px`;
-  };
-
-  const activeGoals = goals.filter(g => g.status === 'active');
-  const completedGoals = goals.filter(g => g.status === 'completed');
-  const abandonedGoals = goals.filter(g => g.status === 'abandoned');
-  
-  const totalTargetAmount = activeGoals.reduce((sum, goal) => sum + goal.target_amount, 0);
-  const totalCurrentAmount = activeGoals.reduce((sum, goal) => sum + goal.current_amount, 0);
-  
-  const simulation = calculateSimulation();
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Metas Financeiras</h1>
           <p className="text-gray-500 mt-1">Estabeleça metas claras e acompanhe seu progresso</p>
         </div>
         <div className="flex space-x-3">
-          <button 
-            onClick={() => setShowRecommendationsModal(true)}
-            className="flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all duration-200 shadow-md"
+          <button
+            onClick={() => setShowAIModal(true)}
+            className="flex items-center space-x-2 px-5 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 shadow-lg"
           >
-            <Lightbulb className="h-4 w-4" />
+            <Brain className="h-4 w-4" />
             <span>Recomendações IA</span>
           </button>
-          <button 
+          
+          <button
             onClick={() => setShowAddModal(true)}
-            className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg"
+            className="flex items-center space-x-2 px-5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg"
           >
             <Plus className="h-4 w-4" />
             <span>Nova Meta</span>
           </button>
         </div>
       </div>
-
-      {/* Resumo */}
+      
+      {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-100 text-sm font-medium">Total em Metas</p>
-              <p className="text-3xl font-bold mt-1">{formatCurrency(totalTargetAmount)}</p>
+              <p className="text-3xl font-bold mt-1">
+                {formatCurrency(goals.reduce((sum, goal) => sum + goal.target_amount, 0))}
+              </p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl">
               <Target className="h-6 w-6" />
             </div>
           </div>
         </div>
-
+        
         <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-100 text-sm font-medium">Já Economizado</p>
-              <p className="text-3xl font-bold mt-1">{formatCurrency(totalCurrentAmount)}</p>
-              <p className="text-green-100 text-sm">
-                {totalTargetAmount > 0 && `${((totalCurrentAmount / totalTargetAmount) * 100).toFixed(1)}%`}
+              <p className="text-3xl font-bold mt-1">
+                {formatCurrency(goals.reduce((sum, goal) => sum + goal.current_amount, 0))}
               </p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl">
@@ -540,13 +410,15 @@ const FinancialGoals: React.FC = () => {
             </div>
           </div>
         </div>
-
+        
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-purple-100 text-sm font-medium">Economia Mensal Sugerida</p>
               <p className="text-3xl font-bold mt-1">
-                {formatCurrency(activeGoals.reduce((sum, goal) => sum + calculateMonthlyRequired(goal), 0))}
+                {formatCurrency(goals
+                  .filter(g => g.status === 'active')
+                  .reduce((sum, goal) => sum + getMonthlySavingsNeeded(goal), 0))}
               </p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl">
@@ -555,822 +427,536 @@ const FinancialGoals: React.FC = () => {
           </div>
         </div>
       </div>
-
-      {/* Economias Potenciais com IA */}
-      {recommendations.filter(r => !r.is_applied).length > 0 && (
-        <div className="bg-white p-6 rounded-2xl shadow-lg">
-          <div className="flex items-center space-x-3 mb-4">
-            <Lightbulb className="h-5 w-5 text-purple-600" />
-            <h2 className="text-lg font-semibold text-gray-800">Economias Potenciais com IA</h2>
+      
+      {/* Potential Savings from AI Recommendations */}
+      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-2 rounded-xl">
+            <Brain className="h-5 w-5 text-white" />
           </div>
-          
-          <div className="bg-purple-50 border border-purple-200 rounded-xl p-4">
-            <div className="flex items-start justify-between">
-              <div>
-                <p className="font-medium text-gray-800">
-                  Total identificado pela IA:
-                </p>
-                <p className="text-purple-700 text-lg font-bold">
-                  {formatCurrency(recommendations.filter(r => !r.is_applied).reduce((sum, r) => sum + r.potential_savings, 0))}/mês
-                </p>
-                <p className="text-gray-600 text-sm mt-2">
-                  {recommendations.filter(r => !r.is_applied).length} sugestões disponíveis
-                </p>
-              </div>
-              <button
-                onClick={() => setShowRecommendationsModal(true)}
-                className="px-4 py-2 bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg hover:from-purple-600 hover:to-purple-700 transition-colors text-sm"
-              >
-                Ver Todas as Sugestões
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Metas Ativas */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-xl font-semibold text-gray-800">Metas Ativas</h2>
+          <h2 className="text-xl font-semibold text-gray-800">Economias Potenciais com IA</h2>
         </div>
         
-        <div className="p-6">
-          {activeGoals.length === 0 ? (
-            <div className="text-center py-12">
-              <Target className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma meta ativa</h3>
-              <p className="text-gray-500 mb-4">Crie sua primeira meta para começar a planejar seu futuro financeiro.</p>
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-              >
-                Criar Meta
-              </button>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {activeGoals.map(goal => {
-                const goalTypeInfo = getGoalTypeInfo(goal.category);
-                const Icon = goalTypeInfo.icon;
-                const progress = calculateProgress(goal);
-                const timeProgress = calculateTimeProgress(goal);
-                const remainingDays = getRemainingDays(goal);
-                const monthlyRequired = calculateMonthlyRequired(goal);
-                const statusColor = getStatusColor(goal);
-                const priorityStyle = priorityOptions.find(p => p.value === goal.priority)?.color || '';
-                
-                return (
-                  <div 
-                    key={goal.id} 
-                    className="border rounded-xl overflow-hidden hover:shadow-md transition-shadow duration-200"
-                    style={{
-                      borderLeftWidth: '6px',
-                      borderLeftColor: remainingDays < 0 ? '#ef4444' : '#3b82f6'
-                    }}
-                  >
-                    <div className="p-5">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center">
-                          <div className={`w-10 h-10 rounded-lg ${goalTypeInfo.color} flex items-center justify-center mr-3`}>
-                            <Icon className="h-5 w-5 text-white" />
-                          </div>
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <h3 className="font-semibold text-gray-900 text-lg">{goal.name}</h3>
-                              <span className={`text-xs px-2 py-0.5 rounded-full ${priorityStyle}`}>
-                                {goal.priority === 'high' ? 'Alta Prioridade' : 
-                                 goal.priority === 'medium' ? 'Média Prioridade' : 
-                                 'Baixa Prioridade'}
-                              </span>
-                              {remainingDays < 0 && (
-                                <span className="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full flex items-center">
-                                  <AlertTriangle className="h-3 w-3 mr-1" />
-                                  Meta atrasada
-                                </span>
-                              )}
-                            </div>
-                            <p className="text-gray-500 text-sm">
-                              {goalTypeInfo.label} • Vencimento: {new Date(goal.target_date).toLocaleDateString('pt-BR')}
-                            </p>
-                          </div>
-                        </div>
-                        
-                        <div className="flex items-center space-x-2">
-                          <button 
-                            onClick={() => handleViewDetails(goal)}
-                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                          <button 
-                            onClick={() => {
-                              setGoalToDelete(goal);
-                              setShowDeleteModal(true);
-                            }}
-                            className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <div className="mt-4">
-                        <div className="flex justify-between items-baseline mb-1">
-                          <div className="text-gray-800 font-medium">
-                            {formatCurrency(goal.current_amount)} <span className="text-gray-500 text-sm">de {formatCurrency(goal.target_amount)}</span>
-                          </div>
-                          <div className="text-gray-500 text-sm">
-                            {progress.toFixed(1)}%
-                          </div>
-                        </div>
-                        
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 mb-2">
-                          <div 
-                            className={`h-2.5 rounded-full ${statusColor}`}
-                            style={{ width: `${progress}%` }}
-                          ></div>
-                        </div>
-                        
-                        <div className="flex justify-between text-xs text-gray-500">
-                          <span>{remainingDays > 0 ? `${remainingDays} dias restantes` : 'Prazo vencido'}</span>
-                          <span>
-                            {monthlyRequired > 0 && `${formatCurrency(monthlyRequired)}/mês necessário`}
-                          </span>
-                        </div>
-                      </div>
-                      
-                      {/* Linked bills section */}
-                      {linkedBills[goal.id] && linkedBills[goal.id].length > 0 && (
-                        <div className="mt-3 pt-3 border-t border-gray-100">
-                          <div className="flex items-center text-sm text-gray-500 mb-1">
-                            <Calendar className="h-3 w-3 mr-1" />
-                            <span>Contribuição Mensal:</span>
-                            <span className="text-gray-700 font-medium ml-1">
-                              {formatCurrency(linkedBills[goal.id].reduce((sum, bill) => sum + bill.amount, 0))}/mês
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-gray-700">Total identificado pela IA:</p>
+            <p className="font-bold text-purple-700">
+              {formatCurrency(recommendations.reduce((sum, rec) => sum + rec.potentialSavings, 0))}/mês
+            </p>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <p className="text-gray-700">Sugestões disponíveis:</p>
+            <p className="font-medium text-gray-800">{recommendations.length}</p>
+          </div>
+          
+          <button
+            onClick={() => setShowAIModal(true)}
+            className="mt-3 w-full py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md flex items-center justify-center space-x-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>Ver Todas as Sugestões</span>
+          </button>
         </div>
       </div>
       
-      {/* Metas Concluídas e Abandonadas */}
-      {(completedGoals.length > 0 || abandonedGoals.length > 0) && (
-        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-          <div className="p-6 border-b border-gray-100">
-            <h2 className="text-xl font-semibold text-gray-800">Metas Finalizadas</h2>
-          </div>
-          
-          <div className="p-6 space-y-6">
-            {/* Completed goals */}
-            {completedGoals.length > 0 && (
-              <div>
-                <h3 className="text-lg font-medium text-green-700 mb-3 flex items-center">
-                  <CheckCircle className="h-5 w-5 mr-2" />
-                  Concluídas
-                </h3>
-                
-                <div className="space-y-4">
-                  {completedGoals.map(goal => {
-                    const goalTypeInfo = getGoalTypeInfo(goal.category);
-                    const Icon = goalTypeInfo.icon;
-                    
-                    return (
-                      <div 
-                        key={goal.id} 
-                        className="border border-green-200 rounded-lg p-4 bg-green-50"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 rounded-lg bg-green-500 flex items-center justify-center mr-3">
-                              <Icon className="h-4 w-4 text-white" />
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-gray-900">{goal.name}</h4>
-                              <div className="flex items-center text-sm text-gray-500">
-                                <span>{formatCurrency(goal.current_amount)}</span>
-                                <span className="text-gray-400 mx-1">•</span>
-                                <span>Concluída em {new Date(goal.updated_at).toLocaleDateString('pt-BR')}</span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <button 
-                            onClick={() => handleViewDetails(goal)}
-                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-            
-            {/* Abandoned goals */}
-            {abandonedGoals.length > 0 && (
-              <div>
-                <h3 className="text-lg font-medium text-red-700 mb-3 flex items-center">
-                  <X className="h-5 w-5 mr-2" />
-                  Abandonadas
-                </h3>
-                
-                <div className="space-y-4">
-                  {abandonedGoals.map(goal => {
-                    const goalTypeInfo = getGoalTypeInfo(goal.category);
-                    const Icon = goalTypeInfo.icon;
-                    const progress = calculateProgress(goal);
-                    
-                    return (
-                      <div 
-                        key={goal.id} 
-                        className="border border-red-200 rounded-lg p-4 bg-red-50"
-                      >
-                        <div className="flex justify-between items-start">
-                          <div className="flex items-center">
-                            <div className="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center mr-3">
-                              <Icon className="h-4 w-4 text-white" />
-                            </div>
-                            <div>
-                              <h4 className="font-medium text-gray-900">{goal.name}</h4>
-                              <div className="flex items-center text-sm text-gray-500">
-                                <span>{formatCurrency(goal.current_amount)} ({progress.toFixed(1)}%)</span>
-                                <span className="text-gray-400 mx-1">•</span>
-                                <span>Abandonada em {new Date(goal.updated_at).toLocaleDateString('pt-BR')}</span>
-                              </div>
-                            </div>
-                          </div>
-                          
-                          <button 
-                            onClick={() => handleViewDetails(goal)}
-                            className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
+      {/* Goals List */}
+      {loading ? (
+        <div className="animate-pulse space-y-4">
+          {[1, 2].map((_, index) => (
+            <div key={index} className="bg-gray-100 h-40 rounded-2xl"></div>
+          ))}
         </div>
-      )}
-
-      {/* Modal: Add Goal */}
-      {showAddModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div 
-            className="bg-gray-900 rounded-2xl shadow-2xl w-full max-w-md overflow-y-auto"
-            style={{ maxHeight: getModalMaxHeight() }}
+      ) : goals.length === 0 ? (
+        <div className="bg-white rounded-2xl shadow-lg p-12 text-center">
+          <Target className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-800 mb-2">Nenhuma meta financeira definida</h3>
+          <p className="text-gray-600 max-w-md mx-auto mb-6">
+            Defina metas financeiras claras para ajudar você a economizar para seus sonhos e objetivos.
+          </p>
+          <button
+            onClick={() => setShowAddModal(true)}
+            className="px-6 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md inline-flex items-center space-x-2"
           >
-            <div className="p-5 border-b border-gray-800">
-              <h2 className="text-xl font-bold text-white">Nova Meta Financeira</h2>
-            </div>
+            <Plus className="h-4 w-4" />
+            <span>Criar Primeira Meta</span>
+          </button>
+        </div>
+      ) : (
+        <div className="space-y-6">
+          {goals.map((goal) => {
+            const CategoryIcon = getCategoryInfo(goal.category).icon;
+            const categoryInfo = getCategoryInfo(goal.category);
+            const colorClass = categoryInfo.color;
+            const progressPercentage = getProgressPercentage(goal.current_amount, goal.target_amount);
+            const monthlySavingsNeeded = getMonthlySavingsNeeded(goal);
+            const isEditing = editingGoal?.id === goal.id;
             
-            <div className="p-5 space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-2">Tipo de Meta</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {goalTypes.map(type => (
-                    <button
-                      key={type.value}
-                      type="button"
-                      className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all duration-200 ${
-                        formData.type === type.value
-                          ? 'bg-blue-100 border-blue-500'
-                          : 'bg-gray-800 border-gray-700 hover:bg-gray-700'
-                      }`}
-                      onClick={() => setFormData({...formData, type: type.value})}
-                    >
-                      <div className={`w-10 h-10 rounded-lg ${type.color} flex items-center justify-center mb-1`}>
-                        <type.icon className="h-5 w-5 text-white" />
+            return (
+              <div key={goal.id} className={`bg-white rounded-2xl shadow-lg overflow-hidden border-l-4 ${
+                goal.status === 'completed' ? 'border-green-500' : 
+                goal.status === 'abandoned' ? 'border-gray-400' :
+                goal.priority === 'high' ? 'border-red-500' :
+                goal.priority === 'medium' ? 'border-yellow-500' :
+                'border-blue-500'
+              }`}>
+                {isEditing ? (
+                  <div className="p-6 space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Nome da Meta</label>
+                        <input
+                          type="text"
+                          value={editingGoal.name || ''}
+                          onChange={(e) => setEditingGoal({...editingGoal, name: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded-lg"
+                        />
                       </div>
-                      <span className={formData.type === type.value ? 'text-blue-600' : 'text-gray-300 text-sm'}>
-                        {type.label}
-                      </span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Nome da Meta</label>
-                <input 
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  placeholder="Ex: Viagem para Europa"
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-white"
-                />
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Valor Alvo</label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                      R$
-                    </span>
-                    <input 
-                      type="number"
-                      value={formData.target_amount}
-                      onChange={(e) => setFormData({...formData, target_amount: e.target.value})}
-                      placeholder="10000"
-                      min="0"
-                      step="0.01"
-                      className="w-full p-3 pl-8 bg-gray-800 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-white"
-                    />
-                  </div>
-                </div>
-                
-                <div>
-                  <label className="block text-sm font-medium text-gray-300 mb-1">Data Alvo</label>
-                  <input 
-                    type="date"
-                    value={formData.target_date}
-                    onChange={(e) => setFormData({...formData, target_date: e.target.value})}
-                    min={new Date().toISOString().split('T')[0]}
-                    className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-white"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Prioridade</label>
-                <select 
-                  value={formData.priority}
-                  onChange={(e) => setFormData({...formData, priority: e.target.value})}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-white"
-                >
-                  {priorityOptions.map(option => (
-                    <option key={option.value} value={option.value}>{option.label}</option>
-                  ))}
-                </select>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-300 mb-1">Descrição (opcional)</label>
-                <textarea 
-                  value={formData.description}
-                  onChange={(e) => setFormData({...formData, description: e.target.value})}
-                  placeholder="Descreva sua meta em mais detalhes..."
-                  rows={3}
-                  className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-white resize-none"
-                />
-              </div>
-              
-              <div className="bg-blue-900/40 p-4 rounded-xl">
-                <h3 className="text-lg font-medium text-white mb-2">Simulação</h3>
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-blue-200">Valor total a economizar:</span>
-                    <span className="text-white font-medium">{formatCurrency(parseFloat(formData.target_amount) || 0)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-blue-200">Economia mensal necessária:</span>
-                    <span className="text-white font-medium">{formatCurrency(simulation.monthlyAmount)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-blue-200">Percentual da renda mensal:</span>
-                    <span className="text-white font-medium">
-                      {totalMonthlyIncome > 0 ? `${simulation.percentOfIncome.toFixed(1)}%` : 'N/A'}
-                    </span>
-                  </div>
-                </div>
-              </div>
-              
-              <div className="pt-2">
-                <div className="bg-blue-900/40 p-4 rounded-xl">
-                  <h3 className="font-medium text-white mb-2 flex items-center">
-                    <Calendar className="h-4 w-4 mr-1 text-blue-300" />
-                    <span>Conta Recorrente</span>
-                  </h3>
-                  <p className="text-sm text-blue-200 mb-3">
-                    Será criada uma conta recorrente mensal para ajudar você a atingir esta meta.
-                  </p>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-blue-200 mb-1">Valor Mensal</label>
-                      <div className="relative">
-                        <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
-                          R$
-                        </span>
-                        <input 
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Categoria</label>
+                        <select
+                          value={editingGoal.category || ''}
+                          onChange={(e) => setEditingGoal({...editingGoal, category: e.target.value as any})}
+                          className="w-full p-2 border border-gray-300 rounded-lg"
+                        >
+                          {GoalCategories.map(cat => (
+                            <option key={cat.value} value={cat.value}>{cat.label}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Valor Alvo (R$)</label>
+                        <input
                           type="number"
-                          value={formData.monthly_contribution}
-                          onChange={(e) => setFormData({...formData, monthly_contribution: e.target.value})}
-                          placeholder={simulation.monthlyAmount.toFixed(2)}
                           min="0"
                           step="0.01"
-                          className="w-full p-3 pl-8 bg-gray-800 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-white"
+                          value={editingGoal.target_amount || ''}
+                          onChange={(e) => setEditingGoal({...editingGoal, target_amount: parseFloat(e.target.value)})}
+                          className="w-full p-2 border border-gray-300 rounded-lg"
+                        />
+                      </div>
+                      
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Data Alvo</label>
+                        <input
+                          type="date"
+                          value={editingGoal.target_date || ''}
+                          onChange={(e) => setEditingGoal({...editingGoal, target_date: e.target.value})}
+                          className="w-full p-2 border border-gray-300 rounded-lg"
                         />
                       </div>
                     </div>
                     
                     <div>
-                      <label className="block text-sm font-medium text-blue-200 mb-1">Dia do Mês</label>
-                      <input 
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Descrição</label>
+                      <textarea
+                        value={editingGoal.description || ''}
+                        onChange={(e) => setEditingGoal({...editingGoal, description: e.target.value})}
+                        className="w-full p-2 border border-gray-300 rounded-lg"
+                        rows={3}
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Prioridade</label>
+                      <select
+                        value={editingGoal.priority || ''}
+                        onChange={(e) => setEditingGoal({...editingGoal, priority: e.target.value as any})}
+                        className="w-full p-2 border border-gray-300 rounded-lg"
+                      >
+                        <option value="high">Alta</option>
+                        <option value="medium">Média</option>
+                        <option value="low">Baixa</option>
+                      </select>
+                    </div>
+                    
+                    <div className="flex justify-end space-x-3">
+                      <button
+                        onClick={() => setEditingGoal(null)}
+                        className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                      >
+                        Cancelar
+                      </button>
+                      
+                      <button
+                        onClick={() => goal.id && handleUpdateGoal(goal.id, editingGoal)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
+                        Salvar Alterações
+                      </button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div className="p-6">
+                      <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                        <div className="flex items-start space-x-4">
+                          <div className={`w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-r ${colorClass} shadow-md`}>
+                            <CategoryIcon className="h-7 w-7 text-white" />
+                          </div>
+                          
+                          <div>
+                            <div className="flex items-center space-x-3">
+                              <h3 className="text-xl font-semibold text-gray-800">{goal.name}</h3>
+                              <span className={`text-xs px-3 py-1 rounded-full ${
+                                goal.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                goal.status === 'abandoned' ? 'bg-gray-100 text-gray-700' :
+                                goal.priority === 'high' ? 'bg-red-100 text-red-700' :
+                                goal.priority === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                                'bg-blue-100 text-blue-700'
+                              }`}>
+                                {goal.status === 'completed' ? 'Concluída' :
+                                 goal.status === 'abandoned' ? 'Abandonada' :
+                                 goal.priority === 'high' ? 'Alta Prioridade' :
+                                 goal.priority === 'medium' ? 'Média Prioridade' :
+                                 'Baixa Prioridade'}
+                              </span>
+                            </div>
+                            
+                            <p className="text-gray-600 mt-1">{goal.description}</p>
+
+                            <div className="flex flex-wrap items-center gap-4 mt-2 text-sm">
+                              <span className="flex items-center text-gray-700">
+                                <Calendar className="h-4 w-4 mr-1" />
+                                <span>{getTimeRemaining(goal.target_date)}</span>
+                              </span>
+                              
+                              <span className="flex items-center text-gray-700">
+                                <DollarSign className="h-4 w-4 mr-1" />
+                                <span className="font-medium">Meta: {formatCurrency(goal.target_amount)}</span>
+                              </span>
+
+                              <span className="flex items-center text-gray-700">
+                                <PiggyBank className="h-4 w-4 mr-1 text-green-600" />
+                                <span className="font-medium text-green-600">Economizado: {formatCurrency(goal.current_amount)}</span>
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        <div className="flex flex-col items-end space-y-2">
+                          <div className="text-right">
+                            <div className="flex items-center justify-end">
+                              <span className="text-2xl font-bold text-gray-800">
+                                {formatCurrency(goal.current_amount)}
+                              </span>
+                              <span className="ml-2 text-sm text-gray-500">
+                                de {formatCurrency(goal.target_amount)}
+                              </span>
+                            </div>
+                            <p className="text-sm text-gray-600">
+                              {progressPercentage.toFixed(1)}% concluído
+                            </p>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            <button
+                              onClick={() => handleContribute(goal.id)}
+                              disabled={goal.status === 'completed'}
+                              className={`px-3 py-1 text-sm rounded-lg flex items-center space-x-1 ${
+                                goal.status === 'completed' 
+                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                  : 'bg-green-500 text-white hover:bg-green-600 transition-colors'
+                              }`}
+                            >
+                              <DollarSign className="h-3 w-3" />
+                              <span>Adicionar</span>
+                            </button>
+                            
+                            <button
+                              onClick={() => {
+                                setSelectedGoal(goal);
+                                setShowAIModal(true);
+                              }}
+                              disabled={goal.status === 'completed'}
+                              className={`px-3 py-1 text-sm rounded-lg ${
+                                goal.status === 'completed' 
+                                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors'
+                              }`}
+                            >
+                              <span className="flex items-center space-x-1">
+                                <Brain className="h-3 w-3" />
+                                <span>Otimizar</span>
+                              </span>
+                            </button>
+                            
+                            <button
+                              onClick={() => setEditingGoal({...goal})}
+                              className="p-1 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors"
+                            >
+                              <Edit className="h-4 w-4" />
+                            </button>
+                            
+                            <button
+                              onClick={() => handleDeleteGoal(goal.id)}
+                              className="p-1 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded transition-colors"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Progress Bar */}
+                    <div className="h-2 bg-gray-200">
+                      <div 
+                        className={`h-2 ${
+                          goal.status === 'completed' ? 'bg-green-500' : `bg-gradient-to-r ${colorClass}`
+                        }`} 
+                        style={{ width: `${progressPercentage}%` }}
+                      ></div>
+                    </div>
+                    
+                    {goal.status === 'active' && (
+                      <div className="bg-gray-50 px-6 py-3 flex justify-between items-center">
+                        <div>
+                          <span className="text-sm font-medium text-gray-700">
+                            Economia mensal necessária:
+                          </span>
+                          <span className="ml-2 text-sm font-semibold text-blue-700">
+                            {formatCurrency(monthlySavingsNeeded)}
+                          </span>
+                        </div>
+                        
+                        {monthlySavingsNeeded > (totalMonthlyIncome * 0.2) && (
+                          <div className="flex items-center text-amber-600 text-sm">
+                            <AlertTriangle className="h-4 w-4 mr-1" />
+                            <span>Meta desafiadora</span>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                  </>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      )}
+      
+      {/* Add Goal Modal */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl">
+            <div className="p-6 border-b border-gray-100">
+              <h2 className="text-2xl font-semibold text-gray-800">Nova Meta Financeira</h2>
+            </div>
+            
+            <div className="p-6">
+              <form onSubmit={(e) => {
+                e.preventDefault();
+                handleAddGoal();
+              }} className="space-y-6">
+                {/* Goal Type Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Tipo de Meta
+                  </label>
+                  <div className="grid grid-cols-3 gap-4">
+                    {GoalCategories.map((category) => {
+                      const isSelected = newGoalFormData.category === category.value;
+                      return (
+                        <button
+                          key={category.value}
+                          type="button"
+                          onClick={() => setNewGoalFormData({
+                            ...newGoalFormData,
+                            category: category.value as any
+                          })}
+                          className={`flex flex-col items-center p-4 rounded-xl border-2 transition-all ${
+                            isSelected 
+                              ? `border-blue-500 bg-blue-50 shadow-md` 
+                              : `border-gray-200 hover:border-gray-300`
+                          }`}
+                        >
+                          <div className={`w-12 h-12 mb-2 rounded-lg flex items-center justify-center bg-gradient-to-r ${category.color}`}>
+                            <category.icon className="h-6 w-6 text-white" />
+                          </div>
+                          <span className="font-medium text-gray-800">{category.label}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Nome da Meta
+                    </label>
+                    <input
+                      type="text"
+                      value={newGoalFormData.name}
+                      onChange={(e) => setNewGoalFormData({...newGoalFormData, name: e.target.value})}
+                      placeholder="Ex: Viagem para Europa"
+                      required
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Valor Alvo
+                    </label>
+                    <div className="relative">
+                      <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">R$</span>
+                      <input
                         type="number"
-                        value={formData.due_day}
-                        onChange={(e) => setFormData({...formData, due_day: e.target.value})}
-                        placeholder="5"
-                        min="1"
-                        max="28"
-                        className="w-full p-3 bg-gray-800 border border-gray-700 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-white"
+                        min="0"
+                        step="0.01"
+                        value={newGoalFormData.target_amount}
+                        onChange={(e) => setNewGoalFormData({...newGoalFormData, target_amount: e.target.value})}
+                        placeholder="10000"
+                        required
+                        className="w-full pl-9 pr-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                       />
                     </div>
                   </div>
-                  
-                  <p className="text-xs text-blue-200 mt-2 flex items-center">
-                    <Info className="h-3 w-3 mr-1" />
-                    Esta conta aparecerá na seção de Contas para você gerenciar
-                  </p>
                 </div>
-              </div>
-              
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-3 border border-gray-700 text-gray-300 rounded-xl hover:bg-gray-800 transition-colors duration-200"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleAddGoal}
-                  className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200"
-                >
-                  Criar Meta
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Modal: Delete Confirmation */}
-      {showDeleteModal && goalToDelete && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-800">Excluir Meta</h2>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div className="bg-red-50 border border-red-200 rounded-xl p-4">
-                <div className="flex items-center space-x-3">
-                  <AlertTriangle className="h-5 w-5 text-red-600" />
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <h3 className="font-medium text-red-700">Esta ação não pode ser desfeita</h3>
-                    <p className="text-sm text-red-600 mt-1">
-                      Todo o progresso e contribuições serão perdidos. Contas associadas serão desvinculadas.
-                    </p>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Data Alvo
+                    </label>
+                    <input
+                      type="date"
+                      value={newGoalFormData.target_date}
+                      onChange={(e) => setNewGoalFormData({...newGoalFormData, target_date: e.target.value})}
+                      required
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                      Prioridade
+                    </label>
+                    <select
+                      value={newGoalFormData.priority}
+                      onChange={(e) => setNewGoalFormData({...newGoalFormData, priority: e.target.value as any})}
+                      className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                    >
+                      <option value="high">Alta</option>
+                      <option value="medium">Média</option>
+                      <option value="low">Baixa</option>
+                    </select>
                   </div>
                 </div>
-              </div>
-              
-              <p className="text-gray-700">
-                Para confirmar, digite o nome da meta: <span className="font-medium">{goalToDelete.name}</span>
-              </p>
-              
-              <input 
-                type="text"
-                value={deleteConfirmation}
-                onChange={(e) => setDeleteConfirmation(e.target.value)}
-                placeholder="Digite o nome da meta"
-                className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-red-500/20 focus:border-red-500"
-              />
-              
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setShowDeleteModal(false);
-                    setGoalToDelete(null);
-                    setDeleteConfirmation('');
-                  }}
-                  className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  onClick={handleDeleteGoal}
-                  className="flex-1 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200"
-                  disabled={deleteConfirmation !== goalToDelete.name}
-                >
-                  Excluir
-                </button>
-              </div>
+                
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Descrição (opcional)
+                  </label>
+                  <textarea
+                    value={newGoalFormData.description}
+                    onChange={(e) => setNewGoalFormData({...newGoalFormData, description: e.target.value})}
+                    placeholder="Descreva sua meta..."
+                    rows={3}
+                    className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  />
+                </div>
+                
+                {newGoalFormData.target_amount && newGoalFormData.target_date && (
+                  <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                    <h3 className="font-medium text-blue-800 mb-1">Simulação</h3>
+                    <div className="text-sm text-blue-700 space-y-1">
+                      <p>Valor total a economizar: {formatCurrency(parseFloat(newGoalFormData.target_amount))}</p>
+                      <p>
+                        Economia mensal necessária: {
+                          formatCurrency(
+                            parseFloat(newGoalFormData.target_amount) / Math.max(1, Math.ceil(
+                              (new Date(newGoalFormData.target_date).getTime() - new Date().getTime()) / 
+                              (1000 * 60 * 60 * 24 * 30)
+                            ))
+                          )
+                        }
+                      </p>
+                      <p>
+                        Percentual da renda mensal: {
+                          totalMonthlyIncome > 0 
+                            ? `${(
+                                (parseFloat(newGoalFormData.target_amount) / Math.max(1, Math.ceil(
+                                  (new Date(newGoalFormData.target_date).getTime() - new Date().getTime()) / 
+                                  (1000 * 60 * 60 * 24 * 30)
+                                )) / totalMonthlyIncome) * 100
+                              ).toFixed(1)}%`
+                            : 'N/A'
+                        }
+                      </p>
+                    </div>
+                  </div>
+                )}
+                
+                <div className="mt-4 bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                  <h3 className="font-medium text-indigo-800 mb-2">Conta Recorrente</h3>
+                  <p className="text-sm text-indigo-700 mb-3">
+                    Será criada uma conta recorrente de R$ {
+                      newGoalFormData.target_amount && newGoalFormData.target_date
+                        ? (parseFloat(newGoalFormData.target_amount) / Math.max(1, Math.ceil(
+                            (new Date(newGoalFormData.target_date).getTime() - new Date().getTime()) / 
+                            (1000 * 60 * 60 * 24 * 30)
+                          ))).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        : '0,00'
+                    }/mês para esta meta.
+                  </p>
+                  <div className="flex items-center text-sm text-indigo-600">
+                    <FileText className="h-4 w-4 mr-2" />
+                    <span>Esta conta aparecerá na seção de Contas para você gerenciar</span>
+                  </div>
+                </div>
+                
+                <div className="flex justify-end space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => setShowAddModal(false)}
+                    className="px-5 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                  
+                  <button
+                    type="submit"
+                    className="px-5 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md"
+                  >
+                    Criar Meta
+                  </button>
+                </div>
+              </form>
             </div>
           </div>
         </div>
       )}
       
-      {/* Modal: Goal Details */}
-      {showDetailModal && selectedGoal && (
+      {/* AI Recommendations Modal */}
+      {showAIModal && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div 
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-y-auto"
-            style={{ maxHeight: getModalMaxHeight() }}
-          >
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <div className="p-6 border-b border-gray-100">
               <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-gray-800">Detalhes da Meta</h2>
+                <div className="flex items-center space-x-3">
+                  <div className="p-2 bg-gradient-to-r from-purple-500 to-indigo-600 rounded-xl">
+                    <Brain className="h-5 w-5 text-white" />
+                  </div>
+                  <h2 className="text-xl font-semibold text-gray-800">
+                    {selectedGoal 
+                      ? `Recomendações para ${selectedGoal.name}`
+                      : 'Recomendações da IA'}
+                  </h2>
+                </div>
+                
                 <button
-                  onClick={() => setShowDetailModal(false)}
-                  className="text-gray-400 hover:text-gray-600"
-                >
-                  <X className="h-5 w-5" />
-                </button>
-              </div>
-            </div>
-            
-            <div className="p-6 space-y-6">
-              <div className="flex items-start space-x-4">
-                <div className={`w-12 h-12 rounded-xl ${getGoalTypeInfo(selectedGoal.category).color} flex items-center justify-center flex-shrink-0`}>
-                  {React.createElement(getGoalTypeInfo(selectedGoal.category).icon, { className: "h-6 w-6 text-white" })}
-                </div>
-                
-                <div className="flex-1">
-                  <div className="flex justify-between items-start">
-                    <div>
-                      <h3 className="text-xl font-bold text-gray-800">{selectedGoal.name}</h3>
-                      <p className="text-gray-600">{getGoalTypeInfo(selectedGoal.category).label}</p>
-                    </div>
-                    <span className={`px-3 py-1 rounded-full text-xs font-medium ${getPriorityColor(selectedGoal.priority)}`}>
-                      {selectedGoal.priority === 'high' ? 'Alta Prioridade' : 
-                       selectedGoal.priority === 'medium' ? 'Média Prioridade' : 
-                       'Baixa Prioridade'}
-                    </span>
-                  </div>
-                  
-                  {selectedGoal.description && (
-                    <p className="text-gray-700 mt-3 bg-gray-50 p-3 rounded-lg">
-                      {selectedGoal.description}
-                    </p>
-                  )}
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-blue-50 p-4 rounded-xl">
-                  <p className="text-sm text-blue-600">Valor Alvo</p>
-                  <p className="text-xl font-semibold text-blue-700">
-                    {formatCurrency(selectedGoal.target_amount)}
-                  </p>
-                </div>
-                
-                <div className="bg-green-50 p-4 rounded-xl">
-                  <p className="text-sm text-green-600">Acumulado</p>
-                  <p className="text-xl font-semibold text-green-700">
-                    {formatCurrency(selectedGoal.current_amount)}
-                    <span className="text-sm font-normal ml-1">
-                      ({calculateProgress(selectedGoal).toFixed(0)}%)
-                    </span>
-                  </p>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <div className="flex justify-between text-sm text-gray-600">
-                  <span>Progresso Financeiro</span>
-                  <span>{calculateProgress(selectedGoal).toFixed(1)}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div 
-                    className={`h-2.5 rounded-full ${getStatusColor(selectedGoal)}`}
-                    style={{ width: `${calculateProgress(selectedGoal)}%` }}
-                  ></div>
-                </div>
-                
-                <div className="flex justify-between text-sm text-gray-600 mt-3">
-                  <span>Progresso Temporal</span>
-                  <span>{calculateTimeProgress(selectedGoal).toFixed(1)}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2.5">
-                  <div 
-                    className="h-2.5 rounded-full bg-blue-500"
-                    style={{ width: `${calculateTimeProgress(selectedGoal)}%` }}
-                  ></div>
-                </div>
-              </div>
-              
-              <div className="grid grid-cols-2 gap-4">
-                <div className="bg-gray-50 p-4 rounded-xl">
-                  <p className="text-sm text-gray-500 flex items-center">
-                    <Calendar className="h-4 w-4 mr-1 text-gray-400" />
-                    Data Limite
-                  </p>
-                  <p className="font-medium text-gray-700">
-                    {new Date(selectedGoal.target_date).toLocaleDateString('pt-BR')}
-                    <span className="ml-2 text-xs text-gray-500">
-                      ({getRemainingDays(selectedGoal)} dias restantes)
-                    </span>
-                  </p>
-                </div>
-                
-                <div className="bg-gray-50 p-4 rounded-xl">
-                  <p className="text-sm text-gray-500 flex items-center">
-                    <DollarSign className="h-4 w-4 mr-1 text-gray-400" />
-                    Necessário Mensal
-                  </p>
-                  <p className="font-medium text-gray-700">
-                    {formatCurrency(calculateMonthlyRequired(selectedGoal))}
-                  </p>
-                </div>
-              </div>
-              
-              {/* Linked Bills */}
-              {linkedBills[selectedGoal.id] && linkedBills[selectedGoal.id].length > 0 && (
-                <div>
-                  <h3 className="text-lg font-medium text-gray-800 mb-3">Contas Vinculadas</h3>
-                  <div className="space-y-2">
-                    {linkedBills[selectedGoal.id].map(bill => (
-                      <div key={bill.id} className="p-3 bg-gray-50 rounded-lg">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="font-medium text-gray-800">{bill.name}</p>
-                            <p className="text-sm text-gray-500">
-                              Próximo vencimento: {new Date(bill.next_due).toLocaleDateString('pt-BR')}
-                            </p>
-                          </div>
-                          <p className="font-medium text-green-600">
-                            {formatCurrency(bill.amount)}/mês
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Recent Contributions */}
-              {contributions[selectedGoal.id] && contributions[selectedGoal.id].length > 0 && (
-                <div>
-                  <h3 className="text-lg font-medium text-gray-800 mb-3">Contribuições Recentes</h3>
-                  <div className="space-y-2 max-h-40 overflow-y-auto">
-                    {contributions[selectedGoal.id].slice(0, 5).map(contribution => (
-                      <div key={contribution.id} className="p-3 bg-gray-50 rounded-lg">
-                        <div className="flex justify-between items-center">
-                          <div>
-                            <p className="text-gray-600 text-sm">
-                              {new Date(contribution.contribution_date).toLocaleDateString('pt-BR')}
-                            </p>
-                            {contribution.notes && (
-                              <p className="text-sm text-gray-500">{contribution.notes}</p>
-                            )}
-                          </div>
-                          <p className="font-medium text-green-600">
-                            +{formatCurrency(contribution.amount)}
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              {/* Goal Recommendations */}
-              {recommendations.filter(r => r.goal_id === selectedGoal.id && !r.is_applied).length > 0 && (
-                <div>
-                  <h3 className="text-lg font-medium text-purple-700 mb-3 flex items-center">
-                    <Lightbulb className="h-5 w-5 mr-2" />
-                    Recomendações da IA
-                  </h3>
-                  
-                  <div className="space-y-2">
-                    {recommendations
-                      .filter(r => r.goal_id === selectedGoal.id && !r.is_applied)
-                      .map(recommendation => (
-                        <div key={recommendation.id} className="p-3 bg-purple-50 border border-purple-200 rounded-lg">
-                          <div className="flex justify-between">
-                            <div>
-                              <p className="font-medium text-purple-700">{recommendation.title}</p>
-                              <p className="text-sm text-gray-600 mt-1">{recommendation.description}</p>
-                              <p className="text-xs mt-2">
-                                <span className={`px-2 py-0.5 rounded-full ${getDifficultyColor(recommendation.difficulty)}`}>
-                                  {recommendation.difficulty === 'easy' ? 'Fácil' : 
-                                   recommendation.difficulty === 'medium' ? 'Moderado' : 
-                                   'Difícil'}
-                                </span>
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <p className="font-semibold text-green-600">
-                                +{formatCurrency(recommendation.potential_savings)}/mês
-                              </p>
-                              <button
-                                onClick={() => handleApplyRecommendation(recommendation)}
-                                className="mt-2 text-xs bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded-lg transition-colors"
-                              >
-                                Aplicar
-                              </button>
-                            </div>
-                          </div>
-                        </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-              
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="button"
                   onClick={() => {
-                    setShowDetailModal(false);
+                    setShowAIModal(false);
                     setSelectedGoal(null);
                   }}
-                  className="flex-1 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-                >
-                  Fechar
-                </button>
-                
-                {selectedGoal.status === 'active' && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        // Mark goal as completed or abandoned
-                        await supabase
-                          .from('financial_goals')
-                          .update({
-                            status: 'abandoned',
-                            updated_at: new Date().toISOString()
-                          })
-                          .eq('id', selectedGoal.id);
-                        
-                        // Close modal and refresh goals
-                        setShowDetailModal(false);
-                        setSelectedGoal(null);
-                        fetchGoals();
-                      } catch (error) {
-                        console.error('Error abandoning goal:', error);
-                      }
-                    }}
-                    className="flex-1 py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors duration-200"
-                  >
-                    Abandonar Meta
-                  </button>
-                )}
-                
-                {selectedGoal.status !== 'active' && (
-                  <button
-                    type="button"
-                    onClick={async () => {
-                      try {
-                        // Reactivate goal
-                        await supabase
-                          .from('financial_goals')
-                          .update({
-                            status: 'active',
-                            updated_at: new Date().toISOString()
-                          })
-                          .eq('id', selectedGoal.id);
-                        
-                        // Close modal and refresh goals
-                        setShowDetailModal(false);
-                        setSelectedGoal(null);
-                        fetchGoals();
-                      } catch (error) {
-                        console.error('Error reactivating goal:', error);
-                      }
-                    }}
-                    className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200"
-                  >
-                    Reativar Meta
-                  </button>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Modal: Recommendations */}
-      {showRecommendationsModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div 
-            className="bg-white rounded-2xl shadow-2xl w-full max-w-3xl overflow-y-auto"
-            style={{ maxHeight: getModalMaxHeight() }}
-          >
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex justify-between items-center">
-                <h2 className="text-xl font-semibold text-gray-800">Recomendações de Economia</h2>
-                <button
-                  onClick={() => setShowRecommendationsModal(false)}
                   className="text-gray-400 hover:text-gray-600"
                 >
                   <X className="h-5 w-5" />
@@ -1379,127 +965,114 @@ const FinancialGoals: React.FC = () => {
             </div>
             
             <div className="p-6">
-              <div className="bg-purple-50 border border-purple-100 p-4 rounded-xl mb-6">
-                <div className="flex items-start">
-                  <Lightbulb className="h-6 w-6 text-purple-600 mr-3 mt-1" />
-                  <div>
-                    <h3 className="font-medium text-purple-800 mb-1">IA Financeira Personalizada</h3>
-                    <p className="text-sm text-purple-700">
-                      Nossa IA analisou suas finanças e encontrou oportunidades para otimizar seus gastos
-                      e alcançar suas metas mais rapidamente. Aqui estão as recomendações personalizadas:
-                    </p>
-                  </div>
-                </div>
-              </div>
-              
-              {recommendations.filter(r => !r.is_applied).length === 0 ? (
-                <div className="text-center py-8">
-                  <CheckCircle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-800 mb-2">Nenhuma recomendação disponível</h3>
-                  <p className="text-gray-500">
-                    Continue gerenciando suas finanças e em breve nossa IA terá novas sugestões para você.
-                  </p>
-                </div>
-              ) : (
-                <div className="space-y-6">
-                  {/* Active recommendations */}
-                  <div className="space-y-4">
-                    {recommendations
-                      .filter(r => !r.is_applied)
-                      .map(recommendation => {
-                        const goalInfo = recommendation.goal_id ? 
-                          goals.find(g => g.id === recommendation.goal_id) : 
-                          null;
-                        
-                        return (
-                          <div key={recommendation.id} className="border border-purple-200 rounded-xl overflow-hidden">
-                            <div className="p-4">
-                              <div className="flex justify-between">
-                                <div className="flex-1">
-                                  <div className="flex items-center">
-                                    <h4 className="font-medium text-gray-800">{recommendation.title}</h4>
-                                    <span className={`ml-3 text-xs px-2 py-0.5 rounded-full ${getDifficultyColor(recommendation.difficulty)}`}>
-                                      {recommendation.difficulty === 'easy' ? 'Fácil' : 
-                                      recommendation.difficulty === 'medium' ? 'Moderado' : 
-                                      'Difícil'}
-                                    </span>
-                                  </div>
-                                  
-                                  <p className="text-gray-600 mt-2">{recommendation.description}</p>
-                                  
-                                  {goalInfo && (
-                                    <div className="mt-2 flex items-center text-sm">
-                                      <Target className="h-3 w-3 text-blue-600 mr-1" />
-                                      <span className="text-blue-600">Meta: {goalInfo.name}</span>
-                                    </div>
-                                  )}
-                                </div>
-                                
-                                <div className="ml-4 flex flex-col items-end">
-                                  <div className="bg-green-100 text-green-700 px-3 py-1 rounded-lg text-sm font-medium">
-                                    +{formatCurrency(recommendation.potential_savings)}/mês
-                                  </div>
-                                  
-                                  <button
-                                    onClick={() => handleApplyRecommendation(recommendation)}
-                                    className="mt-3 px-3 py-1.5 bg-purple-600 text-white text-sm rounded-lg hover:bg-purple-700 transition-colors"
-                                  >
-                                    Aplicar Sugestão
-                                  </button>
-                                </div>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })
-                    }
-                  </div>
-                  
-                  {/* Applied recommendations */}
-                  {recommendations.filter(r => r.is_applied).length > 0 && (
+              {selectedGoal && (
+                <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100 mb-6">
+                  <h3 className="font-medium text-indigo-800 mb-2">Meta Selecionada: {selectedGoal.name}</h3>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <h3 className="text-lg font-medium text-gray-800 mb-3 flex items-center">
-                        <Check className="h-5 w-5 text-green-600 mr-2" />
-                        Sugestões Aplicadas
-                      </h3>
-                      
-                      <div className="space-y-3">
-                        {recommendations
-                          .filter(r => r.is_applied)
-                          .map(recommendation => (
-                            <div key={recommendation.id} className="p-3 bg-gray-50 rounded-lg">
-                              <div className="flex justify-between">
-                                <div>
-                                  <p className="font-medium text-gray-800">{recommendation.title}</p>
-                                  <p className="text-xs text-gray-500 mt-1">
-                                    Aplicada em {new Date(recommendation.applied_at || '').toLocaleDateString('pt-BR')}
-                                  </p>
-                                </div>
-                                <div className="text-green-600 font-medium">
-                                  +{formatCurrency(recommendation.potential_savings)}/mês
-                                </div>
-                              </div>
-                            </div>
-                          ))
-                        }
-                      </div>
+                      <p className="text-indigo-700">Valor: {formatCurrency(selectedGoal.target_amount)}</p>
+                      <p className="text-indigo-700">Progresso: {formatCurrency(selectedGoal.current_amount)}</p>
                     </div>
-                  )}
+                    <div>
+                      <p className="text-indigo-700">Falta: {formatCurrency(selectedGoal.target_amount - selectedGoal.current_amount)}</p>
+                      <p className="text-indigo-700">Economia mensal necessária: {formatCurrency(getMonthlySavingsNeeded(selectedGoal))}</p>
+                    </div>
+                  </div>
                 </div>
               )}
               
-              <button
-                onClick={() => setShowRecommendationsModal(false)}
-                className="mt-6 w-full py-3 bg-gray-200 text-gray-700 rounded-xl hover:bg-gray-300 transition-colors"
-              >
-                Fechar
-              </button>
+              <div className="mb-4">
+                <h3 className="font-semibold text-gray-800 mb-2">Sugestões personalizadas</h3>
+                <p className="text-gray-600 text-sm">
+                  A PROSPERA.AI analisou seus gastos e identificou estas oportunidades de economia.
+                </p>
+              </div>
+              
+              <div className="space-y-4">
+                {aiLoading ? (
+                  <div className="animate-pulse space-y-4">
+                    {[1, 2, 3].map(i => (
+                      <div key={i} className="bg-gray-100 h-24 rounded-xl"></div>
+                    ))}
+                  </div>
+                ) : recommendations.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-gray-500">Nenhuma recomendação disponível no momento.</p>
+                  </div>
+                ) : (
+                  recommendations.map((rec) => (
+                    <div key={rec.id} className={`p-4 rounded-xl border ${
+                      rec.appliedToGoal ? 'bg-green-50 border-green-200' : 'bg-white border-gray-200 hover:border-purple-200 hover:shadow-md transition-all'
+                    }`}>
+                      <div className="flex justify-between">
+                        <div>
+                          <div className="flex items-center space-x-3">
+                            <Scissors className="h-5 w-5 text-purple-600" />
+                            <h4 className="font-medium text-gray-800">{rec.title}</h4>
+                            
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              rec.difficulty === 'easy' ? 'bg-green-100 text-green-700' :
+                              rec.difficulty === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                              'bg-red-100 text-red-700'
+                            }`}>
+                              {rec.difficulty === 'easy' ? 'Fácil' :
+                               rec.difficulty === 'medium' ? 'Médio' : 'Difícil'}
+                            </span>
+                          </div>
+                          
+                          <p className="text-sm text-gray-600 mt-1">{rec.description}</p>
+                        </div>
+                        
+                        <div className="text-right">
+                          <p className="font-semibold text-green-600">{formatCurrency(rec.potentialSavings)}/mês</p>
+                          
+                          {!rec.appliedToGoal && selectedGoal && (
+                            <button
+                              onClick={() => applyRecommendation(selectedGoal.id, rec)}
+                              className="mt-2 px-3 py-1 bg-purple-100 text-purple-700 text-sm rounded-lg hover:bg-purple-200 transition-colors"
+                            >
+                              Aplicar à Meta
+                            </button>
+                          )}
+                          
+                          {rec.appliedToGoal && (
+                            <p className="text-xs text-green-600 mt-2 flex items-center">
+                              <CheckCircle className="h-3 w-3 mr-1" />
+                              Aplicado
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+              
+              <div className="mt-6 pt-4 border-t border-gray-100">
+                <div className="flex justify-end space-x-3">
+                  <button
+                    onClick={() => {
+                      setShowAIModal(false);
+                      setSelectedGoal(null);
+                    }}
+                    className="px-5 py-2 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors"
+                  >
+                    Fechar
+                  </button>
+                  
+                  <button
+                    onClick={() => generateRecommendations()}
+                    className="px-5 py-2 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl hover:from-purple-600 hover:to-indigo-700 transition-all duration-200 flex items-center space-x-2"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    <span>Gerar Novas Sugestões</span>
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         </div>
       )}
     </div>
   );
-};
-
-export default FinancialGoals;
+}

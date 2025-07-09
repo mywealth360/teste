@@ -1,8 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, Receipt, Calendar, Building, Bell, Edit, Trash2, AlertTriangle, Save, X, 
-  CheckCircle, Tag, Home, Car, Users, CreditCard, Target, FileText, Mail, DollarSign, Clock, PiggyBank, Shield
-} from 'lucide-react';
+import { Plus, Receipt, Calendar, Building, Bell, Edit, Trash2, AlertTriangle, Save, X, CheckCircle, Tag, Home, Car, Users, CreditCard, Shield, FileText, Mail, DollarSign, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -28,16 +25,6 @@ interface Bill {
   associated_with?: 'property' | 'vehicle' | 'employee' | 'loan';
   associated_id?: string;
   associated_name?: string;
-  financial_goal_id?: string;
-  is_goal_contribution?: boolean;
-}
-
-interface FinancialGoal {
-  id: string;
-  name: string;
-  target_amount: number;
-  current_amount: number;
-  target_date: string;
 }
 
 interface BillCategory {
@@ -72,10 +59,7 @@ Original categories array - keeping as a fallback
 
 export default function Bills() {
   const { user } = useAuth();
-  
   const [bills, setBills] = useState<Bill[]>([]);
-  const [financialGoals, setFinancialGoals] = useState<FinancialGoal[]>([]);
-  
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Bill>>({});
@@ -92,7 +76,6 @@ export default function Bills() {
   useEffect(() => {
     if (user) {
       fetchBills();
-      fetchFinancialGoals();
       fetchAssociatedEntities();
     }
   }, [user]);
@@ -145,23 +128,6 @@ export default function Bills() {
       if (loansResult.data) setLoans(loansResult.data);
     } catch (err) {
       console.error('Error fetching associated entities:', err);
-    }
-  };
-  
-  // Fetch financial goals for bill association
-  const fetchFinancialGoals = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('financial_goals')
-        .select('id, name, target_amount, current_amount, target_date, status')
-        .eq('user_id', user?.id)
-        .eq('status', 'active')
-        .order('priority', { ascending: false });
-      
-      if (error) throw error;
-      setFinancialGoals(data || []);
-    } catch (err) {
-      console.error('Error fetching financial goals:', err);
     }
   };
 
@@ -254,7 +220,7 @@ export default function Bills() {
     try {
       const today = new Date().toISOString().split('T')[0];
       
-      // Call the mark_bill_as_paid database function
+      // In production, call the mark_bill_as_paid database function
       const { data, error } = await supabase.rpc('mark_bill_as_paid', {
         bill_id: billId,
         payment_date_val: today,
@@ -302,6 +268,29 @@ export default function Bills() {
       console.error('Error marking all bills as paid:', err);
       setError('Erro ao marcar todas as contas como pagas');
     }
+  };
+
+  const totalMonthlyBills = bills
+    .filter(bill => bill.is_active && bill.is_recurring)
+    .reduce((sum, bill) => sum + bill.amount, 0);
+
+  const upcomingBills = bills
+    .filter(bill => bill.is_active)
+    .sort((a, b) => new Date(a.next_due).getTime() - new Date(b.next_due).getTime())
+    .slice(0, 5);
+
+  const overdueBills = bills.filter(bill => {
+    const dueDate = new Date(bill.next_due);
+    const today = new Date();
+    return bill.is_active && dueDate < today;
+  });
+
+  const getDaysUntilDue = (dueDate: string) => {
+    const due = new Date(dueDate);
+    const today = new Date();
+    const diffTime = due.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
   };
 
   const getBillStatus = (bill: Bill) => {
@@ -358,53 +347,6 @@ export default function Bills() {
       console.error('Error setting reminder days:', err);
       setError('Erro ao atualizar dias de notificação');
     }
-  };
-
-  // Associate bill with financial goal
-  const associateBillWithGoal = async (billId: string, goalId: string) => {
-    try {
-      const { error } = await supabase
-        .from('bills')
-        .update({
-          financial_goal_id: goalId,
-          is_goal_contribution: true
-        })
-        .eq('id', billId);
-      
-      if (error) throw error;
-      fetchBills();
-    } catch (err) {
-      console.error('Error associating bill with goal:', err);
-      setError('Erro ao associar conta à meta financeira');
-    }
-  };
-
-  const totalMonthlyBills = bills
-    .filter(bill => bill.is_active && bill.is_recurring)
-    .reduce((sum, bill) => sum + bill.amount, 0);
-
-  const upcomingBills = bills
-    .filter(bill => bill.is_active)
-    .sort((a, b) => new Date(a.next_due).getTime() - new Date(b.next_due).getTime())
-    .slice(0, 5);
-
-  const overdueBills = bills.filter(bill => {
-    const dueDate = new Date(bill.next_due);
-    const today = new Date();
-    return bill.is_active && dueDate < today;
-  });
-
-  const getDaysUntilDue = (dueDate: string) => {
-    const due = new Date(dueDate);
-    const today = new Date();
-    const diffTime = due.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  // Check if bill is associated with a financial goal
-  const isGoalContribution = (bill: Bill) => {
-    return bill.is_goal_contribution && bill.financial_goal_id;
   };
 
   if (loading) {
@@ -660,8 +602,8 @@ export default function Bills() {
                         className="p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                       >
                         {categories.map(category => (
-                          <option key={category.value} value={category.value}>
-                            {category.label}
+                          <option key={category} value={category}>
+                            {category}
                           </option>
                         ))}
                       </select>
@@ -716,8 +658,6 @@ export default function Bills() {
                       <div>
                         <div className="flex items-center space-x-3">
                           <h3 className="font-medium text-gray-800">{bill.name}</h3>
-                          
-                          {/* Main category tag */}
                           <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
                             {bill.category}
                           </span>
@@ -737,36 +677,11 @@ export default function Bills() {
                               <span>{bill.associated_name}</span>
                             </span>
                           )}
-
-                          {bill.is_goal_contribution && bill.financial_goal_id && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 flex items-center space-x-1">
-                              <Target className="h-3 w-3" />
-                              <span>Meta Financeira</span>
-                            </span>
-                          )}
                           
                           {getBillStatus(bill) === 'pending' && (
                             <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 flex items-center space-x-1">
                               <Tag className="h-3 w-3" />
                               <span>Pendente</span>
-                            </span>
-                          )}
-                          {bill.payment_status === 'paid' && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 flex items-center space-x-1">
-                              <CheckCircle className="h-3 w-3" />
-                              <span>Pago</span>
-                            </span>
-                          )}
-                          {bill.payment_status === 'partial' && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 flex items-center space-x-1">
-                              <CheckCircle className="h-3 w-3" />
-                              <span>Pago Parcial</span>
-                            </span>
-                          )}
-                          {bill.payment_status === 'overdue' && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 flex items-center space-x-1">
-                              <AlertTriangle className="h-3 w-3" />
-                              <span>Atrasado</span>
                             </span>
                           )}
                           {!bill.is_active && (
@@ -792,14 +707,10 @@ export default function Bills() {
                           )}
                           {bill.last_paid && (
                             <>
-                              {bill.payment_status !== 'paid' && (
-                                <>
-                                  <span className="text-gray-300">•</span>
-                                  <span className="text-sm text-gray-500">
-                                    Último pagamento: {new Date(bill.last_paid).toLocaleDateString('pt-BR')}
-                                  </span>
-                                </>
-                              )}
+                              <span className="text-gray-300">•</span>
+                              <span className="text-sm text-gray-500">
+                                Último pagamento: {new Date(bill.last_paid).toLocaleDateString('pt-BR')}
+                              </span>
                             </>
                           )}
                         </div>
@@ -808,74 +719,30 @@ export default function Bills() {
                     
                     <div className="flex items-center space-x-3">
                       <div className="text-right">
-                        <div className="flex items-center space-x-4">
-                          <div>
-                            <p className={`font-semibold text-lg ${bill.payment_status === 'paid' ? 'text-green-600' : 'text-gray-800'}`}>
-                              R$ {bill.amount.toLocaleString('pt-BR')}
-                            </p>
-                            {bill.financial_goal_id && (
-                              <p className="text-sm text-indigo-600">
-                                Meta: {financialGoals.find(g => g.id === bill.financial_goal_id)?.name || 'Meta Financeira'}
-                              </p>
-                            )}
-                            {bill.payment_status === 'paid' && bill.payment_date && (
-                              <p className="text-sm text-green-600">
-                                Pago em: {new Date(bill.payment_date).toLocaleDateString('pt-BR')}
-                              </p>
-                            )}
-                            {bill.is_active && (
-                              <p className="text-sm text-gray-500">
-                                Próximo: {new Date(bill.next_due).toLocaleDateString('pt-BR')}
-                              </p>
-                            )}
-                          </div>
-                          
-                          {/* Financial goal button */}
-                          {!isGoalContribution(bill) && financialGoals.length > 0 && (
-                            <div className="dropdown">
-                              <button
-                                className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors duration-200 relative group"
-                                title="Associar a uma meta financeira"
-                              >
-                                <Target className="h-4 w-4" />
-                                
-                                <div className="hidden group-hover:block absolute right-0 top-full mt-1 bg-white shadow-lg rounded-lg z-10 w-64 border border-gray-200">
-                                  <div className="p-2 text-xs font-medium text-gray-700 border-b border-gray-100">
-                                    Associar a uma meta:
-                                  </div>
-                                  <div className="max-h-48 overflow-y-auto">
-                                    {financialGoals.map(goal => (
-                                      <button
-                                        key={goal.id}
-                                        className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm flex items-center space-x-2"
-                                        onClick={() => associateBillWithGoal(bill.id, goal.id)}
-                                      >
-                                        <PiggyBank className="h-3 w-3 text-indigo-500" />
-                                        <span className="truncate">{goal.name}</span>
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              </button>
-                            </div>
-                          )}
-
-                          {/* Email notification status */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleEmailReminder(bill.id);
-                            }}
-                            title={bill.send_email_reminder ? "Desativar notificações por email" : "Ativar notificações por email"}
-                            className={`p-1 rounded-full ${
-                              bill.send_email_reminder 
-                                ? 'text-blue-600 hover:bg-blue-50' 
-                                : 'text-gray-400 hover:bg-gray-50'
-                            } transition-colors duration-200`}
-                          >
-                            <Mail className="h-4 w-4" />
-                          </button>
-                        </div>
+                        <p className="font-semibold text-lg text-gray-800">
+                          R$ {bill.amount.toLocaleString('pt-BR')}
+                        </p>
+                        {bill.is_active && (
+                          <p className="text-sm text-gray-500">
+                            Próximo: {new Date(bill.next_due).toLocaleDateString('pt-BR')}
+                          </p>
+                        )}
+                        
+                        {/* Email notification status */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleEmailReminder(bill.id);
+                          }}
+                          title={bill.send_email_reminder ? "Desativar notificações por email" : "Ativar notificações por email"}
+                          className={`p-1 rounded-full ${
+                            bill.send_email_reminder 
+                              ? 'text-blue-600 hover:bg-blue-50' 
+                              : 'text-gray-400 hover:bg-gray-50'
+                          } transition-colors duration-200`}
+                        >
+                          <Mail className="h-4 w-4" />
+                        </button>
                       </div>
                       
                       <div className="flex items-center space-x-2">
@@ -888,13 +755,12 @@ export default function Bills() {
                                 markAsPaid(bill.id, parseFloat(amount), method || undefined);
                               }
                             }}
-                            className="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs rounded-lg hover:from-green-600 hover:to-green-700 transition-colors duration-200 flex items-center"
+                            className="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm rounded-lg hover:from-green-600 hover:to-green-700 transition-colors duration-200 flex items-center"
                           >
                             <DollarSign className="h-3 w-3 mr-1" />
-                            <span>Pagar</span>
+                            <span>Marcar como Pago</span>
                           </button>
                         )}
-                        
                         <button 
                           onClick={() => handleEditBill(bill)}
                           className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
@@ -978,7 +844,7 @@ export default function Bills() {
               
               <div className="mb-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Associar a Entidade (opcional)
+                  Associar Conta (opcional)
                 </label>
                 
                 {properties.length > 0 && (
@@ -1067,58 +933,6 @@ export default function Bills() {
                       ))}
                     </div>
                   </details>
-                )}
-              </div>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Associar a Meta Financeira (opcional)
-                </label>
-                
-                {financialGoals.length > 0 ? (
-                  <div className="space-y-2 border border-gray-200 rounded-lg p-3">
-                    <div className="flex items-center space-x-2 text-sm">
-                      <Target className="h-4 w-4 text-indigo-600" />
-                      <span className="font-medium text-gray-700">Metas Disponíveis</span>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 gap-2 mt-2">
-                      {financialGoals.map(goal => (
-                        <label key={goal.id} className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
-                          <input
-                            type="radio"
-                            name="financial_goal_id"
-                            value={goal.id}
-                            className="text-indigo-600"
-                          />
-                          <div>
-                            <p className="text-sm font-medium text-gray-800">{goal.name}</p>
-                            <p className="text-xs text-gray-500">
-                              Meta: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(goal.target_amount)} | 
-                              Progresso: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(goal.current_amount)}
-                            </p>
-                          </div>
-                        </label>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-2">
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input type="checkbox" name="is_goal_contribution" className="rounded text-indigo-600" />
-                        <span className="text-sm text-gray-700">Marcar como contribuição para a meta</span>
-                      </label>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Quando esta conta for paga, o valor será automaticamente adicionado à meta selecionada.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-gray-50 rounded-lg p-3 text-center">
-                    <p className="text-sm text-gray-600">Você não tem metas financeiras ativas.</p>
-                    <a href="/?tab=financial-goals" className="text-sm text-indigo-600 hover:underline mt-1 inline-block">
-                      Criar uma meta financeira
-                    </a>
-                  </div>
                 )}
               </div>
               
