@@ -164,7 +164,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     <div className="w-72 bg-white shadow-xl border-r border-gray-100 h-screen fixed left-0 top-0 z-30 overflow-y-auto flex flex-col">
       <div className="p-2 border-b border-gray-100">
         <div className="flex flex-col items-center justify-center py-4">
-          <h1 className="text-xl font-bold text-blue-600">MyWealth 360</h1>
+          <h1 className="text-xl font-bold text-blue-600">PROSPERA.AI</h1>
           <p className="text-xs text-gray-500">Gestão Financeira Familiar</p>
         </div>
       </div>

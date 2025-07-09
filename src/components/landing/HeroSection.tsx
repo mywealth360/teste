@@ -19,7 +19,7 @@ export default function HeroSection({ onRegisterClick }: HeroSectionProps) {
           </div>
           
           <h1 className="text-5xl md:text-7xl font-bold text-gray-800 mb-6">
-            <span className="text-blue-600">MyWealth 360</span>
+            <span className="text-blue-600">PROSPERA.AI</span>
             <span className="block">Controle Patrimonial Familiar Inteligente</span>
           </h1>
           

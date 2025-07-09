@@ -3,7 +3,7 @@
        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
          <div className="flex justify-between items-center h-16">
 -          <div className="flex justify-center">
--            <img 
+            <h1 className="text-2xl font-bold text-blue-600">PROSPERA.AI</h1>
 -              src="https://i.postimg.cc/KzBTcWJw/Chat-GPT-Image-6-de-jul-de-2025-22-28-23.png" 
 -              alt="MyWealth 360"
 -              className="h-16 w-auto object-contain"
