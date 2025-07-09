@@ -329,7 +329,7 @@ export default function Dashboard() {
       </div>
 
       {/* Asset Distribution Chart */}
-      <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+      <div className="bg-white rounded-2xl shadow-lg p-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">Distribuição de Patrimônio</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -389,96 +389,6 @@ export default function Dashboard() {
               <div className="absolute left-[-30px] bottom-0 text-xs text-gray-500">0</div>
               <div className="absolute left-[-30px] bottom-[30px] text-xs text-gray-500">500k</div>
               <div className="absolute left-[-30px] bottom-[60px] text-xs text-gray-500">1M</div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Asset Performance Chart */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">Desempenho de Ativos</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-lg font-medium text-gray-700 mb-4">Rentabilidade Anual</h3>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">Investimentos</span>
-                  <span className="text-sm font-medium text-green-600">+{dashboardData.investmentReturn || 0}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-green-500 h-2 rounded-full" style={{ width: `${Math.min(100, (dashboardData.investmentReturn || 0) * 5)}%` }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">Imóveis</span>
-                  <span className="text-sm font-medium text-green-600">+{dashboardData.realEstateReturn || 0}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-green-500 h-2 rounded-full" style={{ width: `${Math.min(100, (dashboardData.realEstateReturn || 0) * 5)}%` }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">Veículos</span>
-                  <span className="text-sm font-medium text-red-600">{dashboardData.vehicleDepreciation || 0}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-red-500 h-2 rounded-full" style={{ width: `${Math.min(100, Math.abs(dashboardData.vehicleDepreciation || 0) * 3)}%` }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">Ativos Exóticos</span>
-                  <span className="text-sm font-medium text-green-600">+{dashboardData.exoticAssetsReturn || 0}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-green-500 h-2 rounded-full" style={{ width: `${Math.min(100, (dashboardData.exoticAssetsReturn || 0) * 5)}%` }}></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <h3 className="text-lg font-medium text-gray-700 mb-4">Renda Mensal por Ativo</h3>
-            <div className="space-y-4">
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">Dividendos</span>
-                  <span className="text-sm font-medium text-gray-900">{formatCurrency(dashboardData.totalInvestmentIncome || 0)}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${Math.min(100, ((dashboardData.totalInvestmentIncome || 0) / (dashboardData.totalMonthlyIncome || 1)) * 100)}%` }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">Aluguéis</span>
-                  <span className="text-sm font-medium text-gray-900">{formatCurrency(dashboardData.totalRealEstateIncome || 0)}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${Math.min(100, ((dashboardData.totalRealEstateIncome || 0) / (dashboardData.totalMonthlyIncome || 1)) * 100)}%` }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">Renda Fixa</span>
-                  <span className="text-sm font-medium text-gray-900">{formatCurrency(dashboardData.fixedIncomeReturn || 0)}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${Math.min(100, ((dashboardData.fixedIncomeReturn || 0) / (dashboardData.totalMonthlyIncome || 1)) * 100)}%` }}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700">Outros</span>
-                  <span className="text-sm font-medium text-gray-900">{formatCurrency(dashboardData.otherIncome || 0)}</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full" style={{ width: `${Math.min(100, ((dashboardData.otherIncome || 0) / (dashboardData.totalMonthlyIncome || 1)) * 100)}%` }}></div>
-                </div>
-              </div>
             </div>
           </div>
         </div>
