@@ -35,7 +35,6 @@ import SubscriptionButton from './subscription/SubscriptionButton';
 import { products } from '../stripe-config';
 import UpgradeModal from './UpgradeModal';
 import { Link } from 'react-router-dom';
-import { Users } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
