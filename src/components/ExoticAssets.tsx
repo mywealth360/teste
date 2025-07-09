@@ -220,31 +220,31 @@ export default function ExoticAssets() {
 
       {/* Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-purple-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100 text-sm font-medium">Valor Investido</p>
+              <p className="text-white/80 text-sm font-medium">Valor Investido</p>
               <p className="text-3xl font-bold mt-1">R$ {totalInvested.toLocaleString('pt-BR')}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <DollarSign className="h-6 w-6" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-emerald-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-emerald-100 text-sm font-medium">Valor Atual</p>
+              <p className="text-white/80 text-sm font-medium">Valor Atual</p>
               <p className="text-3xl font-bold mt-1">R$ {totalCurrentValue.toLocaleString('pt-BR')}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <Gem className="h-6 w-6" />
             </div>
           </div>
         </div>
 
-        <div className={`bg-gradient-to-br ${totalAppreciation >= 0 ? 'from-green-500 to-green-600' : 'from-red-500 to-red-600'} p-6 rounded-2xl text-white shadow-lg`}>
+        <div className={`${totalAppreciation >= 0 ? 'bg-green-600' : 'bg-red-600'} p-6 rounded-xl text-white shadow-md`}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/80 text-sm font-medium">Valorização</p>
@@ -253,20 +253,20 @@ export default function ExoticAssets() {
               </p>
               <p className="text-white/80 text-sm">{appreciationPercentage.toFixed(1)}%</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <TrendingUp className="h-6 w-6" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-blue-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Total de Itens</p>
+              <p className="text-white/80 text-sm font-medium">Total de Itens</p>
               <p className="text-3xl font-bold mt-1">{assets.length}</p>
-              <p className="text-blue-100 text-sm">{assetCategories.length} categorias</p>
+              <p className="text-white/80 text-sm">{assetCategories.length} categorias</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <Star className="h-6 w-6" />
             </div>
           </div>

@@ -212,33 +212,39 @@ const RealEstate: React.FC = () => {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-orange-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Total de Imóveis</p>
-              <p className="text-2xl font-bold text-gray-900">{properties.length}</p>
+              <p className="text-white/80 text-sm font-medium">Total de Imóveis</p>
+              <p className="text-3xl font-bold mt-1">{properties.length}</p>
             </div>
-            <Home className="h-8 w-8 text-blue-600" />
+            <div className="bg-white/20 p-3 rounded-lg">
+              <Home className="h-6 w-6" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-green-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Valor Total</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalValue)}</p>
+              <p className="text-white/80 text-sm font-medium">Valor Total</p>
+              <p className="text-3xl font-bold mt-1">{formatCurrency(totalValue)}</p>
             </div>
-            <DollarSign className="h-8 w-8 text-green-600" />
+            <div className="bg-white/20 p-3 rounded-lg">
+              <DollarSign className="h-6 w-6" />
+            </div>
           </div>
         </div>
 
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+        <div className="bg-blue-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-600">Renda Mensal</p>
-              <p className="text-2xl font-bold text-gray-900">{formatCurrency(totalMonthlyRent)}</p>
+              <p className="text-white/80 text-sm font-medium">Renda Mensal</p>
+              <p className="text-3xl font-bold mt-1">{formatCurrency(totalMonthlyRent)}</p>
             </div>
-            <TrendingUp className="h-8 w-8 text-green-600" />
+            <div className="bg-white/20 p-3 rounded-lg">
+              <TrendingUp className="h-6 w-6" />
+            </div>
           </div>
         </div>
       </div>

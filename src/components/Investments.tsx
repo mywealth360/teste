@@ -374,31 +374,31 @@ export default function Investments() {
 
       {/* Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-blue-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Total Investido</p>
+              <p className="text-white/80 text-sm font-medium">Total Investido</p>
               <p className="text-2xl font-bold mt-1">R$ {totalInvested.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <DollarSign className="h-5 w-5" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-green-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm font-medium">Valor Atual</p>
+              <p className="text-white/80 text-sm font-medium">Valor Atual</p>
               <p className="text-2xl font-bold mt-1">R$ {totalCurrentValue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <TrendingUp className="h-5 w-5" />
             </div>
           </div>
         </div>
 
-        <div className={`bg-gradient-to-br ${returnPercentage >= 0 ? 'from-emerald-500 to-emerald-600' : 'from-red-500 to-red-600'} p-6 rounded-2xl text-white shadow-lg`}>
+        <div className={`${returnPercentage >= 0 ? 'bg-emerald-600' : 'bg-red-600'} p-6 rounded-xl text-white shadow-md`}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/80 text-sm font-medium">Rentabilidade</p>
@@ -406,25 +406,25 @@ export default function Investments() {
                 {returnPercentage >= 0 ? '+' : ''}{returnPercentage.toFixed(1)}%
               </p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <PieChart className="h-5 w-5" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-purple-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100 text-sm font-medium">Renda Mensal</p>
+              <p className="text-white/80 text-sm font-medium">Renda Mensal</p>
               <p className="text-2xl font-bold mt-1">R$ {totalMonthlyIncome.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <Calendar className="h-5 w-5" />
             </div>
           </div>
         </div>
 
-        <div className={`bg-gradient-to-br ${totalCapitalGain >= 0 ? 'from-teal-500 to-teal-600' : 'from-orange-500 to-orange-600'} p-6 rounded-2xl text-white shadow-lg`}>
+        <div className={`${totalCapitalGain >= 0 ? 'bg-teal-600' : 'bg-orange-600'} p-6 rounded-xl text-white shadow-md`}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/80 text-sm font-medium">Ganho Capital</p>
@@ -432,19 +432,19 @@ export default function Investments() {
                 {totalCapitalGain >= 0 ? '+' : ''}R$ {Math.abs(totalCapitalGain).toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
               </p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <TrendingUp className="h-5 w-5" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-indigo-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-indigo-100 text-sm font-medium">Impostos</p>
+              <p className="text-white/80 text-sm font-medium">Impostos</p>
               <p className="text-2xl font-bold mt-1">R$ {totalTaxes.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <Landmark className="h-5 w-5" />
             </div>
           </div>

@@ -200,13 +200,13 @@ export default function BankAccounts() {
 
       {/* Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-emerald-500 to-emerald-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-emerald-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-emerald-100 text-sm font-medium">Saldo Total</p>
+              <p className="text-white/80 text-sm font-medium">Saldo Total</p>
               <p className="text-3xl font-bold mt-1">R$ {totalBalance.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <Banknote className="h-6 w-6" />
             </div>
           </div>

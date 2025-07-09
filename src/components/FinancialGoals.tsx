@@ -395,45 +395,45 @@ export default function FinancialGoals() {
       
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-blue-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Total em Metas</p>
+              <p className="text-white/80 text-sm font-medium">Total em Metas</p>
               <p className="text-3xl font-bold mt-1">
                 {formatCurrency(goals.reduce((sum, goal) => sum + goal.target_amount, 0))}
               </p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <Target className="h-6 w-6" />
             </div>
           </div>
         </div>
         
-        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-green-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm font-medium">Já Economizado</p>
+              <p className="text-white/80 text-sm font-medium">Já Economizado</p>
               <p className="text-3xl font-bold mt-1">
                 {formatCurrency(goals.reduce((sum, goal) => sum + (goal.current_amount || 0), 0))}
               </p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <PiggyBank className="h-6 w-6" />
             </div>
           </div>
         </div>
         
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-indigo-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100 text-sm font-medium">Economia Mensal Sugerida</p>
+              <p className="text-white/80 text-sm font-medium">Economia Mensal Sugerida</p>
               <p className="text-3xl font-bold mt-1">
                 {formatCurrency(goals
                   .filter(g => g.status === 'active')
                   .reduce((sum, goal) => sum + getMonthlySavingsNeeded(goal), 0))}
               </p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <TrendingUp className="h-6 w-6" />
             </div>
           </div>
@@ -639,10 +639,10 @@ export default function FinancialGoals() {
                             <button
                               onClick={() => handleContribute(goal.id)}
                               disabled={goal.status === 'completed' || loading}
-                              className={`px-3 py-1 text-sm rounded-lg flex items-center space-x-1 ${
+                              className={`px-3 py-1 text-sm rounded-lg flex items-center space-x-1 shadow-sm ${
                                 goal.status === 'completed' 
                                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                                  : 'bg-green-500 text-white hover:bg-green-600 transition-colors'
+                                  : 'bg-green-600 text-white hover:bg-green-700 transition-colors'
                               }`}
                             >
                               {loading ? (
@@ -659,10 +659,10 @@ export default function FinancialGoals() {
                                 setShowAIModal(true);
                               }}
                               disabled={goal.status === 'completed' || loading}
-                              className={`px-3 py-1 text-sm rounded-lg ${
+                              className={`px-3 py-1 text-sm rounded-lg shadow-sm ${
                                 goal.status === 'completed' 
                                   ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                                  : 'bg-purple-100 text-purple-700 hover:bg-purple-200 transition-colors'
+                                  : 'bg-indigo-100 text-indigo-700 hover:bg-indigo-200 transition-colors'
                               }`}
                             >
                               <span className="flex items-center space-x-1">
@@ -692,8 +692,8 @@ export default function FinancialGoals() {
                     {/* Progress Bar */}
                     <div className="h-2 bg-gray-200">
                       <div 
-                        className={`h-2 ${
-                          goal.status === 'completed' ? 'bg-green-500' : `bg-gradient-to-r ${colorClass}`
+                        className={`h-2 transition-all duration-300 ${
+                          goal.status === 'completed' ? 'bg-green-600' : 'bg-blue-600'
                         }`} 
                         style={{ width: `${progressPercentage}%` }}
                       ></div>
@@ -928,7 +928,7 @@ export default function FinancialGoals() {
                     
                     <button
                       type="submit"
-                      className="flex-1 px-5 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-md"
+                      className="flex-1 px-5 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-md"
                     >
                       Criar Meta
                     </button>

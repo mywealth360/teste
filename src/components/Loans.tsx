@@ -209,37 +209,37 @@ export default function Loans() {
 
       {/* Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-red-500 to-red-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-red-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-red-100 text-sm font-medium">Dívida Total</p>
+              <p className="text-white/80 text-sm font-medium">Dívida Total</p>
               <p className="text-3xl font-bold mt-1">R$ {totalDebt.toLocaleString('pt-BR')}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <AlertTriangle className="h-6 w-6" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-orange-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-orange-100 text-sm font-medium">Pagamento Mensal</p>
+              <p className="text-white/80 text-sm font-medium">Pagamento Mensal</p>
               <p className="text-3xl font-bold mt-1">R$ {totalMonthlyPayment.toLocaleString('pt-BR')}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <Calendar className="h-6 w-6" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-purple-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100 text-sm font-medium">Taxa Média</p>
+              <p className="text-white/80 text-sm font-medium">Taxa Média</p>
               <p className="text-3xl font-bold mt-1">{averageInterestRate.toFixed(1)}%</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <Calculator className="h-6 w-6" />
             </div>
           </div>

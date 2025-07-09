@@ -570,31 +570,40 @@ export default function PatrimonyManagement() {
       
       {/* Asset Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-xl shadow-md p-5 border-l-4 border-blue-500">
+        <div className="bg-blue-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center space-x-3 mb-3">
-            <Shield className="h-6 w-6 text-blue-600" />
-            <h3 className="font-semibold text-gray-800">Ativos Líquidos</h3>
+            <div className="bg-white/20 p-3 rounded-lg">
+              <Shield className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-white/80 text-sm font-medium">Ativos Líquidos</p>
+              <p className="text-3xl font-bold mt-1">{formatCurrency(calculateTotalValue() * 0.6)}</p>
+            </div>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{formatCurrency(calculateTotalValue() * 0.6)}</p>
-          <p className="text-sm text-gray-500 mt-1">60% do patrimônio total</p>
         </div>
         
-        <div className="bg-white rounded-xl shadow-md p-5 border-l-4 border-red-500">
+        <div className="bg-red-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center space-x-3 mb-3">
-            <CreditCard className="h-6 w-6 text-red-600" />
-            <h3 className="font-semibold text-gray-800">Dívidas Totais</h3>
+            <div className="bg-white/20 p-3 rounded-lg">
+              <CreditCard className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-white/80 text-sm font-medium">Dívidas Totais</p>
+              <p className="text-3xl font-bold mt-1">{formatCurrency(calculateTotalValue() * 0.15)}</p>
+            </div>
           </div>
-          <p className="text-2xl font-bold text-red-600">{formatCurrency(calculateTotalValue() * 0.15)}</p>
-          <p className="text-sm text-gray-500 mt-1">15% do patrimônio total</p>
         </div>
         
-        <div className="bg-white rounded-xl shadow-md p-5 border-l-4 border-green-500">
+        <div className="bg-green-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center space-x-3 mb-3">
-            <DollarSign className="h-6 w-6 text-green-600" />
-            <h3 className="font-semibold text-gray-800">Patrimônio Líquido</h3>
+            <div className="bg-white/20 p-3 rounded-lg">
+              <DollarSign className="h-6 w-6" />
+            </div>
+            <div>
+              <p className="text-white/80 text-sm font-medium">Patrimônio Líquido</p>
+              <p className="text-3xl font-bold mt-1">{formatCurrency(calculateTotalValue() * 0.85)}</p>
+            </div>
           </div>
-          <p className="text-2xl font-bold text-green-600">{formatCurrency(calculateTotalValue() * 0.85)}</p>
-          <p className="text-sm text-gray-500 mt-1">85% do patrimônio total</p>
         </div>
       </div>
     </div>
