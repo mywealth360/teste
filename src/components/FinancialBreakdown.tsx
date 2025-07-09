@@ -10,7 +10,8 @@ import {
   Banknote,
   Car,
   Gem,
-  Landmark
+  Landmark,
+  Target
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
@@ -516,7 +517,7 @@ export default function FinancialBreakdown({ type }: BreakdownProps) {
                 <div>
                   <h3 className="font-semibold text-indigo-800 mb-1">Metas Financeiras</h3>
                   <p className="text-3xl font-bold text-indigo-700">
-                    R$ {totalFinancialGoals.toLocaleString('pt-BR')}
+                    R$ {financialData.totalFinancialGoals.toLocaleString('pt-BR')}
                   </p>
                 </div>
                 <Target className="h-8 w-8 text-indigo-600" />
