@@ -36,7 +36,171 @@ interface ExpenseItem {
 }
 
 export default function ExpenseManagement() {
-  // ... [previous code remains the same until the return statement]
+  const [expenses, setExpenses] = useState<ExpenseItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [filterType, setFilterType] = useState<string>('all');
+  const [sortBy, setSortBy] = useState<'date' | 'amount' | 'type'>('date');
+  const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const { user } = useAuth();
+
+  useEffect(() => {
+    if (user) {
+      fetchExpenses();
+    }
+  }, [user]);
+
+  const fetchExpenses = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      // Fetch from all relevant tables
+      const tables = [
+        'transactions',
+        'loans',
+        'bills',
+        'retirement_plans',
+        'real_estate_expenses',
+        'vehicle_expenses',
+        'taxes',
+        'employee_expenses',
+        'financial_goals'
+      ];
+
+      const allExpenses: ExpenseItem[] = [];
+
+      for (const table of tables) {
+        const { data, error } = await supabase
+          .from(table)
+          .select('*')
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        if (data) {
+          const mappedData = data.map(item => ({
+            id: item.id,
+            type: getTypeFromTable(table),
+            description: item.description || item.name || item.title || 'Sem descrição',
+            amount: Math.abs(item.amount || item.value || item.monthly_payment || 0),
+            category: item.category || 'Geral',
+            date: item.date || item.created_at || new Date().toISOString(),
+            source: table,
+            recurring: item.recurring || false
+          }));
+          allExpenses.push(...mappedData);
+        }
+      }
+
+      setExpenses(allExpenses);
+    } catch (err) {
+      console.error('Error fetching expenses:', err);
+      setError('Erro ao carregar despesas');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getTypeFromTable = (table: string): ExpenseItem['type'] => {
+    const mapping: Record<string, ExpenseItem['type']> = {
+      'transactions': 'transaction',
+      'loans': 'loan',
+      'bills': 'bill',
+      'retirement_plans': 'retirement',
+      'real_estate_expenses': 'real_estate_expense',
+      'vehicle_expenses': 'vehicle_expense',
+      'taxes': 'tax',
+      'employee_expenses': 'employee_expense',
+      'financial_goals': 'financial_goal'
+    };
+    return mapping[table] || 'transaction';
+  };
+
+  const getTypeIcon = (type: string) => {
+    switch (type) {
+      case 'transaction': return Receipt;
+      case 'loan': return CreditCard;
+      case 'bill': return FileText;
+      case 'retirement': return Shield;
+      case 'real_estate_expense': return Home;
+      case 'vehicle_expense': return Car;
+      case 'tax': return Landmark;
+      case 'employee_expense': return Users;
+      case 'financial_goal': return Target;
+      default: return Receipt;
+    }
+  };
+
+  const getTypeColor = (type: string) => {
+    switch (type) {
+      case 'transaction': return 'bg-red-100 text-red-500';
+      case 'loan': return 'bg-orange-100 text-orange-500';
+      case 'bill': return 'bg-yellow-100 text-yellow-500';
+      case 'retirement': return 'bg-blue-100 text-blue-500';
+      case 'real_estate_expense': return 'bg-purple-100 text-purple-500';
+      case 'vehicle_expense': return 'bg-teal-100 text-teal-500';
+      case 'tax': return 'bg-indigo-100 text-indigo-500';
+      case 'employee_expense': return 'bg-pink-100 text-pink-500';
+      case 'financial_goal': return 'bg-indigo-100 text-indigo-500';
+      default: return 'bg-gray-100 text-gray-500';
+    }
+  };
+
+  const getTypeLabel = (type: string) => {
+    const labels: Record<string, string> = {
+      'transaction': 'Transação',
+      'loan': 'Empréstimo',
+      'bill': 'Conta',
+      'retirement': 'Aposentadoria',
+      'real_estate_expense': 'Imóvel',
+      'vehicle_expense': 'Veículo',
+      'tax': 'Imposto',
+      'employee_expense': 'Funcionário',
+      'financial_goal': 'Meta Financeira'
+    };
+    return labels[type] || type;
+  };
+
+  const filteredAndSortedExpenses = expenses
+    .filter(expense => {
+      const matchesSearch = expense.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                          expense.category.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesFilter = filterType === 'all' || expense.type === filterType;
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      let comparison = 0;
+      
+      switch (sortBy) {
+        case 'date':
+          comparison = new Date(a.date).getTime() - new Date(b.date).getTime();
+          break;
+        case 'amount':
+          comparison = a.amount - b.amount;
+          break;
+        case 'type':
+          comparison = a.type.localeCompare(b.type);
+          break;
+      }
+      
+      return sortOrder === 'asc' ? comparison : -comparison;
+    });
+
+  const totalExpenses = filteredAndSortedExpenses.reduce((sum, expense) => sum + expense.amount, 0);
+  const expensesByType = filteredAndSortedExpenses.reduce((acc, expense) => {
+    acc[expense.type] = (acc[expense.type] || 0) + expense.amount;
+    return acc;
+  }, {} as Record<string, number>);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -56,7 +220,195 @@ export default function ExpenseManagement() {
         </div>
       )}
 
-      {/* ... [rest of the JSX remains the same] ... */}
+      {/* Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Total de Gastos</p>
+              <p className="text-2xl font-bold text-gray-900">
+                R$ {totalExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+              </p>
+            </div>
+            <div className="p-3 bg-red-100 rounded-xl">
+              <TrendingDown className="h-6 w-6 text-red-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Itens de Despesa</p>
+              <p className="text-2xl font-bold text-gray-900">{filteredAndSortedExpenses.length}</p>
+            </div>
+            <div className="p-3 bg-blue-100 rounded-xl">
+              <Receipt className="h-6 w-6 text-blue-600" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-gray-500">Categorias</p>
+              <p className="text-2xl font-bold text-gray-900">{Object.keys(expensesByType).length}</p>
+            </div>
+            <div className="p-3 bg-green-100 rounded-xl">
+              <PieChart className="h-6 w-6 text-green-600" />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Filters and Search */}
+      <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <input
+                type="text"
+                placeholder="Buscar por descrição ou categoria..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              />
+            </div>
+          </div>
+          
+          <div className="flex gap-3">
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="all">Todos os Tipos</option>
+              <option value="transaction">Transações</option>
+              <option value="loan">Empréstimos</option>
+              <option value="bill">Contas</option>
+              <option value="retirement">Aposentadoria</option>
+              <option value="real_estate_expense">Imóveis</option>
+              <option value="vehicle_expense">Veículos</option>
+              <option value="tax">Impostos</option>
+              <option value="employee_expense">Funcionários</option>
+              <option value="financial_goal">Metas</option>
+            </select>
+
+            <select
+              value={`${sortBy}-${sortOrder}`}
+              onChange={(e) => {
+                const [field, order] = e.target.value.split('-');
+                setSortBy(field as 'date' | 'amount' | 'type');
+                setSortOrder(order as 'asc' | 'desc');
+              }}
+              className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            >
+              <option value="date-desc">Data (Mais Recente)</option>
+              <option value="date-asc">Data (Mais Antiga)</option>
+              <option value="amount-desc">Valor (Maior)</option>
+              <option value="amount-asc">Valor (Menor)</option>
+              <option value="type-asc">Tipo (A-Z)</option>
+              <option value="type-desc">Tipo (Z-A)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Expenses List */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800">Lista de Despesas</h2>
+        </div>
+        
+        {filteredAndSortedExpenses.length === 0 ? (
+          <div className="p-8 text-center">
+            <Receipt className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <p className="text-gray-500">Nenhuma despesa encontrada</p>
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {filteredAndSortedExpenses.map((expense) => {
+              const IconComponent = getTypeIcon(expense.type);
+              return (
+                <div key={expense.id} className="p-6 hover:bg-gray-50 transition-colors">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className={`p-2 rounded-xl ${getTypeColor(expense.type)}`}>
+                        <IconComponent className="h-5 w-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-medium text-gray-900">{expense.description}</h3>
+                        <div className="flex items-center space-x-4 mt-1">
+                          <span className="text-sm text-gray-500">{getTypeLabel(expense.type)}</span>
+                          <span className="text-sm text-gray-500">•</span>
+                          <span className="text-sm text-gray-500">{expense.category}</span>
+                          <span className="text-sm text-gray-500">•</span>
+                          <span className="text-sm text-gray-500">
+                            {new Date(expense.date).toLocaleDateString('pt-BR')}
+                          </span>
+                          {expense.recurring && (
+                            <>
+                              <span className="text-sm text-gray-500">•</span>
+                              <span className="text-xs bg-blue-100 text-blue-600 px-2 py-1 rounded-full">
+                                Recorrente
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-lg font-semibold text-red-600">
+                        -R$ {expense.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Expenses by Type Chart */}
+      {Object.keys(expensesByType).length > 0 && (
+        <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+          <h2 className="text-lg font-semibold text-gray-800 mb-4">Gastos por Tipo</h2>
+          <div className="space-y-3">
+            {Object.entries(expensesByType)
+              .sort(([,a], [,b]) => b - a)
+              .map(([type, amount]) => {
+                const percentage = (amount / totalExpenses) * 100;
+                const IconComponent = getTypeIcon(type);
+                return (
+                  <div key={type} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-2 rounded-lg ${getTypeColor(type)}`}>
+                        <IconComponent className="h-4 w-4" />
+                      </div>
+                      <span className="font-medium text-gray-700">{getTypeLabel(type)}</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-24 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full" 
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm font-medium text-gray-600 w-12 text-right">
+                        {percentage.toFixed(1)}%
+                      </span>
+                      <span className="text-sm font-semibold text-gray-900 w-24 text-right">
+                        R$ {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
     </div>
   );
 }
