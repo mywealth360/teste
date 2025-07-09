@@ -394,15 +394,22 @@ export default function FinancialBreakdown({ type }: BreakdownProps) {
                   <div key={index} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
                     <div className="flex justify-between items-center">
                       <div>
-                        <h4 className="font-medium text-gray-800">{income.name}</h4>
+                        <p className="font-medium text-gray-800 flex items-center">
+                          {income.name}
+                          {income.tax_rate > 0 && (
+                            <span className="ml-2 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full flex items-center">
+                              <Landmark className="h-3 w-3 mr-1" />
+                              IRPF {income.tax_rate}%
+                            </span>
+                          )}
+                        </p>
                         <p className="text-sm text-gray-500">{income.category} • {income.frequency}</p>
                       </div>
                       <div className="text-right">
                         <p className="font-semibold text-green-600">R$ {income.amount.toLocaleString('pt-BR')}</p>
                         {income.tax_rate > 0 && (
-                          <p className="text-xs text-indigo-600 flex items-center justify-end">
-                            <Landmark className="h-3 w-3 mr-1" />
-                            IRPF {income.tax_rate}% (R$ {((income.amount * income.tax_rate) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                          <p className="text-xs text-indigo-600">
+                            Imposto: R$ {((income.amount * income.tax_rate) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </p>
                         )}
                       </div>
@@ -618,17 +625,15 @@ export default function FinancialBreakdown({ type }: BreakdownProps) {
                           <p className="font-semibold text-gray-900">R$ {currentValue.toLocaleString('pt-BR')}</p>
                           <p className={`text-sm ${profit >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                             {profit >= 0 ? '+' : ''}R$ {profit.toLocaleString('pt-BR')} ({profitPercentage.toFixed(2)}%)
+                          </p>                      
+                          <p className="text-sm text-purple-600">
+                            +R$ {monthlyIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês
+                            {taxAmount > 0 && (
+                              <span className="text-indigo-600">
+                                {' '}(IR: R$ {taxAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
+                              </span>
+                            )}
                           </p>
-                          {monthlyIncome > 0 && (
-                            <p className="text-sm text-purple-600">
-                              +R$ {monthlyIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês
-                              {taxAmount > 0 && (
-                                <span className="text-indigo-600">
-                                  {' '}(IR: R$ {taxAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })})
-                                </span>
-                              )}
-                            </p>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -661,7 +666,7 @@ export default function FinancialBreakdown({ type }: BreakdownProps) {
                 data.map((property, index) => {
                   const currentValue = property.current_value || property.purchase_price;
                   const appreciation = currentValue - property.purchase_price;
-                  const appreciationPercentage = ((appreciation / property.purchase_price) * 100);
+                  const appreciationPercentage = property.purchase_price > 0 ? ((appreciation / property.purchase_price) * 100) : 0;
                   
                   // Calcular yield para exibição
                   let displayYield = property.dividend_yield;
