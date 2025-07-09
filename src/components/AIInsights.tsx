@@ -206,6 +206,38 @@ export default function AIInsights() {
         </div>
       </div>
 
+      {/* Potential Savings from AI Recommendations */}
+      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-6 border border-indigo-100">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="bg-gradient-to-r from-indigo-500 to-purple-600 p-2 rounded-xl">
+            <Brain className="h-5 w-5 text-white" />
+          </div>
+          <h2 className="text-xl font-semibold text-gray-800">Economias Potenciais com IA</h2>
+        </div>
+        
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <p className="text-gray-700">Total identificado pela IA:</p>
+            <p className="font-bold text-purple-700">
+              R$ 0,00/mês
+            </p>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <p className="text-gray-700">Sugestões disponíveis:</p>
+            <p className="font-medium text-gray-800">0</p>
+          </div>
+          
+          <button
+            onClick={() => {}}
+            className="mt-3 w-full py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md flex items-center justify-center space-x-2"
+          >
+            <Sparkles className="h-4 w-4" />
+            <span>Ver Todas as Sugestões</span>
+          </button>
+        </div>
+      </div>
+
       {/* Filtros */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
         <div className="flex flex-wrap gap-3">
