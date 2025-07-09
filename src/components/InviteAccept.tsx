@@ -197,114 +197,94 @@ export default function InviteAccept() {
           </p>
         </div>
 
-            <p className="text-gray-600">
-              Este convite foi enviado para <strong>{inviteDetails?.email}</strong>. Por favor, faça login ou crie uma conta com este email para aceitar o convite.
-            </p>
-          </div>
-            
-            {error && (
-              <div className="bg-white border border-red-200 rounded-xl p-4">
-                <p className="text-red-700 text-sm">{error}</p>
-              </div>
-            )}
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
-              {authMode === 'register' && (
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
-                  <div className="relative">
-                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                    <input
-                      type="text"
-                      value={formData.fullName}
-                      onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                      placeholder="Seu nome completo"
-                      required
-                      className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                    />
-                  </div>
-                </div>
-              )}
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="email"
-                    value={formData.email}
-                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    readOnly={inviteDetails?.email ? true : false}
-                    placeholder="seu@email.com"
-                    required
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-              
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
-                <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <input
-                    type="password"
-                    value={formData.password}
-                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                    placeholder="Sua senha"
-                    required
-                    minLength={6}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                  />
-                </div>
-              </div>
-              
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center space-x-2"
-              >
-                {loading ? (
-                  <span>Processando...</span>
-                ) : (
-                  <>
-                    <span>{authMode === 'login' ? 'Entrar e Aceitar Convite' : 'Criar Conta'}</span>
-                    <ArrowRight className="h-4 w-4" />
-                  </>
-                )}
-              </button>
-              
-              <div className="text-center">
-                <button
-                  type="button"
-                  onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-                  className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors duration-200"
-                >
-                  {authMode === 'login' 
-                    ? 'Não tem conta? Criar uma agora' 
-                    : 'Já tem conta? Fazer login'
-                  }
-                </button>
-              </div>
-            </form>
-          </div>
-        ) : (
-          <div className="text-center">
-            <Button
-              onClick={handleAcceptInvite}
-              className="bg-blue-500 text-white px-6 py-3 rounded-xl hover:bg-blue-600 transition-all duration-200 flex items-center justify-center space-x-2 mx-auto"
-              disabled={loading}
-            >
-              {loading ? (
-                <span>Processando...</span>
-              ) : (
-                <>
-                  <CheckCircle className="h-5 w-5" />
-                  <span>Aceitar Convite</span>
-                </>
-              )}
-            </Button>
+        <p className="text-gray-600">
+          Este convite foi enviado para <strong>{inviteDetails?.email}</strong>. Por favor, faça login ou crie uma conta com este email para aceitar o convite.
+        </p>
+
+        {error && (
+          <div className="bg-white border border-red-200 rounded-xl p-4">
+            <p className="text-red-700 text-sm">{error}</p>
           </div>
         )}
+        
+        <form onSubmit={handleSubmit} className="space-y-4">
+          {authMode === 'register' && (
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Nome Completo</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  type="text"
+                  value={formData.fullName}
+                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                  placeholder="Seu nome completo"
+                  required
+                  className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                />
+              </div>
+            </div>
+          )}
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="email"
+                value={formData.email}
+                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                readOnly={inviteDetails?.email ? true : false}
+                placeholder="seu@email.com"
+                required
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              />
+            </div>
+          </div>
+          
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Senha</label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                placeholder="Sua senha"
+                required
+                minLength={6}
+                className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              />
+            </div>
+          </div>
+          
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center space-x-2"
+          >
+            {loading ? (
+              <span>Processando...</span>
+            ) : (
+              <>
+                <span>{authMode === 'login' ? 'Entrar e Aceitar Convite' : 'Criar Conta'}</span>
+                <ArrowRight className="h-4 w-4" />
+              </>
+            )}
+          </button>
+          
+          <div className="text-center">
+            <button
+              type="button"
+              onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
+              className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors duration-200"
+            >
+              {authMode === 'login' 
+                ? 'Não tem conta? Criar uma agora' 
+                : 'Já tem conta? Fazer login'
+              }
+            </button>
+          </div>
+        </form>
       </div>
     </div>
   );
