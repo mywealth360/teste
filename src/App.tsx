@@ -40,7 +40,7 @@ function AppContent() {
   const [showPaymentFailedModal, setShowPaymentFailedModal] = useState(false);
   
   // Force subscription page when trial days left is 0
-  const { trialDaysLeft } = useAuth();
+  const { trialDaysLeft, isAdmin } = useAuth();
   
   // Check if trial has expired
   React.useEffect(() => {
@@ -76,9 +76,10 @@ function AppContent() {
   // Check if we should show subscription page
   const shouldShowSubscriptionPage = () => {
     // If trial days left is 0 or trial has expired or subscription has ended, only show subscription page
-    if (trialDaysLeft === 0 ||
+    // Admin users are exempt from this restriction
+    if (!isAdmin && (trialDaysLeft === 0 ||
         (isInTrial && trialExpiresAt && trialExpiresAt < new Date()) || 
-        (!isInTrial && !userPlan)) {
+        (!isInTrial && !userPlan))) {
       return true;
     }
     // Otherwise, show the selected tab content
@@ -130,8 +131,6 @@ function AppContent() {
         return <UserProfile />;
       case 'admin':
         return isAdmin ? <AdminPanel /> : <Dashboard />;
-      case 'subscription':
-        return <SubscriptionPage />;
       case 'subscription':
         return <SubscriptionPage />;
       case 'cards':

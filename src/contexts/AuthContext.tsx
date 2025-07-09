@@ -180,7 +180,13 @@ export function AuthProvider({ children }: AuthProviderProps) {
     const handlePlanChange = (event: CustomEvent) => {
       const { userId, newPlan } = event.detail;
       if (user && user.id === userId) {
-        setUserPlan(newPlan as 'starter' | 'family');
+        setUserPlan(newPlan as 'starter' | 'family'); 
+        
+        // If user is upgraded to family plan, reset trial status
+        if (newPlan === 'family') {
+          setIsInTrial(false);
+          setTrialDaysLeft(0);
+        }
       }
     };
 
@@ -201,7 +207,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     signOut,
     isAdmin,
     userPlan,
-    isInTrial,
+    isInTrial, 
     trialExpiresAt,
     trialDaysLeft
   };

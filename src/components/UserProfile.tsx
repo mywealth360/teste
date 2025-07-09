@@ -4,7 +4,7 @@ import { supabase } from '../lib/supabase';
 import { User, Settings, Phone, Calendar, MapPin, Mail, Shield, CreditCard, CheckCircle, AlertTriangle } from 'lucide-react';
 import PhoneVerification from './PhoneVerification';
 import { useNavigate } from 'react-router-dom';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 interface Profile {
   id: string;
@@ -27,6 +27,7 @@ interface Profile {
 export default function UserProfile() {
   const { user, isAdmin, userPlan, isInTrial, trialExpiresAt } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -39,7 +40,11 @@ export default function UserProfile() {
   const [verificationCode, setVerificationCode] = useState('');
   const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [verificationError, setVerificationError] = useState('');
-  const [verificationSuccess, setVerificationSuccess] = useState('');
+  const [verificationSuccess, setVerificationSuccess] = useState(''); 
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [inviteRole, setInviteRole] = useState('viewer');
+  const [inviteStatus, setInviteStatus] = useState<{message: string, type: 'success' | 'error'} | null>(null);
 
   useEffect(() => {
     fetchProfile();
@@ -106,6 +111,52 @@ export default function UserProfile() {
       ...prev,
       [name]: value
     }));
+  };
+
+  const handleSendInvite = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!inviteEmail) {
+      setInviteStatus({
+        message: 'Por favor, informe um email válido',
+        type: 'error'
+      });
+      return;
+    }
+    
+    try {
+      // Call the send-invite edge function
+      const { data, error } = await supabase.functions.invoke('send-invite', {
+        body: {
+          email: inviteEmail,
+          role: inviteRole
+        }
+      });
+      
+      if (error) throw error;
+      
+      setInviteStatus({
+        message: 'Convite enviado com sucesso!',
+        type: 'success'
+      });
+      
+      // Reset form
+      setInviteEmail('');
+      setInviteRole('viewer');
+      
+      // Close modal after 2 seconds
+      setTimeout(() => {
+        setShowInviteModal(false);
+        setInviteStatus(null);
+      }, 2000);
+      
+    } catch (err) {
+      console.error('Error sending invite:', err);
+      setInviteStatus({
+        message: 'Erro ao enviar convite. Tente novamente.',
+        type: 'error'
+      });
+    }
   };
 
   if (loading) {
@@ -335,6 +386,43 @@ export default function UserProfile() {
               </div>
             </div>
             
+            {/* Compartilhamento de acesso - apenas para plano Family */}
+            {userPlan === 'family' && (
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-lg font-semibold text-gray-900">Compartilhamento de Acesso</h3>
+                  <button
+                    onClick={() => setShowInviteModal(true)}
+                    className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Convidar Usuário
+                  </button>
+                </div>
+                <div className="bg-blue-50 p-4 rounded-lg border border-blue-100">
+                  <p className="text-blue-700">
+                    Com o plano Family, você pode compartilhar o acesso à sua conta com até 5 membros da família ou colaboradores.
+                  </p>
+                </div>
+              </div>
+            )}
+            
+            {userPlan !== 'family' && (
+              <div className="bg-gray-50 p-3 rounded-lg">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-gray-600">Compartilhamento de Acesso</p>
+                    <p className="font-medium text-gray-800">Disponível no plano Family</p>
+                  </div>
+                  <button
+                    onClick={() => navigate('/?tab=subscription')}
+                    className="px-3 py-1 bg-blue-600 text-white text-xs rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Fazer Upgrade
+                  </button>
+                </div>
+              </div>
+            )}
+            
             {isAdmin && (
               <div className="mt-4 p-3 bg-red-50 rounded-lg border border-red-100">
                 <div className="flex items-center">
@@ -346,6 +434,77 @@ export default function UserProfile() {
           </div>
         </div>
       </div>
+      
+      {/* Modal de Convite */}
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="p-6 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-800">Convidar Usuário</h2>
+            </div>
+            
+            <form onSubmit={handleSendInvite} className="p-6 space-y-4">
+              {inviteStatus && (
+                <div className={`p-3 rounded-lg ${
+                  inviteStatus.type === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+                }`}>
+                  {inviteStatus.message}
+                </div>
+              )}
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Email do Convidado</label>
+                <input
+                  type="email"
+                  value={inviteEmail}
+                  onChange={(e) => setInviteEmail(e.target.value)}
+                  placeholder="email@exemplo.com"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                />
+              </div>
+              
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Nível de Acesso</label>
+                <select
+                  value={inviteRole}
+                  onChange={(e) => setInviteRole(e.target.value)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                >
+                  <option value="viewer">Visualizador (somente leitura)</option>
+                  <option value="editor">Editor (pode editar)</option>
+                  <option value="admin">Administrador (acesso total)</option>
+                </select>
+              </div>
+              
+              <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                <p className="text-sm text-blue-700">
+                  O convidado receberá um email com um link para acessar sua conta. Eles precisarão criar uma conta ou fazer login para aceitar o convite.
+                </p>
+              </div>
+              
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowInviteModal(false);
+                    setInviteStatus(null);
+                  }}
+                  className="flex-1 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200"
+                >
+                  Enviar Convite
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

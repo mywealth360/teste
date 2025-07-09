@@ -14,10 +14,10 @@ interface SubscriptionButtonProps {
 export default function SubscriptionButton({
   priceId,
   children,
-  mode = 'subscription',
+  mode = 'subscription', 
   className = '', 
 }: SubscriptionButtonProps) {
-  const { user } = useAuth();
+  const { user, isInTrial, trialDaysLeft } = useAuth();
   const [loading, setLoading] = useState(false);
 
   const handleSubscribe = async () => {
@@ -30,6 +30,13 @@ export default function SubscriptionButton({
       setLoading(true);
 
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+      
+      // For trial period, don't require payment method
+      if (isInTrial && trialDaysLeft > 0 && mode === 'subscription' && priceId === products[0].priceId) {
+        // For starter plan during trial, just redirect to dashboard
+        window.location.href = '/';
+        return;
+      }
 
       if (sessionError) {
         throw new Error('Erro ao obter sessão do usuário');

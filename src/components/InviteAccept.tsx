@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Mail, CheckCircle, AlertTriangle, ArrowRight, User, Lock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
@@ -20,7 +20,7 @@ export default function InviteAccept() {
   const [showAuthForm, setShowAuthForm] = useState(false);
   const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
   const [formData, setFormData] = useState({
-    email: '',
+    email: '', 
     password: '',
     fullName: ''
   });
@@ -31,43 +31,62 @@ export default function InviteAccept() {
     }
   }, [token]);
 
-  const verifyInvite = async () => {
+  const verifyInvite = useCallback(async () => {
     try {
       setLoading(true);
       
-      // In a real implementation, this would verify the token with the backend
-      // For demo purposes, we'll simulate a successful verification
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Mock invite details
-      setInviteDetails({
-        email: 'convidado@example.com',
-        role: 'editor',
-        ownerName: 'João Silva'
+      // Verify the invite token with the backend
+      const { data, error } = await supabase.functions.invoke('verify-invite', {
+        body: { token }
       });
       
-      setShowAuthForm(true);
+      if (error) {
+        throw new Error(error.message || 'Erro ao verificar convite');
+      }
+
+      if (data && data.valid) {
+        setInviteDetails({
+          email: data.email,
+          role: data.role,
+          ownerName: data.ownerName
+        });
+        
+        // Pre-fill the email field
+        setFormData(prev => ({
+          ...prev,
+          email: data.email
+        }));
+        
+        setShowAuthForm(true);
+      } else {
+        throw new Error('Convite inválido ou expirado');
+      }
+      
     } catch (err) {
       console.error('Error verifying invite:', err);
       setError('Este convite é inválido ou expirou. Por favor, solicite um novo convite.');
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
-  const handleAcceptInvite = async () => {
+  const handleAcceptInvite = useCallback(async () => {
     try {
       setLoading(true);
       
-      // In a real implementation, this would call the backend to accept the invite
-      // For demo purposes, we'll simulate a successful acceptance
+      // Accept the invite through the backend
+      const { data, error } = await supabase.functions.invoke('accept-invite', {
+        body: { 
+          token,
+          userId: user?.id
+        }
+      });
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      setSuccess('Convite aceito com sucesso! Você agora tem acesso à conta.');
+      if (error) {
+        throw new Error(error.message || 'Erro ao aceitar convite');
+      }
+
+      setSuccess('Convite aceito com sucesso! Você agora tem acesso à conta compartilhada.');
       
       // Redirect to dashboard after 2 seconds
       setTimeout(() => {
@@ -79,7 +98,7 @@ export default function InviteAccept() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [token, user, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -178,10 +197,13 @@ export default function InviteAccept() {
           </p>
         </div>
 
-        {showAuthForm ? (
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  readOnly={inviteDetails?.email ? true : false}
           <div className="space-y-6">
             <div className="bg-white p-4 rounded-xl border border-blue-100 mb-6">
-              <p className="text-blue-700 text-sm">
+                  className={`w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl ${
+                    inviteDetails?.email ? 'bg-gray-100' : 'focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
+                  }`}
                 Este convite foi enviado para <strong>{inviteDetails?.email}</strong>. Por favor, faça login ou crie uma conta com este email para aceitar o convite.
               </p>
             </div>

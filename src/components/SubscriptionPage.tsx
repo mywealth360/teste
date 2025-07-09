@@ -44,7 +44,7 @@ export default function SubscriptionPage() {
             <p className="text-3xl mt-4 font-bold text-gray-800">R$ 79,90<span className="text-sm text-gray-500">/mês</span></p>
             <div className="mt-2 text-green-700 text-sm flex items-center">
               <CheckCircle className="h-4 w-4 mr-1" />
-              <span>7 dias grátis, depois R$ 79,90/mês</span>
+              <span>7 dias grátis sem cartão, depois R$ 79,90/mês</span>
             </div>
           </div>
           
@@ -115,8 +115,8 @@ export default function SubscriptionPage() {
             >
               Começar Gratuitamente
             </SubscriptionButton>
-            <p className="text-xs text-center text-gray-500 mt-2">
-              Cartão necessário. Sem cobrança nos primeiros 7 dias.
+            <p className="text-xs text-center text-green-600 font-medium mt-2">
+              Sem cartão necessário para o período de teste.
             </p>
           </div>
         </div>
@@ -199,11 +199,7 @@ export default function SubscriptionPage() {
         <div className="flex flex-wrap items-center justify-center gap-4 text-gray-800">
           <div className="flex items-center">
             <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
-            <span>7 dias grátis</span>
-          </div>
-          <div className="flex items-center">
-            <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
-            <span>Cartão necessário</span>
+            <span>7 dias grátis sem cartão</span>
           </div>
           <div className="flex items-center">
             <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
