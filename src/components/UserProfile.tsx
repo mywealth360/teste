@@ -4,7 +4,8 @@ import { supabase } from '../lib/supabase';
 import { User, Settings, Phone, Calendar, MapPin, Mail, Shield, CreditCard, CheckCircle, AlertTriangle } from 'lucide-react';
 import PhoneVerification from './PhoneVerification';
 import { useNavigate } from 'react-router-dom';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { Users } from 'lucide-react';
 
 interface Profile {
   id: string;
@@ -27,7 +28,6 @@ interface Profile {
 export default function UserProfile() {
   const { user, isAdmin, userPlan, isInTrial, trialExpiresAt } = useAuth();
   const navigate = useNavigate();
-  const location = useLocation();
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -198,7 +198,7 @@ export default function UserProfile() {
                 <div className="flex items-center mt-1">
                   <CreditCard className="h-4 w-4 text-blue-600 mr-2" />
                   <div className="flex items-center">
-                    <p className="font-semibold text-blue-600 capitalize">
+                    <p className="font-semibold text-gray-800 capitalize">
                       {userPlan === 'family' ? 'Family' : 'Starter'}
                       {isInTrial && <span className="ml-2 text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full">Trial</span>}
                     </p>
@@ -364,8 +364,8 @@ export default function UserProfile() {
             <div className="flex justify-end">
               <button
                 type="submit"
-                disabled={saving}
-                className="px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-md"
+                className="flex-1 py-3 border border-gray-300 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors duration-200"
               >
                 {saving ? 'Salvando...' : 'Salvar Alterações'}
               </button>
@@ -390,10 +390,13 @@ export default function UserProfile() {
             {userPlan === 'family' && (
               <div className="mt-6">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-gray-900">Compartilhamento de Acesso</h3>
+                  <div className="flex items-center">
+                    <Users className="h-5 w-5 text-blue-600 mr-2" />
+                    <h3 className="text-lg font-semibold text-gray-900">Compartilhamento de Acesso</h3>
+                  </div>
                   <button
                     onClick={() => setShowInviteModal(true)}
-                    className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-sm"
+                    className="px-4 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-sm rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-md"
                   >
                     Convidar Usuário
                   </button>
@@ -409,13 +412,14 @@ export default function UserProfile() {
             {userPlan !== 'family' && (
               <div className="bg-gray-50 p-3 rounded-lg">
                 <div className="flex items-center justify-between">
-                  <div>
+                  <div className="flex items-center">
+                    <Users className="h-5 w-5 text-gray-400 mr-2" />
                     <p className="text-sm text-gray-600">Compartilhamento de Acesso</p>
                     <p className="font-medium text-gray-800">Disponível no plano Family</p>
                   </div>
                   <Link
                     onClick={() => navigate('/?tab=subscription')}
-                    className="px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-sm"
+                    className="px-3 py-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white text-xs rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-md"
                   >
                     Fazer Upgrade
                   </Link>
@@ -460,7 +464,7 @@ export default function UserProfile() {
                   onChange={(e) => setInviteEmail(e.target.value)}
                   placeholder="email@exemplo.com"
                   required
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
                 />
               </div>
               
@@ -469,7 +473,7 @@ export default function UserProfile() {
                 <select
                   value={inviteRole}
                   onChange={(e) => setInviteRole(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
                 >
                   <option value="viewer">Visualizador (somente leitura)</option>
                   <option value="editor">Editor (pode editar)</option>

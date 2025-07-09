@@ -6,6 +6,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 import SubscriptionPage from './components/SubscriptionPage';
 import InviteAccept from './components/InviteAccept';
+import AccessManagement from './components/AccessManagement';
 import Dashboard from './components/Dashboard';
 import AIChat from './components/AIChat';
 import Transactions from './components/Transactions';
@@ -95,6 +96,8 @@ function AppContent() {
     switch (activeTab) {
       case 'dashboard':
         return <Dashboard />;
+      case 'access':
+        return <AccessManagement />;
       case 'revenues':
         return <RevenueManagement />;
       case 'expenses':

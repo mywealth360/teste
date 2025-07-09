@@ -46,6 +46,9 @@ export default function SubscriptionPage() {
               <CheckCircle className="h-4 w-4 mr-1" />
               <span>7 dias grátis, sem cartão necessário</span>
             </div>
+            <div className="mt-2 text-blue-600 text-sm flex items-center justify-center">
+              <span>Acesso a recursos essenciais</span>
+            </div>
           </div>
           
           <div className="p-8">
@@ -111,7 +114,7 @@ export default function SubscriptionPage() {
             <SubscriptionButton
               priceId={products[0].priceId}
               mode="subscription"
-              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-blue-500 text-white hover:bg-blue-600 shadow-md hover:shadow-lg"
+              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl"
             >
               Começar Gratuitamente
             </SubscriptionButton>
@@ -184,7 +187,7 @@ export default function SubscriptionPage() {
             <SubscriptionButton
               priceId={products[1].priceId}
               mode="subscription"
-              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-md hover:shadow-lg"
+              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl"
             >
               Assinar Agora
             </SubscriptionButton>

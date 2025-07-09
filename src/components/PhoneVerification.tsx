@@ -218,7 +218,7 @@ export default function PhoneVerification({ onVerified, className = '' }: PhoneV
               value={phone}
               onChange={handlePhoneChange}
               placeholder="(99) 99999-9999"
-              className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
               maxLength={15}
             />
             <p className="text-xs text-gray-500 mt-1">
@@ -247,7 +247,7 @@ export default function PhoneVerification({ onVerified, className = '' }: PhoneV
               value={verificationCode}
               onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
               placeholder="Digite o código de 6 dígitos"
-              className="w-full px-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
+              className="w-full px-3 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white"
               maxLength={6}
             />
             <p className="text-xs text-gray-500 mt-1">

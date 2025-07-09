@@ -35,6 +35,7 @@ import SubscriptionButton from './subscription/SubscriptionButton';
 import { products } from '../stripe-config';
 import UpgradeModal from './UpgradeModal';
 import { Link } from 'react-router-dom';
+import { Users } from 'lucide-react';
 
 interface SidebarProps {
   activeTab: string;
@@ -96,7 +97,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
 
   const handleTabClick = (tabId: string, isRestricted: boolean) => {
     // If trial days left is 0, only allow subscription tab
-    if (!isAdmin && trialDaysLeft === 0 && tabId !== 'subscription') {
+    if (!isAdmin && trialDaysLeft === 0 && tabId !== 'subscription' && tabId !== 'profile') {
       setActiveTab('subscription');
       return;
     }

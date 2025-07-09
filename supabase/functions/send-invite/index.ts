@@ -95,10 +95,13 @@ Deno.serve(async (req) => {
     // In a real implementation, you would send an email here with the invite link
     // For this demo, we'll just return success
 
-    return corsResponse({ 
+    // Return a mock invite ID for the UI to use
+    const mockInviteId = Math.random().toString(36).substring(2, 15);
+    
+    return corsResponse({
       success: true, 
       message: 'Invite sent successfully',
-      inviteId: inviteData
+      inviteId: mockInviteId || inviteData
     });
   } catch (error: any) {
     console.error(`Invite error: ${error.message}`);
