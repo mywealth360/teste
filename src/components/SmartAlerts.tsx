@@ -1,338 +1,427 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Bell, Calendar, DollarSign, AlertTriangle, CheckCircle, TrendingUp,
-  Clock, Car, Home, Users, CreditCard, Shield, Gem, X,
-  ChevronRight, FileText, Filter, Mail, Settings
+  Plus, Receipt, Calendar, Building, Bell, Edit, Trash2, AlertTriangle, Save, X, 
+  CreditCard,
+  Target
 } from 'lucide-react';
-import { useSupabaseData } from '../hooks/useSupabaseData';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
-type AlertType = 'bill' | 'employee' | 'expense' | 'achievement' | 'tax' | 'asset' | 'investment';
-type AlertPriority = 'high' | 'medium' | 'low';
-
-interface Alert {
+interface Bill {
   id: string;
-  type: AlertType;
-  title: string;
-  description: string;
-  date: string;
-  priority: AlertPriority;
-  isRead: boolean;
-  relatedId?: string;
-  relatedEntity?: string;
-  actionPath?: string;
-  actionLabel?: string;
+  name: string;
+  company: string;
+  amount: number;
+  due_day: number;
+  payment_status?: 'pending' | 'paid' | 'overdue' | 'partial';
+  payment_date?: string;
+  payment_amount?: number;
+  payment_method?: string;
+  send_email_reminder?: boolean;
+  reminder_days_before?: number;
+  category: string;
+  is_recurring: boolean;
+  is_active: boolean;
+  last_paid?: string;
+  next_due: string;
+  created_at: string;
+  updated_at: string;
+  financial_goal_id?: string;
+  is_goal_contribution?: boolean;
+  associated_with?: string;
+  associated_id?: string;
+  associated_name?: string;
+  payment_status?: string;
+  payment_date?: string;
+  payment_amount?: number;
+  payment_method?: string;
+  send_email_reminder?: boolean;
+  reminder_days_before?: number;
+  associated_with?: 'property' | 'vehicle' | 'employee' | 'loan';
+  associated_id?: string;
+  associated_name?: string;
+  financial_goal_id?: string;
+  is_goal_contribution?: boolean;
 }
 
-export default function SmartAlerts() {
+interface FinancialGoal {
+  id: string;
+  name: string;
+  target_amount: number;
+  current_amount: number;
+  target_date: string;
+}
+
+interface BillCategory {
+  value: string;
+  label: string;
+  icon: React.ComponentType<any>;
+  color?: string;
+}
+
+const categories: BillCategory[] = [
+  { value: 'Utilidades', label: 'Utilidades', icon: Building },
+  { value: 'Telecomunicações', label: 'Telecomunicações', icon: Receipt },
+  { value: 'Cartão', label: 'Cartão', icon: CreditCard },
+  { value: 'Financiamento', label: 'Financiamento', icon: CreditCard },
+  { value: 'Seguro', label: 'Seguro', icon: Shield },
+  { value: 'Assinatura', label: 'Assinatura', icon: Calendar },
+  { value: 'Educação', label: 'Educação', icon: FileText },
+  { value: 'Saúde', label: 'Saúde', icon: Shield },
+  { value: 'Transporte', label: 'Transporte', icon: Car },
+  { value: 'Imóvel', label: 'Imóvel', icon: Home },
+  { value: 'Veículo', label: 'Veículo', icon: Car },
+  { value: 'Funcionário', label: 'Funcionário', icon: Users },
+  { value: 'Encargos Sociais', label: 'Encargos Sociais', icon: Users },
+  'Outros', 'Investimentos'
+];
+
+/* 
+Original categories array - keeping as a fallback
+  'Utilidades', 'Telecomunicações', 'Cartão', 'Financiamento', 'Seguro',
+  'Assinatura', 'Educação', 'Saúde', 'Transporte', 'Outros'
+*/
+
+export default function Bills() {
   const { user } = useAuth();
-  const [alerts, setAlerts] = useState<Alert[]>([]);
-  const [filteredAlerts, setFilteredAlerts] = useState<Alert[]>([]);
+  
+  const [bills, setBills] = useState<Bill[]>([]);
+  const [financialGoals, setFinancialGoals] = useState<FinancialGoal[]>([]);
+  
+  const [showAddModal, setShowAddModal] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState<Partial<Bill>>({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedFilter, setSelectedFilter] = useState<'all' | AlertType>('all');
-  const [showAll, setShowAll] = useState(false);
-  const [isInitialLoad, setIsInitialLoad] = useState(true);
-  
-  const {
-    totalMonthlyExpenses,
-    totalMonthlyIncome,
-    totalLoanPayments,
-    totalBills,
-    netWorth,
-  } = useSupabaseData();
+  const [pendingCount, setPendingCount] = useState(0);
+  const [financialGoals, setFinancialGoals] = useState<any[]>([]);
 
-  // Function to generate smart alerts based on financial data
-  const generateAlerts = async () => {
-    if (!user) return;
+  // Properties, Vehicles, and Employees for associating bills
+  const [properties, setProperties] = useState<any[]>([]);
+  const [vehicles, setVehicles] = useState<any[]>([]);
+  const [employees, setEmployees] = useState<any[]>([]);
+  const [loans, setLoans] = useState<any[]>([]);
+  const [selectedGoal, setSelectedGoal] = useState<string>('');
 
+  useEffect(() => {
+    if (user) {
+      fetchBills();
+      fetchFinancialGoals();
+      fetchAssociatedEntities();
+    }
+  }, [user]);
+
+  useEffect(() => {
+    // Atualizar contagem de contas pendentes
+    const pending = bills.filter(bill => {
+      const dueDate = new Date(bill.next_due);
+      const today = new Date();
+      return bill.is_active && dueDate <= today;
+    }).length;
+    
+    setPendingCount(pending);
+  }, [bills]);
+
+  const fetchBills = async () => {
     try {
       setLoading(true);
-      const alerts: Alert[] = [];
-
-      // Fetch bills that are due soon (next 7 days)
-      const { data: upcomingBills, error: billsError } = await supabase
+      const { data, error } = await supabase
         .from('bills')
         .select('*')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .lte('next_due', new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString())
+        .eq('user_id', user?.id)
         .order('next_due', { ascending: true });
 
-      if (billsError) throw billsError;
-
-      // Create alerts for upcoming bills
-      upcomingBills?.forEach(bill => {
-        const daysUntilDue = Math.ceil(
-          (new Date(bill.next_due).getTime() - Date.now()) / (1000 * 60 * 60 * 24)
-        );
-        
-        let priority: AlertPriority = 'medium';
-        if (daysUntilDue <= 2) priority = 'high';
-        else if (daysUntilDue <= 5) priority = 'medium';
-        else priority = 'low';
-
-        alerts.push({
-          id: `bill-${bill.id}`,
-          type: 'bill',
-          title: `Conta a vencer: ${bill.name}`,
-          description: `${bill.company} - R$ ${bill.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} - Vence em ${daysUntilDue} ${daysUntilDue === 1 ? 'dia' : 'dias'}`,
-          date: bill.next_due,
-          priority,
-          isRead: false,
-          relatedId: bill.id,
-          relatedEntity: 'bills',
-          actionPath: '/bills',
-          actionLabel: 'Ver Contas'
-        });
-      });
-
-      // Fetch employee data for vacation alerts
-      const { data: employees, error: employeesError } = await supabase
-        .from('employees')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('status', 'active');
-
-      if (employeesError) throw employeesError;
-
-      // Create alerts for upcoming employee vacations
-      employees?.forEach(employee => {
-        if (employee.next_vacation) {
-          const nextVacation = new Date(employee.next_vacation);
-          const daysUntilVacation = Math.ceil(
-            (nextVacation.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
-          );
-
-          if (daysUntilVacation <= 30 && daysUntilVacation > 0) {
-            alerts.push({
-              id: `vacation-${employee.id}`,
-              type: 'employee',
-              title: `Férias do funcionário ${employee.name}`,
-              description: `Férias programadas para ${new Date(employee.next_vacation).toLocaleDateString('pt-BR')} (em ${daysUntilVacation} dias)`,
-              date: employee.next_vacation,
-              priority: daysUntilVacation <= 7 ? 'high' : 'medium',
-              isRead: false,
-              relatedId: employee.id,
-              relatedEntity: 'employees',
-              actionPath: '/employees',
-              actionLabel: 'Ver Funcionários'
-            });
-          }
-          // If vacation is overdue
-          else if (daysUntilVacation <= 0) {
-            alerts.push({
-              id: `vacation-overdue-${employee.id}`,
-              type: 'employee',
-              title: `Férias vencidas: ${employee.name}`,
-              description: `As férias deste funcionário venceram em ${new Date(employee.next_vacation).toLocaleDateString('pt-BR')}`,
-              date: employee.next_vacation,
-              priority: 'high',
-              isRead: false,
-              relatedId: employee.id,
-              relatedEntity: 'employees',
-              actionPath: '/employees',
-              actionLabel: 'Ver Funcionários'
-            });
-          }
-        }
-
-        // FGTS payment alerts - due on the 7th of each month
-        const nextMonth = new Date();
-        nextMonth.setMonth(today.getMonth() + 1);
-        const fgtsDate = new Date(today.getFullYear(), today.getMonth(), 7);
-        
-        if (today.getDate() <= 7) {
-          // FGTS is due this month
-          const daysUntilFgts = 7 - today.getDate();
-          
-          alerts.push({
-            id: `fgts-${employee.id}`,
-            type: 'tax',
-            title: `Pagamento FGTS ${employee.name}`,
-            description: `O FGTS vence em ${daysUntilFgts} ${daysUntilFgts === 1 ? 'dia' : 'dias'} (dia 7). Valor: R$ ${(employee.salary * (employee.fgts_percentage / 100)).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`,
-            date: fgtsDate.toISOString(),
-            priority: daysUntilFgts <= 2 ? 'high' : 'medium',
-            isRead: false,
-            relatedId: employee.id,
-            relatedEntity: 'employees',
-            actionPath: '/employees',
-            actionLabel: 'Ver Funcionários'
-          });
-        }
-      });
-
-      // Expense alerts - check if spending is more than 80% of income
-      if (totalMonthlyExpenses + totalLoanPayments + totalBills > totalMonthlyIncome * 0.8) {
-        const spendingPercentage = ((totalMonthlyExpenses + totalLoanPayments + totalBills) / totalMonthlyIncome * 100).toFixed(1);
-        
-        alerts.push({
-          id: `expense-warning-${Date.now()}`,
-          type: 'expense',
-          title: 'Gastos acima do recomendado',
-          description: `Seus gastos mensais representam ${spendingPercentage}% da sua renda. O recomendado é manter abaixo de 80%.`,
-          date: new Date().toISOString(),
-          priority: 'high',
-          isRead: false,
-          actionPath: '/expenses',
-          actionLabel: 'Ver Gastos'
-        });
-      }
-
-      // Achievement alerts - if net worth increased by more than 10% in the past month
-      // This would typically use historical data from a "net_worth_history" table or similar
-      // For this example, we're using mock data
-      const mockPreviousNetWorth = netWorth * 0.85; // Simulating a 15% increase
-      const netWorthIncrease = ((netWorth - mockPreviousNetWorth) / mockPreviousNetWorth * 100).toFixed(1);
-      
-      if (netWorth > mockPreviousNetWorth && (netWorth - mockPreviousNetWorth) / mockPreviousNetWorth > 0.1) {
-        alerts.push({
-          id: `achievement-networth-${Date.now()}`,
-          type: 'achievement',
-          title: 'Patrimônio aumentou significativamente!',
-          description: `Seu patrimônio líquido aumentou ${netWorthIncrease}% no último mês. Continue assim!`,
-          date: new Date().toISOString(),
-          priority: 'medium',
-          isRead: false,
-          actionPath: '/patrimony',
-          actionLabel: 'Ver Patrimônio'
-        });
-      }
-
-      // Add a few more dynamic alerts based on real financial data
-      // Tax filing deadlines
-      const currentYear = new Date().getFullYear();
-      const taxFilingDate = new Date(currentYear, 3, 30); // April 30th
-      if (today <= taxFilingDate && today.getMonth() >= 2) { // March, April
-        const daysUntilTaxFiling = Math.ceil((taxFilingDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-        if (daysUntilTaxFiling <= 30) {
-          alerts.push({
-            id: `tax-filing-${Date.now()}`,
-            type: 'tax',
-            title: 'Prazo para declaração de IR',
-            description: `Faltam ${daysUntilTaxFiling} dias para o prazo final de entrega da declaração de Imposto de Renda.`,
-            date: taxFilingDate.toISOString(),
-            priority: daysUntilTaxFiling <= 7 ? 'high' : 'medium',
-            isRead: false,
-            actionPath: '/documents',
-            actionLabel: 'Ver Documentos'
-          });
-        }
-      }
-
-      // Sort alerts by priority and date
-      alerts.sort((a, b) => {
-        const priorityOrder = { high: 0, medium: 1, low: 2 };
-        if (priorityOrder[a.priority] !== priorityOrder[b.priority]) {
-          return priorityOrder[a.priority] - priorityOrder[b.priority];
-        }
-        return new Date(a.date).getTime() - new Date(b.date).getTime();
-      });
-
-      setAlerts(alerts);
-      setIsInitialLoad(false);
+      if (error) throw error;
+      setBills(data || []);
     } catch (err) {
-      console.error('Error generating alerts:', err);
-      setError('Erro ao gerar alertas');
+      console.error('Error fetching bills:', err);
+      setError('Erro ao carregar contas');
     } finally {
       setLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (user) {
-      generateAlerts();
-    }
-  }, [user, totalMonthlyExpenses, totalMonthlyIncome, totalLoanPayments, totalBills, netWorth]);
-
-  useEffect(() => {
-    if (selectedFilter === 'all') {
-      setFilteredAlerts(alerts);
-    } else {
-      setFilteredAlerts(alerts.filter(alert => alert.type === selectedFilter));
-    }
-  }, [alerts, selectedFilter]);
-
-  const markAsRead = async (alertId: string) => {
-    setAlerts(prev => 
-      prev.map(alert => 
-        alert.id === alertId ? { ...alert, isRead: true } : alert
-      )
-    );
-  };
-
-  const handleAlertAction = (alert: Alert) => {
-    markAsRead(alert.id);
-    if (alert.actionPath) {
-      window.location.href = alert.actionPath;
+  
+  const fetchAssociatedEntities = async () => {
+    if (!user) return;
+    
+    try {
+      // Fetch properties, vehicles, and employees in parallel
+      const [propertiesResult, vehiclesResult, employeesResult, loansResult] = await Promise.all([
+        supabase.from('real_estate').select('id, address, type').eq('user_id', user.id),
+        supabase.from('vehicles').select('id, brand, model').eq('user_id', user.id),
+        supabase.from('employees').select('id, name, role').eq('user_id', user.id).eq('status', 'active'),
+        supabase.from('loans').select('id, bank, type').eq('user_id', user.id)
+      ]);
+      
+      if (propertiesResult.data) setProperties(propertiesResult.data);
+      if (vehiclesResult.data) setVehicles(vehiclesResult.data);
+      if (employeesResult.data) setEmployees(employeesResult.data);
+      if (loansResult.data) setLoans(loansResult.data);
+    } catch (err) {
+      console.error('Error fetching associated entities:', err);
     }
   };
-
-  const getPriorityColor = (priority: AlertPriority) => {
-    switch (priority) {
-      case 'high': return 'bg-red-500';
-      case 'medium': return 'bg-yellow-500';
-      case 'low': return 'bg-blue-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
-  const getTypeIcon = (type: AlertType) => {
-    switch (type) {
-      case 'bill': return <FileText className="h-5 w-5 text-blue-600" />;
-      case 'employee': return <Users className="h-5 w-5 text-purple-600" />;
-      case 'expense': return <DollarSign className="h-5 w-5 text-red-600" />;
-      case 'achievement': return <CheckCircle className="h-5 w-5 text-green-600" />;
-      case 'tax': return <FileText className="h-5 w-5 text-indigo-600" />;
-      case 'asset': return <Home className="h-5 w-5 text-orange-600" />;
-      case 'investment': return <TrendingUp className="h-5 w-5 text-emerald-600" />;
-      default: return <Bell className="h-5 w-5 text-gray-600" />;
+  
+  // Fetch financial goals for bill association
+  const fetchFinancialGoals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('financial_goals')
+        .select('id, name, target_amount, current_amount, target_date, status')
+        .eq('user_id', user?.id)
+        .eq('status', 'active')
+        .order('priority', { ascending: false });
+      
+      if (error) throw error;
+      setFinancialGoals(data || []);
+    } catch (err) {
+      console.error('Error fetching financial goals:', err);
     }
   };
 
-  const getTypeBackground = (type: AlertType) => {
-    switch (type) {
-      case 'bill': return 'bg-blue-50';
-      case 'employee': return 'bg-purple-50';
-      case 'expense': return 'bg-red-50';
-      case 'achievement': return 'bg-green-50';
-      case 'tax': return 'bg-indigo-50';
-      case 'asset': return 'bg-orange-50';
-      case 'investment': return 'bg-emerald-50';
-      default: return 'bg-gray-50';
+  const handleAddBill = async (billData: Omit<Bill, 'id' | 'created_at' | 'updated_at' | 'next_due'>) => {
+    try {
+      const today = new Date();
+      const nextDue = new Date(today.getFullYear(), today.getMonth(), billData.due_day);
+      if (nextDue <= today) {
+        nextDue.setMonth(nextDue.getMonth() + 1);
+      }
+
+      const { error } = await supabase
+        .from('bills')
+        .insert([{
+          ...billData,
+          user_id: user?.id,
+          next_due: nextDue.toISOString().split('T')[0],
+        }]);
+
+      if (error) throw error;
+      
+      setShowAddModal(false);
+      fetchBills();
+    } catch (err) {
+      console.error('Error adding bill:', err);
+      setError('Erro ao adicionar conta');
     }
   };
 
-  const getTypeLabel = (type: AlertType) => {
-    switch (type) {
-      case 'bill': return 'Conta';
-      case 'employee': return 'Funcionário';
-      case 'expense': return 'Gasto';
-      case 'achievement': return 'Conquista';
-      case 'tax': return 'Imposto';
-      case 'asset': return 'Ativo';
-      case 'investment': return 'Investimento';
-      default: return 'Alerta';
+  const handleEditBill = (bill: Bill) => {
+    setEditingId(bill.id);
+    setEditForm({
+      name: bill.name,
+      company: bill.company,
+      amount: bill.amount,
+      due_day: bill.due_day,
+      category: bill.category,
+      is_recurring: bill.is_recurring,
+      is_active: bill.is_active
+    });
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId) return;
+
+    try {
+      const { error } = await supabase
+        .from('bills')
+        .update({
+          ...editForm,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', editingId);
+
+      if (error) throw error;
+      
+      setEditingId(null);
+      setEditForm({});
+      fetchBills();
+    } catch (err) {
+      console.error('Error updating bill:', err);
+      setError('Erro ao atualizar conta');
     }
   };
 
-  // Get alert counts by type
-  const getAlertCountByType = (type: AlertType | 'all') => {
-    if (type === 'all') return alerts.length;
-    return alerts.filter(alert => alert.type === type).length;
+  const handleCancelEdit = () => {
+    setEditingId(null);
+    setEditForm({});
   };
 
-  // Filter categories with alerts
-  const alertTypes = ['bill', 'employee', 'expense', 'achievement', 'tax', 'asset', 'investment'] as AlertType[];
-  const activeAlertTypes = alertTypes.filter(type => getAlertCountByType(type) > 0);
+  const handleDeleteBill = async (id: string) => {
+    if (!confirm('Tem certeza que deseja excluir esta conta?')) return;
 
-  // Add a button to navigate to email notification settings
-  const navigateToEmailSettings = () => {
-    window.location.href = '/?tab=profile';
+    try {
+      const { error } = await supabase
+        .from('bills')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      fetchBills();
+    } catch (err) {
+      console.error('Error deleting bill:', err);
+      setError('Erro ao excluir conta');
+    }
   };
 
-  if (loading && isInitialLoad) {
+  // Mark bill as paid
+  const markAsPaid = async (billId: string, amount?: number, paymentMethod?: string) => {
+    try {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Call the mark_bill_as_paid database function
+      const { data, error } = await supabase.rpc('mark_bill_as_paid', {
+        bill_id: billId,
+        payment_date_val: today,
+        payment_amount_val: amount,
+        payment_method_val: paymentMethod
+      });
+
+      if (error) throw error;
+      fetchBills();
+    } catch (err) {
+      console.error('Error marking bill as paid:', err);
+      setError('Erro ao marcar conta como paga');
+    }
+  };
+
+  const markAllAsPaid = async () => {
+    if (!confirm('Tem certeza que deseja marcar todas as contas pendentes como pagas?')) return;
+
+    try {
+      const today = new Date();
+      const pendingBills = bills.filter(bill => {
+        const dueDate = new Date(bill.next_due);
+        return bill.is_active && dueDate <= today;
+      });
+
+      if (pendingBills.length === 0) {
+        alert('Não há contas pendentes para pagar.');
+        return;
+      }
+
+      const updates = pendingBills.map(bill => {
+        const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, bill.due_day);
+        return supabase
+          .from('bills')
+          .update({
+            last_paid: today.toISOString().split('T')[0],
+            next_due: nextMonth.toISOString().split('T')[0]
+          })
+          .eq('id', bill.id);
+      });
+
+      await Promise.all(updates);
+      fetchBills();
+    } catch (err) {
+      console.error('Error marking all bills as paid:', err);
+      setError('Erro ao marcar todas as contas como pagas');
+    }
+  };
+
+  const getBillStatus = (bill: Bill) => {
+    if (bill.payment_status === 'paid') {
+      return 'paid';
+    }
+    
+    if (bill.payment_status === 'partial') {
+      return 'partial';
+    }
+    
+    if (bill.payment_status === 'overdue' || 
+        (bill.next_due && new Date(bill.next_due) < new Date())) {
+      return 'overdue';
+    }
+    
+    return 'pending';
+  };
+
+  // Toggle email reminder for a bill
+  const toggleEmailReminder = async (billId: string) => {
+    try {
+      const bill = bills.find(b => b.id === billId);
+      if (!bill) return;
+      
+      const { error } = await supabase
+        .from('bills')
+        .update({
+          send_email_reminder: !bill.send_email_reminder
+        })
+        .eq('id', billId);
+
+      if (error) throw error;
+      fetchBills();
+    } catch (err) {
+      console.error('Error toggling email reminder:', err);
+      setError('Erro ao atualizar preferência de notificação');
+    }
+  };
+  
+  // Set reminder days before
+  const setReminderDays = async (billId: string, days: number) => {
+    try {
+      const { error } = await supabase
+        .from('bills')
+        .update({
+          reminder_days_before: days
+        })
+        .eq('id', billId);
+
+      if (error) throw error;
+      fetchBills();
+    } catch (err) {
+      console.error('Error setting reminder days:', err);
+      setError('Erro ao atualizar dias de notificação');
+    }
+  };
+
+  // Associate bill with financial goal
+  const associateBillWithGoal = async (billId: string, goalId: string) => {
+    try {
+      const { error } = await supabase
+        .from('bills')
+        .update({
+          financial_goal_id: goalId,
+          is_goal_contribution: true
+        })
+        .eq('id', billId);
+      
+      if (error) throw error;
+      fetchBills();
+    } catch (err) {
+      console.error('Error associating bill with goal:', err);
+      setError('Erro ao associar conta à meta financeira');
+    }
+  };
+
+  const totalMonthlyBills = bills
+    .filter(bill => bill.is_active && bill.is_recurring)
+    .reduce((sum, bill) => sum + bill.amount, 0);
+
+  const upcomingBills = bills
+    .filter(bill => bill.is_active)
+    .sort((a, b) => new Date(a.next_due).getTime() - new Date(b.next_due).getTime())
+    .slice(0, 5);
+
+  const overdueBills = bills.filter(bill => {
+    const dueDate = new Date(bill.next_due);
+    const today = new Date();
+    return bill.is_active && dueDate < today;
+  });
+
+  const getDaysUntilDue = (dueDate: string) => {
+    const due = new Date(dueDate);
+    const today = new Date();
+    const diffTime = due.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  // Check if bill is associated with a financial goal
+  const isGoalContribution = (bill: Bill) => {
+    return bill.is_goal_contribution && bill.financial_goal_id;
+  };
+
+  if (loading) {
     return (
       <div className="space-y-6">
         <div className="animate-pulse">
@@ -346,21 +435,35 @@ export default function SmartAlerts() {
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Alertas Inteligentes</h1>
-          <p className="text-gray-500 mt-1">Acompanhe eventos importantes e fique por dentro de suas finanças</p>
-          <p className="text-sm text-blue-600 mt-1 flex items-center cursor-pointer" onClick={navigateToEmailSettings}>
-            <Mail className="h-3 w-3 mr-1" />
-            <span>Configurar alertas por email</span>
-          </p>
-        </div>
-        <div className="bg-blue-500 p-2 rounded-full text-white relative">
-          <Bell className="h-6 w-6" />
-          {alerts.filter(a => !a.isRead).length > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white text-xs w-5 h-5 flex items-center justify-center rounded-full">
-              {alerts.filter(a => !a.isRead).length}
-            </span>
+        <div className="flex items-center space-x-3">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">Contas a Pagar</h1>
+            <p className="text-gray-500 mt-1">Gerencie suas contas e nunca mais esqueça um pagamento</p>
+          </div>
+          {pendingCount > 0 && (
+            <div className="bg-red-100 text-red-700 px-3 py-1 rounded-full flex items-center space-x-1">
+              <Tag className="h-4 w-4" />
+              <span>{pendingCount} pendentes</span>
+            </div>
           )}
+        </div>
+        <div className="flex space-x-3">
+          {overdueBills.length > 0 && (
+            <button 
+              onClick={markAllAsPaid}
+              className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg"
+            >
+              <CheckCircle className="h-4 w-4" />
+              <span>Pagar Todas</span>
+            </button>
+          )}
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Nova Conta</span>
+          </button>
         </div>
       </div>
 
@@ -370,43 +473,58 @@ export default function SmartAlerts() {
         </div>
       )}
 
+      {/* Alertas */}
+      {overdueBills.length > 0 && (
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center space-x-3">
+              <AlertTriangle className="h-6 w-6 text-red-600" />
+              <h2 className="text-lg font-semibold text-red-800">Contas em Atraso</h2>
+            </div>
+            <button
+              onClick={markAllAsPaid}
+              className="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors duration-200 flex items-center space-x-2"
+            >
+              <CheckCircle className="h-4 w-4" />
+              <span>Marcar Todas como Pagas</span>
+            </button>
+          </div>
+          <div className="space-y-2">
+            {overdueBills.map(bill => (
+              <div key={bill.id} className="flex items-center justify-between bg-white p-3 rounded-lg">
+                <div>
+                  <span className="font-medium text-gray-800">{bill.name}</span>
+                  <span className="text-sm text-gray-500 ml-2">
+                    Venceu em {new Date(bill.next_due).toLocaleDateString('pt-BR')}
+                  </span>
+                </div>
+                <div className="flex items-center space-x-3">
+                  <span className="font-semibold text-red-600">
+                    R$ {bill.amount.toLocaleString('pt-BR')}
+                  </span>
+                  <button
+                    onClick={() => markAsPaid(bill.id)}
+                    className="px-3 py-1 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors duration-200"
+                  >
+                    Marcar como Pago
+                  </button>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Total de Alertas</p>
-              <p className="text-3xl font-bold mt-1">{alerts.length}</p>
-              <p className="text-blue-100 text-sm">{alerts.filter(a => !a.isRead).length} não lidos</p>
+              <p className="text-blue-100 text-sm font-medium">Total Mensal</p>
+              <p className="text-3xl font-bold mt-1">R$ {totalMonthlyBills.toLocaleString('pt-BR')}</p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl">
-              <Bell className="h-6 w-6" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-red-500 to-red-600 p-6 rounded-2xl text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-red-100 text-sm font-medium">Alta Prioridade</p>
-              <p className="text-3xl font-bold mt-1">{alerts.filter(a => a.priority === 'high').length}</p>
-              <p className="text-red-100 text-sm">Requerem atenção</p>
-            </div>
-            <div className="bg-white/20 p-3 rounded-xl">
-              <AlertTriangle className="h-6 w-6" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-yellow-500 to-yellow-600 p-6 rounded-2xl text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-yellow-100 text-sm font-medium">Contas a Vencer</p>
-              <p className="text-3xl font-bold mt-1">{alerts.filter(a => a.type === 'bill').length}</p>
-              <p className="text-yellow-100 text-sm">Próximos 7 dias</p>
-            </div>
-            <div className="bg-white/20 p-3 rounded-xl">
-              <Calendar className="h-6 w-6" />
+              <Receipt className="h-6 w-6" />
             </div>
           </div>
         </div>
@@ -414,216 +532,833 @@ export default function SmartAlerts() {
         <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm font-medium">Conquistas</p>
-              <p className="text-3xl font-bold mt-1">{alerts.filter(a => a.type === 'achievement').length}</p>
-              <p className="text-green-100 text-sm">Metas alcançadas</p>
+              <p className="text-green-100 text-sm font-medium">Contas Ativas</p>
+              <p className="text-3xl font-bold mt-1">{bills.filter(b => b.is_active).length}</p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl">
-              <CheckCircle className="h-6 w-6" />
+              <Building className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-2xl text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-orange-100 text-sm font-medium">Próximas</p>
+              <p className="text-3xl font-bold mt-1">{upcomingBills.length}</p>
+            </div>
+            <div className="bg-white/20 p-3 rounded-xl">
+              <Bell className="h-6 w-6" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Filtros */}
+      {/* Próximas contas */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
-        <div className="flex items-center mb-4">
-          <Filter className="h-5 w-5 text-gray-400 mr-2" />
-          <h2 className="text-lg font-semibold text-gray-800">Filtrar por Tipo</h2>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          <button
-            onClick={() => setSelectedFilter('all')}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium flex items-center space-x-1 transition-colors ${
-              selectedFilter === 'all'
-                ? 'bg-blue-500 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            }`}
-          >
-            <span>Todos</span> 
-            <span className="bg-blue-700 text-white text-xs rounded-full px-1.5 py-0.5">
-              {getAlertCountByType('all')}
-            </span>
-          </button>
-          {activeAlertTypes.map((type) => (
-            <button
-              key={type}
-              onClick={() => setSelectedFilter(type)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors flex items-center space-x-1 ${
-                selectedFilter === type
-                  ? 'bg-blue-500 text-white'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-              }`}
-            >
-              {getTypeIcon(type)}
-              <span>{getTypeLabel(type)} ({getAlertCountByType(type)})</span>
-            </button>
-          ))}
+        <h2 className="text-xl font-semibold text-gray-800 mb-6">Próximas Contas</h2>
+        <div className="space-y-4">
+          {upcomingBills.map((bill) => {
+            const daysUntilDue = getDaysUntilDue(bill.next_due);
+            const isOverdue = daysUntilDue < 0;
+            const isDueSoon = daysUntilDue <= 3 && daysUntilDue >= 0;
+            
+            return (
+              <div key={bill.id} className={`p-4 rounded-xl border-2 transition-all duration-200 ${
+                isOverdue ? 'border-red-200 bg-red-50' :
+                isDueSoon ? 'border-yellow-200 bg-yellow-50' :
+                'border-gray-100 bg-gray-50'
+              }`}>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                      isOverdue ? 'bg-red-500' :
+                      isDueSoon ? 'bg-yellow-500' :
+                      'bg-blue-500'
+                    }`}>
+                      <Receipt className="h-5 w-5 text-white" />
+                    </div>
+                    
+                    <div>
+                      <h3 className="font-medium text-gray-800">{bill.name}</h3>
+                      <p className="text-sm text-gray-500">{bill.company} • {bill.category}</p>
+                    </div>
+                  </div>
+                  
+                  <div className="text-right">
+                    <p className="font-semibold text-lg text-gray-800">
+                      R$ {bill.amount.toLocaleString('pt-BR')}
+                    </p>
+                    <p className={`text-sm ${
+                      isOverdue ? 'text-red-600' :
+                      isDueSoon ? 'text-yellow-600' :
+                      'text-gray-500'
+                    }`}>
+                      {isOverdue ? `${Math.abs(daysUntilDue)} dias em atraso` :
+                       isDueSoon ? `Vence em ${daysUntilDue} dias` :
+                       `Vence em ${daysUntilDue} dias`}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
 
-      {/* Lista de alertas */}
-      <div className="bg-gray-50 p-4 rounded-2xl border border-gray-200 mb-6 flex items-center justify-between">
-        <div className="flex items-center space-x-3">
-          <Mail className="h-5 w-5 text-blue-600" />
-          <div>
-            <h3 className="font-medium text-gray-800">Alertas por Email</h3>
-            <p className="text-sm text-gray-600">Configure como receber estes alertas no seu email</p>
-          </div>
-        </div>
-        <button
-          onClick={navigateToEmailSettings}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center space-x-2"
-        >
-          <Settings className="h-4 w-4" />
-          <span>Configurar</span>
-        </button>
-      </div>
-      
+      {/* Lista completa de contas */}
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="p-6 border-b border-gray-100">
-          <h2 className="text-xl font-semibold text-gray-800">
-            {selectedFilter === 'all' ? 'Todos os Alertas' : `Alertas de ${getTypeLabel(selectedFilter)}`}
-          </h2>
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <h2 className="text-xl font-semibold text-gray-800">Todas as Contas</h2>
+          {pendingCount > 0 && (
+            <button
+              onClick={markAllAsPaid}
+              className="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors duration-200 flex items-center space-x-2"
+            >
+              <CheckCircle className="h-4 w-4" />
+              <span>Marcar Todas como Pagas</span>
+            </button>
+          )}
         </div>
         
         <div className="divide-y divide-gray-100">
-          {filteredAlerts.length === 0 ? (
+          {bills.length === 0 ? (
             <div className="p-12 text-center">
-              <Bell className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhum alerta encontrado</h3>
-              <p className="text-gray-500">Não há alertas para exibir no momento.</p>
+              <Receipt className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma conta cadastrada</h3>
+              <p className="text-gray-500">Adicione suas contas para acompanhar os vencimentos.</p>
             </div>
           ) : (
-            <>
-              {filteredAlerts.slice(0, showAll ? filteredAlerts.length : 5).map((alert) => (
-                <div 
-                  key={alert.id} 
-                  className={`p-6 hover:bg-gray-50 transition-colors duration-200 ${
-                    !alert.isRead ? 'border-l-4 border-blue-500' : ''
-                  }`}
-                >
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start space-x-4">
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getTypeBackground(alert.type)}`}>
-                        {getTypeIcon(alert.type)}
+            bills.map((bill) => (
+              <div key={bill.id} className="p-6 hover:bg-gray-50 transition-colors duration-200">
+                {editingId === bill.id ? (
+                  // Modo de edição
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <input
+                        type="text"
+                        value={editForm.name || ''}
+                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                        className="p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        placeholder="Nome da conta"
+                      />
+                      <input
+                        type="text"
+                        value={editForm.company || ''}
+                        onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+                        className="p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        placeholder="Empresa"
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <input
+                        type="number"
+                        value={editForm.amount || ''}
+                        onChange={(e) => setEditForm({ ...editForm, amount: Number(e.target.value) })}
+                        className="p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        placeholder="Valor"
+                        step="0.01"
+                      />
+                      <input
+                        type="number"
+                        value={editForm.due_day || ''}
+                        onChange={(e) => setEditForm({ ...editForm, due_day: Number(e.target.value) })}
+                        className="p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                        placeholder="Dia do vencimento (1-31)"
+                        min="1"
+                        max="31"
+                      />
+                      <select
+                        value={editForm.category || ''}
+                        onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
+                        className="p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                      >
+                        {categories.map(category => (
+                          <option key={category.value} value={category.value}>
+                            {category.label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4">
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={editForm.is_recurring || false}
+                            onChange={(e) => setEditForm({ ...editForm, is_recurring: e.target.checked })}
+                            className="rounded text-blue-600"
+                          />
+                          <span className="text-gray-700">Recorrente</span>
+                        </label>
+                        <label className="flex items-center space-x-2">
+                          <input
+                            type="checkbox"
+                            checked={editForm.is_active || false}
+                            onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
+                            className="rounded text-blue-600"
+                          />
+                          <span className="text-gray-700">Ativa</span>
+                        </label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <button
+                          onClick={handleSaveEdit}
+                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors duration-200"
+                        >
+                          <Save className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={handleCancelEdit}
+                          className="p-2 text-gray-400 hover:bg-gray-50 rounded-lg transition-colors duration-200"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ) : (
+                  // Modo de visualização
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-4">
+                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
+                        bill.is_active ? 'bg-blue-500' : 'bg-gray-400'
+                      }`}>
+                        <Receipt className="h-6 w-6 text-white" />
                       </div>
                       
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-start">
-                          <div>
-                            <div className="flex items-center space-x-2">
-                              <h3 className="font-medium text-gray-900">{alert.title}</h3>
-                              <span className={`inline-flex items-center rounded-full w-2 h-2 ${getPriorityColor(alert.priority)}`}></span>
-                            </div>
-                            <p className="text-gray-600 mt-1">{alert.description}</p>
-                          </div>
+                      <div>
+                        <div className="flex items-center space-x-3">
+                          <h3 className="font-medium text-gray-800">{bill.name}</h3>
+                          
+                          {/* Main category tag */}
+                          <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
+                            {bill.category}
+                          </span>
+                          
+                          {bill.associated_with && bill.associated_name && (
+                            <span className={`text-xs px-2 py-1 rounded-full ${
+                              bill.associated_with === 'property' ? 'bg-orange-100 text-orange-700' :
+                              bill.associated_with === 'vehicle' ? 'bg-blue-100 text-blue-700' :
+                              bill.associated_with === 'employee' ? 'bg-purple-100 text-purple-700' :
+                              bill.associated_with === 'loan' ? 'bg-red-100 text-red-700' :
+                              'bg-gray-100 text-gray-700'
+                            } flex items-center space-x-1`}>
+                              {bill.associated_with === 'property' && <Home className="h-3 w-3" />}
+                              {bill.associated_with === 'vehicle' && <Car className="h-3 w-3" />}
+                              {bill.associated_with === 'employee' && <Users className="h-3 w-3" />}
+                              {bill.associated_with === 'loan' && <CreditCard className="h-3 w-3" />}
+                              <span>{bill.associated_name}</span>
+                            </span>
+                          )}
+
+                          {bill.is_goal_contribution && bill.financial_goal_id && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 flex items-center space-x-1">
+                              <Target className="h-3 w-3" />
+                              <span>Meta Financeira</span>
+                            </span>
+                          )}
+                          
+                          {getBillStatus(bill) === 'pending' && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 flex items-center space-x-1">
+                              <Tag className="h-3 w-3" />
+                              <span>Pendente</span>
+                            </span>
+                          )}
+                          {bill.payment_status === 'paid' && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 flex items-center space-x-1">
+                              <CheckCircle className="h-3 w-3" />
+                              <span>Pago</span>
+                            </span>
+                          )}
+                          {bill.payment_status === 'partial' && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 flex items-center space-x-1">
+                              <CheckCircle className="h-3 w-3" />
+                              <span>Pago Parcial</span>
+                            </span>
+                          )}
+                          {bill.payment_status === 'overdue' && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 flex items-center space-x-1">
+                              <AlertTriangle className="h-3 w-3" />
+                              <span>Atrasado</span>
+                            </span>
+                          )}
+                          {!bill.is_active && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
+                              Inativa
+                            </span>
+                          )}
                         </div>
                         
-                        <div className="flex items-center justify-between mt-3">
-                          <div className="flex items-center space-x-2">
-                            <Clock className="h-4 w-4 text-gray-400" />
-                            <span className="text-sm text-gray-500">
-                              {new Date(alert.date).toLocaleDateString('pt-BR')}
-                            </span>
-                          </div>
-                          
-                          <div className="flex items-center space-x-2">
-                            {alert.actionPath && (
-                              <button
-                                onClick={() => handleAlertAction(alert)}
-                                className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1"
-                              >
-                                <span>{alert.actionLabel || 'Ver detalhes'}</span>
-                                <ChevronRight className="h-4 w-4" />
-                              </button>
-                            )}
-                            
-                            {alert.type === 'bill' && (
-                              <button
-                                onClick={() => {
-                                  if (alert.relatedId) {
-                                    const billId = alert.relatedId;
-                                    // Call the mark_bill_as_paid function
-                                    fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/mark_bill_as_paid`, {
-                                      method: 'POST',
-                                      headers: {
-                                        'Content-Type': 'application/json',
-                                        'Authorization': `Bearer ${supabase.auth.getSession().then(({ data }) => data.session?.access_token)}`
-                                      },
-                                      body: JSON.stringify({ 
-                                        bill_id: billId,
-                                        payment_date_val: new Date().toISOString().split('T')[0]
-                                      })
-                                    }).then(() => {
-                                      // Mark alert as read
-                                      markAsRead(alert.id);
-                                      // Refresh alerts
-                                      generateAlerts();
-                                    });
-                                  }
-                                }}
-                                className="px-3 py-1 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600 transition-colors"
-                              >
-                                Marcar como Pago
-                              </button>
-                            )}
-                          </div>
+                        <div className="flex items-center space-x-2 mt-1">
+                          <span className="text-sm text-gray-500">{bill.company}</span>
+                          <span className="text-gray-300">•</span>
+                          <span className="text-sm text-gray-500">
+                            Vence dia {bill.due_day}
+                          </span>
+                          {bill.payment_status === 'paid' && bill.payment_date && (
+                            <>
+                              <span className="text-gray-300">•</span>
+                              <span className="text-sm text-green-600">
+                                Pago em {new Date(bill.payment_date).toLocaleDateString('pt-BR')}
+                              </span>
+                            </>
+                          )}
+                          {bill.last_paid && (
+                            <>
+                              {bill.payment_status !== 'paid' && (
+                                <>
+                                  <span className="text-gray-300">•</span>
+                                  <span className="text-sm text-gray-500">
+                                    Último pagamento: {new Date(bill.last_paid).toLocaleDateString('pt-BR')}
+                                  </span>
+                                </>
+                              )}
+                            </>
+                          )}
                         </div>
                       </div>
                     </div>
                     
-                    <div className="flex flex-col items-center ml-2">
-                      <button
-                        onClick={() => markAsRead(alert.id)}
-                        className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
+                    <div className="flex items-center space-x-3">
+                      <div className="text-right">
+                        <div className="flex items-center space-x-4">
+                          <div>
+                            <p className={`font-semibold text-lg ${bill.payment_status === 'paid' ? 'text-green-600' : 'text-gray-800'}`}>
+                              R$ {bill.amount.toLocaleString('pt-BR')}
+                            </p>
+                            {bill.financial_goal_id && (
+                              <p className="text-sm text-indigo-600">
+                                Meta: {financialGoals.find(g => g.id === bill.financial_goal_id)?.name || 'Meta Financeira'}
+                              </p>
+                            )}
+                            {bill.payment_status === 'paid' && bill.payment_date && (
+                              <p className="text-sm text-green-600">
+                                Pago em: {new Date(bill.payment_date).toLocaleDateString('pt-BR')}
+                              </p>
+                            )}
+                            {bill.is_active && (
+                              <p className="text-sm text-gray-500">
+                                Próximo: {new Date(bill.next_due).toLocaleDateString('pt-BR')}
+                              </p>
+                            )}
+                          </div>
+                          
+                          {/* Financial goal button */}
+                          {!isGoalContribution(bill) && financialGoals.length > 0 && (
+                            <div className="dropdown">
+                              <button
+                                className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors duration-200 relative group"
+                                title="Associar a uma meta financeira"
+                              >
+                                <Target className="h-4 w-4" />
+                                
+                                <div className="hidden group-hover:block absolute right-0 top-full mt-1 bg-white shadow-lg rounded-lg z-10 w-64 border border-gray-200">
+                                  <div className="p-2 text-xs font-medium text-gray-700 border-b border-gray-100">
+                                    Associar a uma meta:
+                                  </div>
+                                  <div className="max-h-48 overflow-y-auto">
+                                    {financialGoals.map(goal => (
+                                      <button
+                                        key={goal.id}
+                                        className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm flex items-center space-x-2"
+                                        onClick={() => associateBillWithGoal(bill.id, goal.id)}
+                                      >
+                                        <PiggyBank className="h-3 w-3 text-indigo-500" />
+                                        <span className="truncate">{goal.name}</span>
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </button>
+                            </div>
+                          )}
+
+                          {/* Email notification status */}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              toggleEmailReminder(bill.id);
+                            }}
+                            title={bill.send_email_reminder ? "Desativar notificações por email" : "Ativar notificações por email"}
+                            className={`p-1 rounded-full ${
+                              bill.send_email_reminder 
+                                ? 'text-blue-600 hover:bg-blue-50' 
+                                : 'text-gray-400 hover:bg-gray-50'
+                            } transition-colors duration-200`}
+                          >
+                            <Mail className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </div>
                       
-                      {alert.type === 'bill' && (
-                        <button
-                          onClick={() => window.location.href = '/bills'}
-                          className="mt-1 text-gray-400 hover:text-blue-600 p-1 rounded hover:bg-gray-100" 
-                          title="Ver em contas"
+                      <div className="flex items-center space-x-2">
+                        {bill.is_active && bill.payment_status !== 'paid' && (
+                          <button
+                            onClick={() => {
+                              const amount = prompt('Valor pago:', bill.amount.toString());
+                              if (amount !== null) {
+                                const method = prompt('Método de pagamento (opcional):', '');
+                                markAsPaid(bill.id, parseFloat(amount), method || undefined);
+                              }
+                            }}
+                            className="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs rounded-lg hover:from-green-600 hover:to-green-700 transition-colors duration-200 flex items-center"
+                          >
+                            <DollarSign className="h-3 w-3 mr-1" />
+                            <span>Pagar</span>
+                          </button>
+                        )}
+                        
+                        <button 
+                          onClick={() => handleEditBill(bill)}
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
                         >
-                          <FileText className="h-4 w-4" />
+                          <Edit className="h-4 w-4" />
                         </button>
-                      )}
-                      
-                      <button
-                        onClick={() => {
-                          // Call the send-alert-email edge function
-                          supabase.functions.invoke('send-alert-email', {
-                            body: { alertId: alert.id }
-                          }).then(() => {
-                            alert('Email de alerta enviado!');
-                          });
-                        }}
-                        className="mt-1 text-gray-400 hover:text-blue-600 p-1 rounded hover:bg-gray-100"
-                        title="Enviar por email"
-                      >
-                        <Mail className="h-4 w-4" />
-                      </button>
+                        <button 
+                          onClick={() => handleDeleteBill(bill.id)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-              
-              {filteredAlerts.length > 5 && !showAll && (
-                <div className="p-4 text-center">
-                  <button
-                    onClick={() => setShowAll(true)}
-                    className="text-blue-600 hover:text-blue-700 font-medium"
-                  >
-                    Ver todos os {filteredAlerts.length} alertas
-                  </button>
-                </div>
-              )}
-            </>
+                )}
+              </div>
+            ))
           )}
         </div>
       </div>
+
+      {/* Modal de adicionar conta */}
+      {showAddModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
+            <div className="p-6 border-b border-gray-100">
+              <h2 className="text-xl font-semibold text-gray-800">Nova Conta</h2>
+            </div>
+            
+            <form onSubmit={(e) => {
+              // Prevent default form submission behavior
+              e.preventDefault();
+              
+              // Extract form data
+              const formData = new FormData(e.currentTarget);
+              
+              // Get financial goal ID if bill is associated with a goal
+              let associated_with = null;
+              let associated_id = null;
+              let associated_name = null;
+              let financial_goal_id = null;
+              let is_goal_contribution = false;
+              
+              const associatedValue = formData.get('associated_with');
+              if (associatedValue) {
+                const [type, id] = (associatedValue as string).split('-');
+                
+                if (type === 'goal') {
+                  financial_goal_id = id;
+                  is_goal_contribution = true;
+                  
+                  // Find the goal for associated name
+                  const goal = financialGoals.find(g => g.id === id);
+                  if (goal) {
+                    associated_name = goal.name;
+                  }
+                } else {
+                  associated_with = type;
+                  associated_id = id;
+                  
+                  // Find proper name based on entity type
+                  if (type === 'property') {
+                    const property = properties.find(p => p.id === id);
+                    if (property) associated_name = property.address;
+                  } else if (type === 'vehicle') {
+                    const vehicle = vehicles.find(v => v.id === id);
+                    if (vehicle) associated_name = `${vehicle.brand} ${vehicle.model}`;
+                  } else if (type === 'employee') {
+                    const employee = employees.find(e => e.id === id);
+                    if (employee) associated_name = employee.name;
+                  } else if (type === 'loan') {
+                    const loan = loans.find(l => l.id === id);
+                    if (loan) associated_name = `${loan.type} - ${loan.bank}`;
+                  }
+                }
+              }
+              
+              // Create bill data
+              const billData = {
+                name: formData.get('name') as string,
+                company: formData.get('company') as string,
+                amount: Number(formData.get('amount')),
+                due_day: Number(formData.get('due_day')),
+                category: formData.get('category') as string,
+                is_recurring: formData.has('is_recurring'),
+                is_active: true,
+                last_paid: undefined,
+                next_due: undefined,
+                associated_with,
+                associated_id,
+                associated_name,
+                financial_goal_id,
+                is_goal_contribution
+              };
+              
+              // Handle bill creation
+              handleAddBill(billData);
+              
+            }} className="p-6 space-y-4">
+              <input
+                type="text"
+                name="name"
+                placeholder="Nome da conta (ex: Energia Elétrica)"
+                required
+                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              />
+              
+              <input
+                type="text"
+                name="company"
+                placeholder="Empresa (ex: CEMIG)"
+                required
+                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              />
+              
+              <div className="grid grid-cols-2 gap-4">
+                <input
+                  type="number"
+                  name="amount"
+                  placeholder="Valor (R$)"
+                  step="0.01"
+                  required
+                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                />
+                
+                <input
+                  type="number"
+                  name="due_day"
+                  placeholder="Dia do vencimento (1-31)"
+                  min="1"
+                  max="31"
+                  required
+                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                />
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Associar a Entidade (opcional)
+                </label>
+                
+                {properties.length > 0 && (
+                  <details className="mb-2">
+                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
+                      <Home className="h-4 w-4 mr-2 text-gray-600" />
+                      Imóveis
+                    </summary>
+                    <div className="ml-4 mt-2 space-y-2">
+                      {properties.map(property => (
+                        <label key={property.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="associated_with"
+                            value={`property-${property.id}`}
+                            className="rounded-full text-blue-600"
+                          />
+                          <span className="text-sm text-gray-700">{property.address}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                )}
+                
+                {vehicles.length > 0 && (
+                  <details className="mb-2">
+                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
+                      <Car className="h-4 w-4 mr-2 text-gray-600" />
+                      Veículos
+                    </summary>
+                    <div className="ml-4 mt-2 space-y-2">
+                      {vehicles.map(vehicle => (
+                        <label key={vehicle.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="associated_with"
+                            value={`vehicle-${vehicle.id}`}
+                            className="rounded-full text-blue-600"
+                          />
+                          <span className="text-sm text-gray-700">{vehicle.brand} {vehicle.model}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                )}
+                
+                {employees.length > 0 && (
+                  <details className="mb-2">
+                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
+                      <Users className="h-4 w-4 mr-2 text-gray-600" />
+                      Funcionários
+                    </summary>
+                    <div className="ml-4 mt-2 space-y-2">
+                      {employees.map(employee => (
+                        <label key={employee.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="associated_with"
+                            value={`employee-${employee.id}`}
+                            className="rounded-full text-blue-600"
+                          />
+                          <span className="text-sm text-gray-700">{employee.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                )}
+                
+                {loans.length > 0 && (
+                  <details className="mb-2">
+                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
+                      <CreditCard className="h-4 w-4 mr-2 text-gray-600" />
+                      Empréstimos
+                    </summary>
+                    <div className="ml-4 mt-2 space-y-2">
+                      {loans.map(loan => (
+                        <label key={loan.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="associated_with"
+                            value={`loan-${loan.id}`}
+                            className="rounded-full text-blue-600"
+                          />
+                          <span className="text-sm text-gray-700">{loan.bank} - {loan.type}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Associar a Meta Financeira (opcional)
+                </label>
+                
+                {financialGoals.length > 0 ? (
+                  <div className="space-y-2 border border-gray-200 rounded-lg p-3">
+                    <div className="flex items-center space-x-2 text-sm">
+                      <Target className="h-4 w-4 text-indigo-600" />
+                      <span className="font-medium text-gray-700">Metas Disponíveis</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-2 mt-2">
+                      {financialGoals.map(goal => (
+                        <label key={goal.id} className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
+                          <input
+                            type="radio"
+                            name="financial_goal_id"
+                            value={goal.id}
+                            className="text-indigo-600"
+                          />
+                          <div>
+                            <p className="text-sm font-medium text-gray-800">{goal.name}</p>
+                            <p className="text-xs text-gray-500">
+                              Meta: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(goal.target_amount)} | 
+                              Progresso: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(goal.current_amount)}
+                            </p>
+                          </div>
+                        </label>
+                      ))}
+                    </div>
+                    
+                    <div className="mt-2">
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" name="is_goal_contribution" className="rounded text-indigo-600" />
+                        <span className="text-sm text-gray-700">Marcar como contribuição para a meta</span>
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Quando esta conta for paga, o valor será automaticamente adicionado à meta selecionada.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <p className="text-sm text-gray-600">Você não tem metas financeiras ativas.</p>
+                    <a href="/?tab=financial-goals" className="text-sm text-indigo-600 hover:underline mt-1 inline-block">
+                      Criar uma meta financeira
+                    </a>
+                  </div>
+                )}
+              </div>
+              
+              <select
+                name="category"
+                required
+                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+              >
+                <option value="">Selecione uma categoria</option>
+                <option value="Utilidades">Utilidades</option>
+                <option value="Telecomunicações">Telecomunicações</option>
+                <option value="Cartão">Cartão</option>
+                <option value="Investimentos">Investimentos</option>
+                <option value="Financiamento">Financiamento</option>
+                <option value="Seguro">Seguro</option>
+                <option value="Assinatura">Assinatura</option>
+                <option value="Educação">Educação</option>
+                <option value="Saúde">Saúde</option>
+                <option value="Transporte">Transporte</option>
+                <option value="Outros">Outros</option>
+              </select>
+              
+              <label className="flex items-center space-x-2">
+                <input type="checkbox" name="is_recurring" className="rounded text-blue-600" defaultChecked />
+                <span className="text-gray-700">Conta recorrente (mensal)</span>
+              </label> 
+
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Associar Conta (opcional)
+                </label>
+
+                {financialGoals.length > 0 && (
+                  <details className="mb-2">
+                    <summary className="cursor-pointer py-2 px-3 bg-indigo-50 rounded-lg text-indigo-700 flex items-center">
+                      <Target className="h-4 w-4 mr-2 text-indigo-600" />
+                      Metas Financeiras
+                    </summary>
+                    <div className="ml-4 mt-2 space-y-2">
+                      {financialGoals.map(goal => (
+                        <label key={goal.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="associated_with"
+                            value={`goal-${goal.id}`}
+                            className="rounded-full text-indigo-600"
+                          />
+                          <span className="text-sm text-gray-700">{goal.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                )}
+                
+                {properties.length > 0 && (
+                  <details className="mb-2">
+                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
+                      <Home className="h-4 w-4 mr-2 text-gray-600" />
+                      Imóveis
+                    </summary>
+                    <div className="ml-4 mt-2 space-y-2">
+                      {properties.map(property => (
+                        <label key={property.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="associated_with"
+                            value={`property-${property.id}`}
+                            className="rounded-full text-blue-600"
+                          />
+                          <span className="text-sm text-gray-700">{property.address}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                )}
+                
+                {vehicles.length > 0 && (
+                  <details className="mb-2">
+                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
+                      <Car className="h-4 w-4 mr-2 text-gray-600" />
+                      Veículos
+                    </summary>
+                    <div className="ml-4 mt-2 space-y-2">
+                      {vehicles.map(vehicle => (
+                        <label key={vehicle.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="associated_with"
+                            value={`vehicle-${vehicle.id}`}
+                            className="rounded-full text-blue-600"
+                          />
+                          <span className="text-sm text-gray-700">{vehicle.brand} {vehicle.model}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                )}
+                
+                {employees.length > 0 && (
+                  <details className="mb-2">
+                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
+                      <Users className="h-4 w-4 mr-2 text-gray-600" />
+                      Funcionários
+                    </summary>
+                    <div className="ml-4 mt-2 space-y-2">
+                      {employees.map(employee => (
+                        <label key={employee.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="associated_with"
+                            value={`employee-${employee.id}`}
+                            className="rounded-full text-blue-600"
+                          />
+                          <span className="text-sm text-gray-700">{employee.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                )}
+                
+                {loans.length > 0 && (
+                  <details className="mb-2">
+                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
+                      <CreditCard className="h-4 w-4 mr-2 text-gray-600" />
+                      Empréstimos
+                    </summary>
+                    <div className="ml-4 mt-2 space-y-2">
+                      {loans.map(loan => (
+                        <label key={loan.id} className="flex items-center space-x-2 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="associated_with"
+                            value={`loan-${loan.id}`}
+                            className="rounded-full text-blue-600"
+                          />
+                          <span className="text-sm text-gray-700">{loan.bank} - {loan.type}</span>
+                        </label>
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </div>
+              
+              <div className="flex items-center space-x-2 mt-4">
+                <input type="checkbox" name="send_email_reminder" className="rounded text-blue-600" defaultChecked />
+                <label className="text-gray-700 flex items-center space-x-2">
+                  <Mail className="h-4 w-4 text-blue-500" />
+                  <span>Receber notificações por email</span>
+                </label>
+              </div>
+              
+              <div className="flex space-x-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setShowAddModal(false)}
+                  className="flex-1 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors duration-200"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200"
+                >
+                  Adicionar
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
