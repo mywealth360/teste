@@ -457,11 +457,11 @@ export default function Income() {
                               editForm.amount && (editForm.tax_rate !== undefined ? editForm.tax_rate : taxRate) > 0 
                                 ? ((editForm.amount * (editForm.tax_rate !== undefined ? editForm.tax_rate : taxRate)) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })
                                 : '0,00'
-                            } ({editForm.tax_rate !== undefined ? editForm.tax_rate : taxRate}%)
+                        R$ {source.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                           </p>
                         </div>
                         <p className="text-xs text-indigo-600 mt-1">
-                          Esta taxa será salva automaticamente e usada para cálculos de impostos.
+                          Imposto: R$ {((source.amount * source.tax_rate) / 100).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                         </p>
                       </div>
                       
