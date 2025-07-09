@@ -56,7 +56,7 @@ export default function RevenueManagement() {
   const fetchAllRevenues = async () => {
     try {
       setLoading(true);
-      setError(null); 
+      setError(null);
 
       // Buscar todos os tipos de receitas
       const [
@@ -92,7 +92,7 @@ export default function RevenueManagement() {
       // Processar investimentos com renda
       (investmentData.data || []).forEach(investment => {
         let monthlyIncome = 0;
-        
+
         // Calcular renda mensal com base no tipo de investimento
         if (investment.type === 'acoes' || investment.type === 'fundos-imobiliarios') {
           if (investment.dividend_yield && investment.quantity && investment.current_price) {
@@ -100,6 +100,9 @@ export default function RevenueManagement() {
             monthlyIncome = (currentValue * investment.dividend_yield) / 100 / 12;
           } else if (investment.monthly_income) {
             monthlyIncome = investment.monthly_income;
+          } else if (investment.dividend_yield && investment.amount) {
+            // Handle dividend yield without quantity/price but with amount
+            monthlyIncome = (investment.amount * investment.dividend_yield) / 100 / 12;
           }
         } else if (investment.interest_rate && investment.amount) {
           monthlyIncome = (investment.amount * investment.interest_rate) / 100 / 12;
@@ -108,7 +111,8 @@ export default function RevenueManagement() {
         }
         
         // Apenas adicionar se houver renda mensal
-        if (monthlyIncome > 0) {
+        // Only add investments that actually generate income
+        if (monthlyIncome > 0 && monthlyIncome != null) {
           allRevenues.push({
             id: `investment-${investment.id}`,
             type: 'investment',
@@ -221,12 +225,10 @@ export default function RevenueManagement() {
     const totalsByType = filtered.reduce((acc, revenue) => {
       const monthlyAmount = calculateMonthlyRevenue(revenue);
       // Ensure only valid revenue types are added (skip 'invest' if it doesn't exist)
-      if (monthlyAmount > 0 && !acc[revenue.type]) {
-        acc[revenue.type] = 0;
-      }
-      
-      // Only add to the total if there's actual revenue
       if (monthlyAmount > 0) {
+        if (!acc[revenue.type]) {
+          acc[revenue.type] = 0;
+        }
         acc[revenue.type] += monthlyAmount;
       }
       
@@ -472,10 +474,7 @@ export default function RevenueManagement() {
           </select>
 
           <button
-            onClick={() => {
-              // Export revenue categories data for dashboard
-              localStorage.setItem('revenueCategories', JSON.stringify(revenuesByCategory));
-            }}
+            onClick={() => fetchAllRevenues()}
             className="hidden"
           >
             Sync
@@ -626,10 +625,9 @@ export default function RevenueManagement() {
         </div>
       </div>
 
-      {/* Detalhamento de Receitas por Fonte */}
-      <div className="bg-white p-6 rounded-2xl shadow-lg">
-        <h2 className="text-xl font-semibold text-gray-800 mb-2">Detalhamento de Receitas</h2>
-        <p className="text-gray-500 mb-4 text-sm">Lista completa de todas as suas fontes de receita</p>
+      {/* Detalhamento por tipo */}
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-6">Detalhamento das Receitas</h2>
         <div className="space-y-6 max-h-96 overflow-y-auto pr-2">
           {/* Only show real estate section if there are entries */}
           {filteredRevenues.filter(r => r.type === 'real_estate').length > 0 && (
@@ -637,11 +635,97 @@ export default function RevenueManagement() {
               <h3 className="font-medium text-gray-700 border-b border-gray-200 pb-2 mb-3">Aluguéis de Imóveis</h3>
               <div className="space-y-2">
                 {filteredRevenues.filter(r => r.type === 'real_estate').map((revenue, idx) => (
-                </div>
-                <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                  <div key={`re-${idx}`} className="bg-orange-50 p-3 rounded-lg border border-orange-100">
+                    <div className="flex justify-between">
+                      <div>
+                        <p className="font-medium text-gray-800">{revenue.description}</p>
+                        <p className="text-sm text-gray-600">{revenue.source}</p>
+                      </div>
+                      <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
-          ))}
+          )}
+          
+          {/* Only show investments section if there are entries */}
+          {filteredRevenues.filter(r => r.type === 'investment').length > 0 && (
+            <div>
+              <h3 className="font-medium text-gray-700 border-b border-gray-200 pb-2 mb-3">Dividendos de Investimentos</h3>
+              <div className="space-y-2">
+                {filteredRevenues.filter(r => r.type === 'investment').map((revenue, idx) => (
+                  <div key={`inv-${idx}`} className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                    <div className="flex justify-between">
+                      <div>
+                        <div className="flex items-center">
+                          <p className="font-medium text-gray-800">{revenue.description}</p>
+                          {revenue.tax_rate && revenue.tax_rate > 0 && (
+                            <span className="ml-2 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
+                              IRPF {revenue.tax_rate}%
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">{revenue.source}</p>
+                      </div>
+                      <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Only show income sources section if there are entries */}
+          {filteredRevenues.filter(r => r.type === 'income_source' && r.category !== 'invest').length > 0 && (
+            <div>
+              <h3 className="font-medium text-gray-700 border-b border-gray-200 pb-2 mb-3">Fontes de Renda</h3>
+              <div className="space-y-2">
+                {filteredRevenues
+                  .filter(r => r.type === 'income_source' && r.category !== 'invest')
+                  .map((revenue, idx) => (
+                    <div key={`inc-${idx}`} className="bg-green-50 p-3 rounded-lg border border-green-100">
+                      <div className="flex justify-between">
+                        <div>
+                          <p className="font-medium text-gray-800">{revenue.description}</p>
+                          <p className="text-sm text-gray-600">{revenue.category} - {getFrequencyLabel(revenue.frequency)}</p>
+                        </div>
+                        <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Only show transactions section if there are entries */}
+          {filteredRevenues.filter(r => r.type === 'transaction' && r.category !== 'invest').length > 0 && (
+            <div>
+              <h3 className="font-medium text-gray-700 border-b border-gray-200 pb-2 mb-3">Outras Receitas</h3>
+              <div className="space-y-2">
+                {filteredRevenues
+                  .filter(r => r.type === 'transaction' && r.category !== 'invest')
+                  .map((revenue, idx) => (
+                    <div key={`trans-${idx}`} className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+                      <div className="flex justify-between">
+                        <div>
+                          <p className="font-medium text-gray-800">{revenue.description}</p>
+                          <p className="text-sm text-gray-600">{revenue.category}</p>
+                        </div>
+                        <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+          
+          {filteredRevenues.length === 0 && (
+            <div className="text-center py-8">
+              <DollarSign className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">Nenhuma receita encontrada para os filtros selecionados.</p>
+            </div>
+          )}
         </div>
       </div>
 
