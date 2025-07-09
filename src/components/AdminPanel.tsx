@@ -288,49 +288,49 @@ export default function AdminPanel() {
 
       {/* Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-blue-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Total de Usuários</p>
+              <p className="text-white/80 text-sm font-medium">Total de Usuários</p>
               <p className="text-3xl font-bold mt-1">{users.length}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <Users className="h-6 w-6" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-green-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm font-medium">Plano Starter</p>
+              <p className="text-white/80 text-sm font-medium">Plano Starter</p>
               <p className="text-3xl font-bold mt-1">{users.filter(u => u.plan === 'starter').length}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <CreditCard className="h-6 w-6" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-indigo-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100 text-sm font-medium">Plano Family</p>
+              <p className="text-white/80 text-sm font-medium">Plano Family</p>
               <p className="text-3xl font-bold mt-1">{users.filter(u => u.plan === 'family').length}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <Users className="h-6 w-6" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-red-500 to-red-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-red-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-red-100 text-sm font-medium">Administradores</p>
+              <p className="text-white/80 text-sm font-medium">Administradores</p>
               <p className="text-3xl font-bold mt-1">{users.filter(u => u.is_admin).length}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <Shield className="h-6 w-6" />
             </div>
           </div>
@@ -571,7 +571,7 @@ export default function AdminPanel() {
                 <button
                   type="button"
                   onClick={handleSaveEdit}
-                  className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200"
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200"
                 >
                   Salvar Alterações
                 </button>
@@ -611,7 +611,7 @@ export default function AdminPanel() {
                 <button
                   type="button"
                   onClick={confirmDeleteUser}
-                  className="flex-1 py-3 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-xl hover:from-red-600 hover:to-red-700 transition-all duration-200"
+                  className="flex-1 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-all duration-200"
                 >
                   Excluir Usuário
                 </button>

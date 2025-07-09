@@ -138,7 +138,7 @@ export default function AIInsights() {
 
       {/* Cards de resumo */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-2xl shadow-lg border border-orange-100">
+        <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-orange-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-orange-600 text-sm font-medium">Alertas Ativos</p>
@@ -152,7 +152,7 @@ export default function AIInsights() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-lg border border-blue-100">
+        <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-blue-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-blue-600 text-sm font-medium">Sugestões</p>
@@ -166,7 +166,7 @@ export default function AIInsights() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-lg border border-green-100">
+        <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-green-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-green-600 text-sm font-medium">Conquistas</p>
@@ -180,7 +180,7 @@ export default function AIInsights() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-2xl shadow-lg border border-indigo-100">
+        <div className="bg-white p-6 rounded-xl shadow-md border-l-4 border-indigo-500">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-indigo-600 text-sm font-medium">Novos Recursos</p>
@@ -194,13 +194,13 @@ export default function AIInsights() {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-indigo-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100 text-sm font-medium">Score IA</p>
+              <p className="text-white/80 text-sm font-medium">Score IA</p>
               <p className="text-2xl font-bold mt-1">87/100</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <Zap className="h-6 w-6" />
             </div>
           </div>
@@ -245,10 +245,10 @@ export default function AIInsights() {
           {['all', 'feature', 'warning', 'suggestion', 'achievement'].map((filter) => (
             <button
               key={filter}
-              onClick={() => setSelectedFilter(filter as any)}
+              className="mt-3 w-full py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200 shadow-md flex items-center justify-center space-x-2"
               className={`px-4 py-2 rounded-xl font-medium transition-all duration-200 ${
                 selectedFilter === filter
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                  ? 'bg-blue-600 text-white shadow-md'
                   : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
               }`}
             >
@@ -298,7 +298,7 @@ export default function AIInsights() {
                       
                       <div className="flex space-x-3">
                         {insight.type === 'suggestion' && (
-                          <button className={`px-4 py-2 ${colors.button} text-white rounded-lg text-sm font-medium transition-colors duration-200`}>
+                          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors duration-200">
                             Aplicar Sugestão
                           </button>
                         )}

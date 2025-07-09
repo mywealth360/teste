@@ -2,7 +2,7 @@ import React from 'react';
 
 export default function Footer() {
   return (
-    <footer className="bg-gradient-to-r from-blue-600 to-purple-700 text-white py-6">
+    <footer className="bg-blue-600 text-white py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <div className="flex flex-col items-center justify-center">
           <h2 className="text-xl font-bold text-white mb-2">PROSPERA.AI</h2>

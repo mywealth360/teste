@@ -266,7 +266,7 @@ export default function PhoneVerification({ onVerified, className = '' }: PhoneV
             <button
               type="submit"
               disabled={loading || verificationCode.length !== 6}
-              className="flex-1 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
+              className="w-full py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center space-x-2 shadow-md"
             >
               {loading ? 'Verificando...' : 'Verificar Código'}
             </button>

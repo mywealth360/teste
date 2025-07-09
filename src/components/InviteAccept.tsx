@@ -276,7 +276,7 @@ export default function InviteAccept() {
             <button
               type="button"
               onClick={() => setAuthMode(authMode === 'login' ? 'register' : 'login')}
-              className="text-blue-600 hover:text-blue-700 text-sm font-medium transition-colors duration-200"
+              className="w-full py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 flex items-center justify-center space-x-2 shadow-md"
             >
               {authMode === 'login' 
                 ? 'Não tem conta? Criar uma agora' 

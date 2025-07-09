@@ -18,8 +18,8 @@ export default function HeroSection({ onRegisterClick }: HeroSectionProps) {
             <span>Teste Grátis por 7 Dias • Cancele quando quiser</span>
           </div>
           
-          <h1 className="text-5xl md:text-7xl font-bold text-gray-800 mb-6">
-            <span className="text-blue-600">PROSPERA.AI</span>
+          <h1 className="text-5xl md:text-7xl font-bold mb-6">
+            <span className="bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">PROSPERA.AI</span>
             <span className="block">Controle Patrimonial Familiar Inteligente</span>
           </h1>
           
@@ -31,7 +31,7 @@ export default function HeroSection({ onRegisterClick }: HeroSectionProps) {
             <SubscriptionButton
               priceId={products[0].priceId}
               mode="subscription"
-              className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 flex items-center space-x-2 shadow-lg"
+              className="bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-md"
             >
               <span>Começar Teste Grátis</span>
               <ArrowRight className="h-5 w-5 ml-2" />

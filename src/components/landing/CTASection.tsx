@@ -4,7 +4,7 @@ import { products } from '../../stripe-config';
 
 export default function CTASection() {
   return (
-    <section className="py-20 bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 text-white">
+    <section className="py-20 bg-slate-900 text-white">
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h2 className="text-4xl md:text-5xl font-bold mb-6">
           Pronto para transformar seu patrimônio?
@@ -16,7 +16,7 @@ export default function CTASection() {
           <SubscriptionButton
             priceId={products[0].priceId}
             mode="subscription"
-            className="bg-gradient-to-r from-blue-500 to-purple-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-lg hover:shadow-xl"
+            className="bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition-all duration-200 shadow-md"
           >
             Começar Teste Grátis
           </SubscriptionButton>

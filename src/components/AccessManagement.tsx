@@ -281,7 +281,7 @@ export default function AccessManagement() {
         </div>
         <button 
           onClick={() => setShowInviteModal(true)}
-          className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-md"
+          className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-md"
         >
           <UserPlus className="h-4 w-4" />
           <span>Convidar Usuário</span>
@@ -296,39 +296,39 @@ export default function AccessManagement() {
 
       {/* Resumo */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-blue-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-blue-100 text-sm font-medium">Acessos Compartilhados</p>
+              <p className="text-white/80 text-sm font-medium">Acessos Compartilhados</p>
               <p className="text-3xl font-bold mt-1">{sharedAccesses.length}</p>
-              <p className="text-blue-100 text-sm">de 5 disponíveis</p>
+              <p className="text-white/80 text-sm">de 5 disponíveis</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <Users className="h-6 w-6" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-green-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm font-medium">Convites Pendentes</p>
+              <p className="text-white/80 text-sm font-medium">Convites Pendentes</p>
               <p className="text-3xl font-bold mt-1">{pendingInvites.length}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <Mail className="h-6 w-6" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-indigo-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-purple-100 text-sm font-medium">Seu Plano</p>
+              <p className="text-white/80 text-sm font-medium">Seu Plano</p>
               <p className="text-3xl font-bold mt-1">Family</p>
-              <p className="text-purple-100 text-sm">Compartilhamento ilimitado</p>
+              <p className="text-white/80 text-sm">Compartilhamento ilimitado</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <Shield className="h-6 w-6" />
             </div>
           </div>
@@ -498,7 +498,7 @@ export default function AccessManagement() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-md"
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-md"
                 >
                   Enviar Convite
                 </button>

@@ -162,38 +162,38 @@ export default function Dashboard() {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-green-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-green-100 text-sm font-medium">Receita Mensal</p>
+              <p className="text-white/80 text-sm font-medium">Receita Mensal</p>
               <p className="text-3xl font-bold mt-1">{formatCurrency(dashboardData.totalMonthlyIncome || 0)}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl cursor-pointer" onClick={() => navigate('/revenues')}>
+            <div className="bg-white/20 p-3 rounded-lg cursor-pointer" onClick={() => navigate('/revenues')}>
               <TrendingUp className="h-6 w-6" />
             </div>
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-red-500 to-red-600 p-6 rounded-2xl text-white shadow-lg">
+        <div className="bg-red-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-red-100 text-sm font-medium">Despesa Mensal</p>
+              <p className="text-white/80 text-sm font-medium">Despesa Mensal</p>
               <p className="text-3xl font-bold mt-1">{formatCurrency(dashboardData.totalMonthlyExpenses || 0)}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl cursor-pointer" onClick={() => navigate('/expenses')}>
+            <div className="bg-white/20 p-3 rounded-lg cursor-pointer" onClick={() => navigate('/expenses')}>
               <TrendingDown className="h-6 w-6" />
             </div>
           </div>
         </div>
 
-        <div className={`bg-gradient-to-br ${dashboardData.netMonthlyIncome >= 0 ? 'from-blue-500 to-blue-600' : 'from-orange-500 to-orange-600'} p-6 rounded-2xl text-white shadow-lg`}>
+        <div className={`${dashboardData.netMonthlyIncome >= 0 ? 'bg-blue-600' : 'bg-orange-600'} p-6 rounded-xl text-white shadow-md`}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/80 text-sm font-medium">Saldo Mensal</p>
               <p className="text-3xl font-bold mt-1">{formatCurrency(Math.abs(dashboardData.netMonthlyIncome || 0))}</p>
               <p className="text-white/80 text-sm">{dashboardData.netMonthlyIncome >= 0 ? 'Positivo' : 'Negativo'}</p>
             </div>
-            <div className="bg-white/20 p-3 rounded-xl">
+            <div className="bg-white/20 p-3 rounded-lg">
               <DollarSign className="h-6 w-6" />
             </div>
           </div>

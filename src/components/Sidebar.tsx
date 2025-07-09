@@ -143,9 +143,9 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
               onClick={() => handleTabClick(item.id, item.restricted)}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
                 activeTab === item.id
-                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                  ? 'bg-blue-600 text-white shadow-md'
                   : isRestricted
-                    ? 'text-gray-400 cursor-not-allowed opacity-70'
+                 ? 'bg-blue-600 text-white shadow-md' 
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
               }`}
               disabled={isRestricted && userPlan === 'starter'}
@@ -167,8 +167,8 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
     <div className="w-72 bg-white shadow-xl border-r border-gray-100 h-screen fixed left-0 top-0 z-30 overflow-y-auto">
       <div className="p-2 border-b border-gray-100">
         <div className="flex items-center justify-between py-4 px-2">
-          <h1 className="text-xl font-bold text-blue-600">PROSPERA.AI</h1>
-          <p className="text-xs text-gray-500">Gestão Financeira Familiar</p>
+          <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">PROSPERA.AI</h1>
+          <span className="text-xs text-gray-500 border-l border-gray-200 pl-2">Gestão Financeira</span>
         </div>
       </div>
      
@@ -188,7 +188,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                 onClick={() => handleTabClick(item.id, item.restricted)}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium ${
                   activeTab === item.id
-                    ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                    ? 'bg-blue-600 text-white shadow-md'
                     : isRestricted
                       ? 'text-gray-400 cursor-not-allowed opacity-70'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
@@ -304,7 +304,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       {/* Profile dropdown */}
       {showProfileDropdown && (
         <div className="absolute top-12 right-0 bg-white rounded-xl shadow-xl border border-gray-100 w-64 overflow-hidden">
-        <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-xl text-white mb-4">
+        <div className="bg-blue-600 p-3 rounded-xl text-white mb-4">
           <div className="flex items-center justify-between">
             <div className="flex-1 cursor-pointer" onClick={() => setActiveTab('subscription')}>
               <h2 className="text-sm font-bold text-white">
@@ -320,7 +320,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
             {isAdmin && (
               <div className="flex items-center space-x-1">
                 <Crown className="h-3 w-3 text-yellow-300" />
-                <span className="text-xs text-white font-medium">Admin</span>
+               className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-bold bg-red-600 text-white shadow-md hover:bg-red-700"
               </div> 
             )}
           </div>

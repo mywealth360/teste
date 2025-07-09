@@ -14,9 +14,9 @@ export default function Header({ onLoginClick, onRegisterClick }: HeaderProps) {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Left side - Logo */}
-          <div className="flex items-center">
-            <h1 className="text-2xl font-bold text-blue-600">PROSPERA.AI</h1>
-            <p className="text-sm text-gray-500 ml-2">Gestão Financeira Familiar</p>
+          <div className="flex items-center space-x-2">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">PROSPERA.AI</h1>
+            <span className="text-sm text-gray-500 border-l border-gray-200 pl-2">Gestão Financeira</span>
           </div>
           
           {/* Center - Navigation */}

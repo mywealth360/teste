@@ -132,8 +132,8 @@ export default function PricingSection() {
                   onClick={handlePlanClick}
                   className={`w-full py-3 rounded-xl font-semibold transition-all duration-200 ${
                     plan.popular
-                      ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white hover:from-blue-600 hover:to-purple-700 shadow-lg hover:shadow-xl'
-                      : 'bg-gradient-to-r from-blue-500 to-blue-600 text-white hover:from-blue-600 hover:to-blue-700 shadow-lg hover:shadow-xl'
+                      ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
+                      : 'bg-blue-600 text-white hover:bg-blue-700 shadow-md'
                   }`}
                 >
                   {plan.name === 'Starter' ? 'Começar Gratuitamente' : 'Assinar Agora'}

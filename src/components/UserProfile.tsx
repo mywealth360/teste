@@ -395,7 +395,7 @@ export default function UserProfile() {
               <div className="flex justify-end">
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-200 shadow-md"
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-md"
                 >
                   {saving ? 'Salvando...' : 'Salvar Alterações'}
                 </button>
