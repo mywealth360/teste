@@ -72,6 +72,30 @@ export default function Dashboard() {
 
   const [selectedBreakdown, setSelectedBreakdown] = useState<string | null>(null);
 
+  // Load revenue categories from localStorage
+  const [revenueCategories, setRevenueCategories] = useState<Record<string, number>>({});
+  
+  useEffect(() => {
+    const savedCategories = localStorage.getItem('revenueCategories');
+    if (savedCategories) {
+      try {
+        setRevenueCategories(JSON.parse(savedCategories));
+      } catch (err) {
+        console.error('Error parsing revenue categories:', err);
+      }
+    }
+    
+    // Clear localStorage data older than 24 hours
+    const lastUpdate = localStorage.getItem('revenueCategoriesTimestamp');
+    if (lastUpdate && (Date.now() - parseInt(lastUpdate)) > 24 * 60 * 60 * 1000) {
+      localStorage.removeItem('revenueCategories');
+      localStorage.removeItem('revenuesByType');
+      localStorage.removeItem('revenueCategoriesTimestamp');
+    } else if (!lastUpdate) {
+      localStorage.setItem('revenueCategoriesTimestamp', Date.now().toString());
+    }
+  }, []);
+
   // Calculate total monthly expenses including all categories
   const totalMonthlyExpensesComplete = totalMonthlyExpenses + totalLoanPayments + totalBills + 
     totalRetirementContribution + totalRealEstateExpenses + totalVehicleExpenses + 
@@ -558,6 +582,43 @@ export default function Dashboard() {
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
+          
+          <div className="mt-6 border-t border-gray-100 pt-4">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Receitas por Categoria</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {Object.keys(revenueCategories).length > 0 ? (
+                Object.entries(revenueCategories).map(([category, amount]) => (
+                  <div key={category} className="bg-gradient-to-br from-green-50 to-emerald-50 p-4 rounded-xl border border-green-100">
+                    <div className="flex justify-between items-center mb-2">
+                      <h4 className="font-medium text-gray-800 capitalize">{category}</h4>
+                      <span className="text-sm text-green-600">
+                        {totalMonthlyIncome > 0 ? `${((amount / totalMonthlyIncome) * 100).toFixed(1)}%` : '0%'}
+                      </span>
+                    </div>
+                    <p className="text-xl font-bold text-green-700">
+                      R$ {amount.toLocaleString('pt-BR', {minimumFractionDigits: 2})}
+                    </p>
+                    <div className="w-full bg-green-200 rounded-full h-2 mt-2">
+                      <div
+                        className="bg-gradient-to-r from-green-500 to-emerald-500 h-2 rounded-full"
+                        style={{ width: totalMonthlyIncome > 0 ? `${(amount / totalMonthlyIncome) * 100}%` : '0%' }}
+                      ></div>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="col-span-3 bg-blue-50 p-4 rounded-xl border border-blue-100 text-center">
+                  <p className="text-blue-700">Visite a seção de "Gestão de Receitas" para ver suas fontes de renda por categoria.</p>
+                  <button
+                    onClick={() => setActiveTab('revenues')}
+                    className="mt-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    Ver Receitas
+                  </button>
+                </div>
+              )}
             </div>
           </div>
           

@@ -46,7 +46,7 @@ export function useSupabaseData() {
       // Fetch all data in parallel - income must be fetched first as other functions depend on it
       // First fetch income since other functions depend on it
       await fetchIncome();
-
+      
       // Then fetch the rest in parallel
       await Promise.all([
         fetchExpenses(),
@@ -80,7 +80,11 @@ export function useSupabaseData() {
       // Final validation to ensure consistent totals
       // Make sure total monthly income includes all sources
       const validatedTotalMonthlyIncome = totalMonthlyIncome + totalInvestmentIncome + totalRealEstateIncome;
-      setTotalMonthlyIncome(validatedTotalMonthlyIncome);
+      
+      // Only update if we have income - otherwise keep previous calculation
+      if (validatedTotalMonthlyIncome > 0) {
+        setTotalMonthlyIncome(validatedTotalMonthlyIncome);
+      }
 
       // Calculate total taxes
       await calculateTotalTaxes();
@@ -197,6 +201,9 @@ export function useSupabaseData() {
           // Use monthly_income if provided
           if (investment.monthly_income) {
             currentInvestmentMonthlyIncome = investment.monthly_income;
+          } else if (investment.dividend_yield && investment.amount) {
+            // If amount and dividend yield are available (for funds without quantity/price)
+            currentInvestmentMonthlyIncome = (investment.amount * investment.dividend_yield) / 100 / 12;
           }
         }
         
@@ -533,6 +540,8 @@ export function useSupabaseData() {
               monthlyIncome = (currentValue * investment.dividend_yield) / 100 / 12;
             } else if (investment.monthly_income) {
               monthlyIncome = investment.monthly_income;
+            } else if (inv.monthly_income) {
+              currentInvestmentMonthlyIncome = inv.monthly_income;
             }
           } else if (investment.interest_rate && investment.amount) {
             monthlyIncome = (investment.amount * investment.interest_rate) / 100 / 12;
