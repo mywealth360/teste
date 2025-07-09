@@ -34,6 +34,7 @@ import SubscriptionStatus from './SubscriptionStatus';
 import SubscriptionButton from './subscription/SubscriptionButton';
 import { products } from '../stripe-config';
 import UpgradeModal from './UpgradeModal';
+import { Link } from 'react-router-dom';
 
 interface SidebarProps {
   activeTab: string;
@@ -154,23 +155,14 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   return (
     <div className="w-64 bg-white shadow-xl border-r border-gray-100 h-screen fixed left-0 top-0 z-30 overflow-y-auto flex flex-col">
       <div className="p-2 border-b border-gray-100">
-        <div className="flex justify-center">
-          <div className="flex justify-center items-center">
-            <img 
-              src="https://i.postimg.cc/KzBTcWJw/Chat-GPT-Image-6-de-jul-de-2025-22-28-23.png" 
-              alt="My Wealth 360"
-              className="h-24 w-auto object-contain"
-              style={{ marginTop: '-10px', marginBottom: '-10px', transform: 'scale(1.2)' }}
-            />
-          </div>
-        </div>
+        <h1 className="text-xl font-bold text-center text-gray-800">MyWealth 360</h1>
       </div>
       
       {/* Subscription Status */}
       <div className="p-4 border-b border-gray-100">
         <div className="bg-gradient-to-r from-blue-500 to-purple-600 p-3 rounded-xl text-white">
           <div className="flex items-center justify-between">
-            <div className="flex-1">
+            <div className="flex-1 cursor-pointer" onClick={() => setActiveTab('subscription')}>
               <h2 className="text-sm font-bold text-white">
                 Plano {userPlan === 'family' ? 'Family' : 'Starter'} 
                 {isInTrial && <span className="ml-1 text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full">Trial</span>}
@@ -341,6 +333,18 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           >
             <User className="h-4 w-4" />
             <span>Meu Perfil</span>
+          </button>
+          
+          <button
+            onClick={() => setActiveTab('subscription')}
+            className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+              activeTab === 'subscription'
+                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600'
+            }`}
+          >
+            <Crown className="h-4 w-4" />
+            <span>Assinatura</span>
           </button>
           
           {isAdmin && (

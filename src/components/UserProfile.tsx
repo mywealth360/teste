@@ -3,6 +3,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { User, Settings, Phone, Calendar, MapPin, Mail, Shield, CreditCard, CheckCircle, AlertTriangle } from 'lucide-react';
 import PhoneVerification from './PhoneVerification';
+import { Link } from 'react-router-dom';
 
 interface Profile {
   id: string;
@@ -143,10 +144,19 @@ export default function UserProfile() {
                 <p className="text-sm text-gray-600">Plano Atual</p>
                 <div className="flex items-center mt-1">
                   <CreditCard className="h-4 w-4 text-blue-600 mr-2" />
-                  <p className="font-semibold text-gray-900 capitalize">
-                    {userPlan === 'family' ? 'Family' : 'Starter'}
-                    {isInTrial && <span className="ml-2 text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full">Trial</span>}
-                  </p>
+                  <div className="flex items-center">
+                    <p className="font-semibold text-gray-900 capitalize">
+                      {userPlan === 'family' ? 'Family' : 'Starter'}
+                      {isInTrial && <span className="ml-2 text-xs bg-green-500 text-white px-1.5 py-0.5 rounded-full">Trial</span>}
+                    </p>
+                    <Link 
+                      to="#" 
+                      onClick={() => setActiveTab('subscription')}
+                      className="ml-2 text-xs text-blue-600 hover:text-blue-800 hover:underline"
+                    >
+                      Alterar
+                    </Link>
+                  </div>
                 </div>
               </div>
               
