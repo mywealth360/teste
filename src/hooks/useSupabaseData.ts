@@ -224,13 +224,20 @@ export default function RevenueManagement() {
     // Calculate totals by source type
     const totalsByType = filtered.reduce((acc, revenue) => {
       const monthlyAmount = calculateMonthlyRevenue(revenue);
+      // Ensure only valid revenue types are added (skip 'invest' if it doesn't exist)
+      if (monthlyAmount > 0 && !acc[revenue.type]) {
       if (monthlyAmount > 0) {
         if (!acc[revenue.type]) {
           acc[revenue.type] = 0;
         }
         acc[revenue.type] += monthlyAmount;
       }
-      return acc;
+      
+      // Only add to the total if there's actual revenue
+      if (monthlyAmount > 0) {
+        acc[revenue.type] += monthlyAmount;
+      }
+      
     }, {} as Record<string, number>);
 
     // Update localStorage with data for dashboard
@@ -260,6 +267,13 @@ export default function RevenueManagement() {
       localStorage.setItem('revenuesByType', JSON.stringify({
         data: validTypes,
         timestamp
+      }));
+        data: revenuesByCategory,
+        timestamp: timestamp
+      }));
+      localStorage.setItem('revenuesByType', JSON.stringify({
+        data: totalsByType,
+        timestamp: timestamp
       }));
     }
 
@@ -613,19 +627,6 @@ export default function RevenueManagement() {
                     className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full"
                     style={{ width: `${(totalsByType['transaction'] / totalRevenues) * 100}%` }}
                   ></div>
-                </div>
-                <p className="text-xs text-purple-600 mt-1 text-right">
-                  {((totalsByType['transaction'] / totalRevenues) * 100).toFixed(1)}%
-                </p>
-              </div>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Detalhamento por seção */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">Detalhamento das Receitas</h2>
         <div className="space-y-6 max-h-96 overflow-y-auto pr-2">
           {/* Only show real estate section if there are entries */}
           {filteredRevenues.filter(r => r.type === 'real_estate').length > 0 && (
@@ -666,7 +667,16 @@ export default function RevenueManagement() {
                         </div>
                         <p className="text-sm text-gray-600">{revenue.source}</p>
                       </div>
-                      <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { m
+                          )
+                          }
+              )
+            }
+            )
+          )
+          }
+  )
+}inimumFractionDigits: 2 })}</p>
                     </div>
                   </div>
                 ))}
