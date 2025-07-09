@@ -1,410 +1,109 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Plus, Receipt, Calendar, Building, Bell, Edit, Trash2, AlertTriangle, Save, X, 
-  CheckCircle, Tag, Home, Car, Users, CreditCard, Target, FileText, Mail, DollarSign, Clock, PiggyBank, Shield
+  Bell,
+  TrendingUp, 
+  TrendingDown, 
+  DollarSign,
+  Target,
+  Brain,
+  AlertTriangle,
+  CheckCircle,
+  Lightbulb,
+  Home,
+  Building,
+  Shield,
+  CreditCard,
+  Banknote,
+  Clock,
+  X,
+  Receipt,
+  Calendar,
+  FileText,
+  Landmark,
+  Wallet,
+  BarChart3,
+  Car,
+  Gem,
+  Users,
+  ChevronRight,
+  PiggyBank
 } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import { useAuth } from '../contexts/AuthContext';
+import { useSupabaseData } from '../hooks/useSupabaseData';
+import { useMonthlyRenewal } from '../hooks/useMonthlyRenewal';
+import { aiInsights } from '../data/mockData';
+import { useNavigate } from 'react-router-dom';
+import AlertsIndicator from './AlertsIndicator';
+import WealthEvolutionChart from './WealthEvolutionChart';
+import FinancialBreakdown from './FinancialBreakdown';
 
-interface Bill {
-  id: string;
-  name: string;
-  company: string;
-  amount: number;
-  due_day: number;
-  payment_status?: 'pending' | 'paid' | 'overdue' | 'partial';
-  payment_date?: string;
-  payment_amount?: number;
-  payment_method?: string;
-  send_email_reminder?: boolean;
-  reminder_days_before?: number;
-  category: string;
-  is_recurring: boolean;
-  is_active: boolean;
-  last_paid?: string;
-  next_due: string;
-  created_at: string;
-  updated_at: string;
-  associated_with?: 'property' | 'vehicle' | 'employee' | 'loan';
-  associated_id?: string;
-  associated_name?: string;
-  financial_goal_id?: string;
-  is_goal_contribution?: boolean;
-}
+export default function Dashboard() {
+  const navigate = useNavigate();
+  const {
+    totalMonthlyIncome,
+    totalMonthlyExpenses,
+    netMonthlyIncome,
+    totalInvestmentValue,
+    totalInvestmentIncome,
+    totalRealEstateValue,
+    totalRealEstateIncome,
+    totalRealEstateExpenses,
+    totalRetirementSaved,
+    totalRetirementContribution,
+    totalDebt,
+    totalLoanPayments,
+    totalBills,
+    totalBankBalance,
+    totalVehicleValue,
+    totalVehicleDepreciation,
+    totalVehicleExpenses,
+    totalExoticAssetsValue,
+    totalExoticAssetsAppreciation,
+    totalFinancialGoals,
+    totalAssets,
+    netWorth,
+    totalTaxes,
+    loading,
+    error
+  } = useSupabaseData();
 
-interface FinancialGoal {
-  id: string;
-  name: string;
-  target_amount: number;
-  current_amount: number;
-  target_date: string;
-}
+  // Ativar renovação automática mensal
+  useMonthlyRenewal();
 
-interface BillCategory {
-  value: string;
-  label: string;
-  icon: React.ComponentType<any>;
-  color?: string;
-}
+  const [selectedBreakdown, setSelectedBreakdown] = useState<string | null>(null);
 
-const categories: BillCategory[] = [
-  { value: 'Utilidades', label: 'Utilidades', icon: Building },
-  { value: 'Telecomunicações', label: 'Telecomunicações', icon: Receipt },
-  { value: 'Cartão', label: 'Cartão', icon: CreditCard },
-  { value: 'Financiamento', label: 'Financiamento', icon: CreditCard },
-  { value: 'Seguro', label: 'Seguro', icon: Shield },
-  { value: 'Assinatura', label: 'Assinatura', icon: Calendar },
-  { value: 'Educação', label: 'Educação', icon: FileText },
-  { value: 'Saúde', label: 'Saúde', icon: Shield },
-  { value: 'Transporte', label: 'Transporte', icon: Car },
-  { value: 'Imóvel', label: 'Imóvel', icon: Home },
-  { value: 'Veículo', label: 'Veículo', icon: Car },
-  { value: 'Funcionário', label: 'Funcionário', icon: Users },
-  { value: 'Encargos Sociais', label: 'Encargos Sociais', icon: Users },
-  { value: 'Outros', label: 'Outros', icon: Receipt }
-];
+  // Calculate total monthly expenses including all categories
+  const totalMonthlyExpensesComplete = totalMonthlyExpenses + totalLoanPayments + totalBills + 
+    totalRetirementContribution + totalRealEstateExpenses + totalVehicleExpenses + 
+    totalTaxes;
 
-/* 
-Original categories array - keeping as a fallback
-  'Utilidades', 'Telecomunicações', 'Cartão', 'Financiamento', 'Seguro',
-  'Assinatura', 'Educação', 'Saúde', 'Transporte', 'Outros'
-*/
+  // Calculate total monthly income including all sources (ensure it's never negative)
+  const totalMonthlyIncomeComplete = Math.max(0, totalMonthlyIncome + totalInvestmentIncome + totalRealEstateIncome);
 
-export default function Bills() {
-  const { user } = useAuth();
-  
-  const [bills, setBills] = useState<Bill[]>([]);
-  const [financialGoals, setFinancialGoals] = useState<FinancialGoal[]>([]);
-  
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<Partial<Bill>>({});
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [pendingCount, setPendingCount] = useState(0);
+  // Calculate net monthly income
+  const netMonthlyIncomeComplete = totalMonthlyIncomeComplete - totalMonthlyExpensesComplete; 
 
-  // Properties, Vehicles, and Employees for associating bills
-  const [properties, setProperties] = useState<any[]>([]);
-  const [vehicles, setVehicles] = useState<any[]>([]);
-  const [employees, setEmployees] = useState<any[]>([]);
-  const [loans, setLoans] = useState<any[]>([]);
+  // Calculate liquid assets (bank accounts + easily liquidated investments)
+  const liquidAssets = totalBankBalance + (totalInvestmentValue * 0.7); // Assuming 70% of investments are liquid
 
-  useEffect(() => {
-    if (user) {
-      fetchBills();
-      fetchFinancialGoals();
-      fetchAssociatedEntities();
-    }
-  }, [user]);
+  // Calculate immobilized assets (real estate + retirement + illiquid investments + vehicles + exotic assets)
+  const immobilizedAssets = totalRealEstateValue + totalRetirementSaved + (totalInvestmentValue * 0.3) + totalVehicleValue + totalExoticAssetsValue;
 
-  useEffect(() => {
-    // Atualizar contagem de contas pendentes
-    const pending = bills.filter(bill => {
-      const dueDate = new Date(bill.next_due);
-      const today = new Date();
-      return bill.is_active && dueDate <= today;
-    }).length;
-    
-    setPendingCount(pending);
-  }, [bills]);
-
-  const fetchBills = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('bills')
-        .select('*')
-        .eq('user_id', user?.id)
-        .order('next_due', { ascending: true });
-
-      if (error) throw error;
-      setBills(data || []);
-    } catch (err) {
-      console.error('Error fetching bills:', err);
-      setError('Erro ao carregar contas');
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  const fetchAssociatedEntities = async () => {
-    if (!user) return;
-    
-    try {
-      // Fetch properties, vehicles, and employees in parallel
-      const [propertiesResult, vehiclesResult, employeesResult, loansResult] = await Promise.all([
-        supabase.from('real_estate').select('id, address, type').eq('user_id', user.id),
-        supabase.from('vehicles').select('id, brand, model').eq('user_id', user.id),
-        supabase.from('employees').select('id, name, role').eq('user_id', user.id).eq('status', 'active'),
-        supabase.from('loans').select('id, bank, type').eq('user_id', user.id)
-      ]);
-      
-      if (propertiesResult.data) setProperties(propertiesResult.data);
-      if (vehiclesResult.data) setVehicles(vehiclesResult.data);
-      if (employeesResult.data) setEmployees(employeesResult.data);
-      if (loansResult.data) setLoans(loansResult.data);
-    } catch (err) {
-      console.error('Error fetching associated entities:', err);
-    }
-  };
-  
-  // Fetch financial goals for bill association
-  const fetchFinancialGoals = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('financial_goals')
-        .select('id, name, target_amount, current_amount, target_date, status')
-        .eq('user_id', user?.id)
-        .eq('status', 'active')
-        .order('priority', { ascending: false });
-      
-      if (error) throw error;
-      setFinancialGoals(data || []);
-    } catch (err) {
-      console.error('Error fetching financial goals:', err);
+  const getInsightIcon = (type: string) => {
+    switch (type) {
+      case 'warning': return AlertTriangle;
+      case 'achievement': return CheckCircle;
+      case 'suggestion': return Lightbulb;
+      default: return Brain;
     }
   };
 
-  const handleAddBill = async (billData: Omit<Bill, 'id' | 'created_at' | 'updated_at' | 'next_due'>) => {
-    try {
-      const today = new Date();
-      const nextDue = new Date(today.getFullYear(), today.getMonth(), billData.due_day);
-      if (nextDue <= today) {
-        nextDue.setMonth(nextDue.getMonth() + 1);
-      }
-
-      const { error } = await supabase
-        .from('bills')
-        .insert([{
-          ...billData,
-          user_id: user?.id,
-          next_due: nextDue.toISOString().split('T')[0],
-        }]);
-
-      if (error) throw error;
-      
-      setShowAddModal(false);
-      fetchBills();
-    } catch (err) {
-      console.error('Error adding bill:', err);
-      setError('Erro ao adicionar conta');
+  const getInsightColor = (type: string) => {
+    switch (type) {
+      case 'warning': return 'text-orange-500 bg-orange-50';
+      case 'achievement': return 'text-green-500 bg-green-50';
+      case 'suggestion': return 'text-blue-500 bg-blue-50';
+      default: return 'text-gray-500 bg-gray-50';
     }
-  };
-
-  const handleEditBill = (bill: Bill) => {
-    setEditingId(bill.id);
-    setEditForm({
-      name: bill.name,
-      company: bill.company,
-      amount: bill.amount,
-      due_day: bill.due_day,
-      category: bill.category,
-      is_recurring: bill.is_recurring,
-      is_active: bill.is_active
-    });
-  };
-
-  const handleSaveEdit = async () => {
-    if (!editingId) return;
-
-    try {
-      const { error } = await supabase
-        .from('bills')
-        .update({
-          ...editForm,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', editingId);
-
-      if (error) throw error;
-      
-      setEditingId(null);
-      setEditForm({});
-      fetchBills();
-    } catch (err) {
-      console.error('Error updating bill:', err);
-      setError('Erro ao atualizar conta');
-    }
-  };
-
-  const handleCancelEdit = () => {
-    setEditingId(null);
-    setEditForm({});
-  };
-
-  const handleDeleteBill = async (id: string) => {
-    if (!confirm('Tem certeza que deseja excluir esta conta?')) return;
-
-    try {
-      const { error } = await supabase
-        .from('bills')
-        .delete()
-        .eq('id', id);
-
-      if (error) throw error;
-      fetchBills();
-    } catch (err) {
-      console.error('Error deleting bill:', err);
-      setError('Erro ao excluir conta');
-    }
-  };
-
-  // Mark bill as paid
-  const markAsPaid = async (billId: string, amount?: number, paymentMethod?: string) => {
-    try {
-      const today = new Date().toISOString().split('T')[0];
-      
-      // Call the mark_bill_as_paid database function
-      const { data, error } = await supabase.rpc('mark_bill_as_paid', {
-        bill_id: billId,
-        payment_date_val: today,
-        payment_amount_val: amount,
-        payment_method_val: paymentMethod
-      });
-
-      if (error) throw error;
-      fetchBills();
-    } catch (err) {
-      console.error('Error marking bill as paid:', err);
-      setError('Erro ao marcar conta como paga');
-    }
-  };
-
-  const markAllAsPaid = async () => {
-    if (!confirm('Tem certeza que deseja marcar todas as contas pendentes como pagas?')) return;
-
-    try {
-      const today = new Date();
-      const pendingBills = bills.filter(bill => {
-        const dueDate = new Date(bill.next_due);
-        return bill.is_active && dueDate <= today;
-      });
-
-      if (pendingBills.length === 0) {
-        alert('Não há contas pendentes para pagar.');
-        return;
-      }
-
-      const updates = pendingBills.map(bill => {
-        const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, bill.due_day);
-        return supabase
-          .from('bills')
-          .update({
-            last_paid: today.toISOString().split('T')[0],
-            next_due: nextMonth.toISOString().split('T')[0]
-          })
-          .eq('id', bill.id);
-      });
-
-      await Promise.all(updates);
-      fetchBills();
-    } catch (err) {
-      console.error('Error marking all bills as paid:', err);
-      setError('Erro ao marcar todas as contas como pagas');
-    }
-  };
-
-  const getBillStatus = (bill: Bill) => {
-    if (bill.payment_status === 'paid') {
-      return 'paid';
-    }
-    
-    if (bill.payment_status === 'partial') {
-      return 'partial';
-    }
-    
-    if (bill.payment_status === 'overdue' || 
-        (bill.next_due && new Date(bill.next_due) < new Date())) {
-      return 'overdue';
-    }
-    
-    return 'pending';
-  };
-
-  // Toggle email reminder for a bill
-  const toggleEmailReminder = async (billId: string) => {
-    try {
-      const bill = bills.find(b => b.id === billId);
-      if (!bill) return;
-      
-      const { error } = await supabase
-        .from('bills')
-        .update({
-          send_email_reminder: !bill.send_email_reminder
-        })
-        .eq('id', billId);
-
-      if (error) throw error;
-      fetchBills();
-    } catch (err) {
-      console.error('Error toggling email reminder:', err);
-      setError('Erro ao atualizar preferência de notificação');
-    }
-  };
-  
-  // Set reminder days before
-  const setReminderDays = async (billId: string, days: number) => {
-    try {
-      const { error } = await supabase
-        .from('bills')
-        .update({
-          reminder_days_before: days
-        })
-        .eq('id', billId);
-
-      if (error) throw error;
-      fetchBills();
-    } catch (err) {
-      console.error('Error setting reminder days:', err);
-      setError('Erro ao atualizar dias de notificação');
-    }
-  };
-
-  // Associate bill with financial goal
-  const associateBillWithGoal = async (billId: string, goalId: string) => {
-    try {
-      const { error } = await supabase
-        .from('bills')
-        .update({
-          financial_goal_id: goalId,
-          is_goal_contribution: true
-        })
-        .eq('id', billId);
-      
-      if (error) throw error;
-      fetchBills();
-    } catch (err) {
-      console.error('Error associating bill with goal:', err);
-      setError('Erro ao associar conta à meta financeira');
-    }
-  };
-
-  const totalMonthlyBills = bills
-    .filter(bill => bill.is_active && bill.is_recurring)
-    .reduce((sum, bill) => sum + bill.amount, 0);
-
-  const upcomingBills = bills
-    .filter(bill => bill.is_active)
-    .sort((a, b) => new Date(a.next_due).getTime() - new Date(b.next_due).getTime())
-    .slice(0, 5);
-
-  const overdueBills = bills.filter(bill => {
-    const dueDate = new Date(bill.next_due);
-    const today = new Date();
-    return bill.is_active && dueDate < today;
-  });
-
-  const getDaysUntilDue = (dueDate: string) => {
-    const due = new Date(dueDate);
-    const today = new Date();
-    const diffTime = due.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  // Check if bill is associated with a financial goal
-  const isGoalContribution = (bill: Bill) => {
-    return bill.is_goal_contribution && bill.financial_goal_id;
   };
 
   if (loading) {
@@ -414,176 +113,716 @@ export default function Bills() {
           <div className="h-8 bg-gray-200 rounded w-1/4 mb-2"></div>
           <div className="h-4 bg-gray-200 rounded w-1/3"></div>
         </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="bg-gray-200 animate-pulse h-40 rounded-3xl"></div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-6">
+        <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
+          <div className="flex items-center space-x-3">
+            <AlertTriangle className="h-6 w-6 text-red-600" />
+            <div>
+              <h3 className="text-lg font-semibold text-red-800">Erro ao carregar dados</h3>
+              <p className="text-red-600">{error}</p>
+            </div>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-3">
-          <div>
-            <h1 className="text-3xl font-bold text-gray-800">Contas a Pagar</h1>
-            <p className="text-gray-500 mt-1">Gerencie suas contas e nunca mais esqueça um pagamento</p>
-          </div>
-          {pendingCount > 0 && (
-            <div className="bg-red-100 text-red-700 px-3 py-1 rounded-full flex items-center space-x-1">
-              <Tag className="h-4 w-4" />
-              <span>{pendingCount} pendentes</span>
+    <div className="space-y-8">
+      {/* Header com Patrimônio Líquido */}
+      <div className="relative overflow-hidden bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900 rounded-3xl p-8 text-white">
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-purple-600/20"></div>
+        <div className="relative z-10">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-4xl font-bold mb-2">Dashboard Financeiro</h1>
+              <p className="text-slate-300 text-lg">Visão completa do seu patrimônio</p>
             </div>
-          )}
-        </div>
-        <div className="flex space-x-3">
-          {overdueBills.length > 0 && (
-            <button 
-              onClick={markAllAsPaid}
-              className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg"
-            >
-              <CheckCircle className="h-4 w-4" />
-              <span>Pagar Todas</span>
-            </button>
-          )}
-          <button 
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg"
-          >
-            <Plus className="h-4 w-4" />
-            <span>Nova Conta</span>
-          </button>
-        </div>
-      </div>
-
-      {error && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-4">
-          <p className="text-red-700">{error}</p>
-        </div>
-      )}
-
-      {/* Alertas */}
-      {overdueBills.length > 0 && (
-        <div className="bg-red-50 border border-red-200 rounded-2xl p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-3">
-              <AlertTriangle className="h-6 w-6 text-red-600" />
-              <h2 className="text-lg font-semibold text-red-800">Contas em Atraso</h2>
-            </div>
-            <button
-              onClick={markAllAsPaid}
-              className="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors duration-200 flex items-center space-x-2"
-            >
-              <CheckCircle className="h-4 w-4" />
-              <span>Marcar Todas como Pagas</span>
-            </button>
-          </div>
-          <div className="space-y-2">
-            {overdueBills.map(bill => (
-              <div key={bill.id} className="flex items-center justify-between bg-white p-3 rounded-lg">
-                <div>
-                  <span className="font-medium text-gray-800">{bill.name}</span>
-                  <span className="text-sm text-gray-500 ml-2">
-                    Venceu em {new Date(bill.next_due).toLocaleDateString('pt-BR')}
-                  </span>
-                </div>
-                <div className="flex items-center space-x-3">
-                  <span className="font-semibold text-red-600">
-                    R$ {bill.amount.toLocaleString('pt-BR')}
-                  </span>
-                  <button
-                    onClick={() => markAsPaid(bill.id)}
-                    className="px-3 py-1 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors duration-200"
-                  >
-                    Marcar como Pago
-                  </button>
+            <div className="flex items-center space-x-6">
+              {/* Alert Indicator */}
+              <div className="bg-white/20 p-3 rounded-xl backdrop-blur-sm">
+                <AlertsIndicator />
+              </div>
+              
+              <div className="text-right">
+                <p className="text-slate-300 text-sm mb-1">Patrimônio Líquido</p>
+                <p className={`text-4xl font-bold ${netWorth >= 0 ? 'text-green-400' : 'text-red-400'}`}>
+                  R$ {Math.abs(netWorth).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                </p>
+                <div className="flex items-center justify-end mt-2">
+                  <div className={`flex items-center space-x-1 px-3 py-1 rounded-full text-sm ${
+                    netWorth >= 0 ? 'bg-green-500/20 text-green-300' : 'bg-red-500/20 text-red-300'
+                  }`}>
+                    {netWorth >= 0 ? (
+                      <TrendingUp className="h-4 w-4" />
+                    ) : (
+                      <TrendingDown className="h-4 w-4" />
+                    )}
+                    <span>{netWorth >= 0 ? 'Positivo' : 'Negativo'}</span>
+                  </div>
                 </div>
               </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {/* Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-blue-100 text-sm font-medium">Total Mensal</p>
-              <p className="text-3xl font-bold mt-1">R$ {totalMonthlyBills.toLocaleString('pt-BR')}</p>
-            </div>
-            <div className="bg-white/20 p-3 rounded-xl">
-              <Receipt className="h-6 w-6" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-2xl text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-green-100 text-sm font-medium">Contas Ativas</p>
-              <p className="text-3xl font-bold mt-1">{bills.filter(b => b.is_active).length}</p>
-            </div>
-            <div className="bg-white/20 p-3 rounded-xl">
-              <Building className="h-6 w-6" />
-            </div>
-          </div>
-        </div>
-
-        <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-6 rounded-2xl text-white shadow-lg">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-orange-100 text-sm font-medium">Próximas</p>
-              <p className="text-3xl font-bold mt-1">{upcomingBills.length}</p>
-            </div>
-            <div className="bg-white/20 p-3 rounded-xl">
-              <Bell className="h-6 w-6" />
             </div>
           </div>
         </div>
       </div>
 
-      {/* Próximas contas */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">Próximas Contas</h2>
-        <div className="space-y-4">
-          {upcomingBills.map((bill) => {
-            const daysUntilDue = getDaysUntilDue(bill.next_due);
-            const isOverdue = daysUntilDue < 0;
-            const isDueSoon = daysUntilDue <= 3 && daysUntilDue >= 0;
-            
-            return (
-              <div key={bill.id} className={`p-4 rounded-xl border-2 transition-all duration-200 ${
-                isOverdue ? 'border-red-200 bg-red-50' :
-                isDueSoon ? 'border-yellow-200 bg-yellow-50' :
-                'border-gray-100 bg-gray-50'
-              }`}>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-                      isOverdue ? 'bg-red-500' :
-                      isDueSoon ? 'bg-yellow-500' :
-                      'bg-blue-500'
-                    }`}>
-                      <Receipt className="h-5 w-5 text-white" />
+      {/* Financial Goals Quick View */}
+      <div 
+        onClick={() => navigate('/?tab=financial-goals')} 
+        className="bg-white p-6 rounded-2xl shadow-lg border border-indigo-100 cursor-pointer hover:shadow-xl transition-all duration-200 mb-8"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl">
+              <Target className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-800">Metas Financeiras</h2>
+          </div>
+          <span className="text-sm text-blue-600 flex items-center">
+            Ver todas <ChevronRight className="h-4 w-4 ml-1" />
+          </span>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-indigo-50 p-3 rounded-lg">
+            <p className="text-sm text-indigo-600">Total de Metas</p>
+            <p className="text-xl font-bold text-indigo-700">R$ {totalFinancialGoals.toLocaleString('pt-BR')}</p>
+            <div className="flex items-center text-xs text-indigo-500 mt-1">
+              <PiggyBank className="h-3 w-3 mr-1" /> Alocação patrimonial
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Seção de Renda e Custos */}
+      <div className="space-y-6">
+        <div className="flex items-center space-x-3">
+          <div className="bg-gradient-to-r from-green-500 to-red-500 w-1 h-8 rounded-full"></div>
+          <h2 className="text-2xl font-bold text-gray-800">Fluxo de Caixa Mensal</h2>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Renda Mensal */}
+          <div 
+            onClick={() => setSelectedBreakdown('income')} 
+            className="group relative overflow-hidden bg-gradient-to-br from-green-500 to-emerald-600 rounded-3xl p-6 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
+                  <TrendingUp className="h-8 w-8 text-white" />
+                </div>
+                <DollarSign className="h-6 w-6 opacity-60" />
+              </div>
+              <div>
+                <p className="text-green-100 text-sm font-medium mb-2">Renda Mensal</p>
+                <p className="text-4xl font-bold mb-2 text-white">
+                  R$ {totalMonthlyIncomeComplete.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+                <div className="flex items-center space-x-2">
+                  <div className="bg-white/20 px-3 py-1 rounded-full flex items-center space-x-1">
+                    <span className="text-sm text-white">Todas as fontes</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  {totalMonthlyIncome > 0 && (
+                    <div className="bg-green-500/30 px-2 py-0.5 rounded-full text-xs text-white">
+                      Receitas: {totalMonthlyIncomeComplete > 0 ? ((totalMonthlyIncome / totalMonthlyIncomeComplete) * 100).toFixed(0) : '0'}%
                     </div>
-                    
+                  )}
+                  {totalInvestmentIncome > 0 && (
+                    <div className="bg-blue-500/30 px-2 py-0.5 rounded-full text-xs text-white">
+                      Investimentos: {totalMonthlyIncomeComplete > 0 ? ((totalInvestmentIncome / totalMonthlyIncomeComplete) * 100).toFixed(0) : '0'}%
+                    </div>
+                  )}
+                  {totalRealEstateIncome > 0 && (
+                    <div className="bg-purple-500/30 px-2 py-0.5 rounded-full text-xs text-white">
+                      Imóveis: {totalMonthlyIncomeComplete > 0 ? ((totalRealEstateIncome / totalMonthlyIncomeComplete) * 100).toFixed(0) : '0'}%
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Gastos Mensais */}
+          <div 
+            onClick={() => setSelectedBreakdown('expenses')}
+            className="group relative overflow-hidden bg-gradient-to-br from-red-500 to-pink-600 rounded-3xl p-6 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
+                  <TrendingDown className="h-8 w-8 text-white" />
+                </div>
+                <Receipt className="h-6 w-6 opacity-60" />
+              </div>
+              <div>
+                <p className="text-red-100 text-sm font-medium mb-2">Gastos Mensais</p>
+                <p className="text-4xl font-bold mb-2 text-white">
+                  R$ {totalMonthlyExpensesComplete.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+                <div className="flex items-center space-x-2">
+                  <div className="bg-white/20 px-3 py-1 rounded-full flex items-center space-x-1">
+                    <span className="text-sm text-white">Todos os gastos</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  <div className="bg-red-500/30 px-2 py-0.5 rounded-full text-xs text-white">
+                    Fixos: {totalMonthlyExpensesComplete > 0 ? ((totalBills / totalMonthlyExpensesComplete) * 100).toFixed(0) : '0'}%
+                  </div>
+                  <div className="bg-orange-500/30 px-2 py-0.5 rounded-full text-xs text-white">
+                    Dívidas: {totalMonthlyExpensesComplete > 0 ? ((totalLoanPayments / totalMonthlyExpensesComplete) * 100).toFixed(0) : '0'}%
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Saldo Mensal */}
+          <div 
+            onClick={() => setSelectedBreakdown('balance')}
+            className={`group relative overflow-hidden bg-gradient-to-br ${netMonthlyIncomeComplete >= 0 ? 'from-blue-500 to-indigo-600' : 'from-orange-500 to-red-600'} rounded-3xl p-6 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105`}
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
+                  <DollarSign className="h-8 w-8" />
+                </div>
+                <Calendar className="h-6 w-6 opacity-60" />
+              </div>
+              <div>
+                <p className="text-white/80 text-sm font-medium mb-2">Saldo Mensal</p>
+                <p className="text-4xl font-bold mb-2 text-white">
+                  {netMonthlyIncomeComplete < 0 ? '-' : ''}R$ {Math.abs(netMonthlyIncomeComplete).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                </p>
+                <div className="flex items-center space-x-2">
+                  <div className="bg-white/20 px-3 py-1 rounded-full flex items-center space-x-1">
+                    <span className="text-sm text-white">{netMonthlyIncomeComplete >= 0 ? 'Positivo' : 'Negativo'}</span>
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-1 mt-2">
+                  <div className="bg-white/30 px-2 py-0.5 rounded-full text-xs text-white">
+                    Proporção: {totalMonthlyIncomeComplete > 0 ? 
+                      ((totalMonthlyExpensesComplete / totalMonthlyIncomeComplete) * 100).toFixed(0) : '0'}% da renda
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Additional income details section */}
+        <div className="bg-white rounded-2xl shadow-lg p-6">
+          <div className="mt-6 border-t border-gray-100 pt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Detalhamento das Fontes de Renda</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="bg-green-50 p-4 rounded-xl border border-green-100">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
+                    <DollarSign className="h-5 w-5 text-green-600" />
                     <div>
-                      <h3 className="font-medium text-gray-800">{bill.name}</h3>
-                      <p className="text-sm text-gray-500">{bill.company} • {bill.category}</p>
+                      <p className="text-green-600 text-sm font-medium">Fontes de Renda</p>
+                      <p className="text-lg font-bold text-green-700">R$ {totalMonthlyIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   </div>
-                  
-                  <div className="text-right">
-                    <p className="font-semibold text-lg text-gray-800">
-                      R$ {bill.amount.toLocaleString('pt-BR')}
-                    </p>
-                    <p className={`text-sm ${
-                      isOverdue ? 'text-red-600' :
-                      isDueSoon ? 'text-yellow-600' :
-                      'text-gray-500'
+                  <div className="text-xs text-green-500 bg-green-50 px-2 py-0.5 rounded-full">
+                    {totalMonthlyIncomeComplete > 0 ? ((totalMonthlyIncome / totalMonthlyIncomeComplete) * 100).toFixed(1) : '0'}%
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
+                    <Building className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="text-blue-600 text-sm font-medium">Investimentos</p>
+                      <p className="text-lg font-bold text-blue-700">R$ {totalInvestmentIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
+                    {totalMonthlyIncomeComplete > 0 ? ((totalInvestmentIncome / totalMonthlyIncomeComplete) * 100).toFixed(1) : '0'}%
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
+                    <Home className="h-5 w-5 text-purple-600" />
+                    <div>
+                      <p className="text-purple-600 text-sm font-medium">Aluguéis</p>
+                      <p className="text-lg font-bold text-purple-700">R$ {totalRealEstateIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
+                    {totalMonthlyIncomeComplete > 0 ? ((totalRealEstateIncome / totalMonthlyIncomeComplete) * 100).toFixed(1) : '0'}%
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="mt-6 border-t border-gray-100 pt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-4">Detalhamento dos Custos Mensais</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Receipt className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="text-blue-600 text-sm font-medium">Transações</p>
+                      <p className="text-lg font-bold text-blue-700">R$ {totalMonthlyExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
+                    {((totalMonthlyExpenses / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+              
+              <div className="bg-red-50 p-4 rounded-xl border border-red-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <CreditCard className="h-5 w-5 text-red-600" />
+                    <div>
+                      <p className="text-red-600 text-sm font-medium">Empréstimos</p>
+                      <p className="text-lg font-bold text-red-700">R$ {totalLoanPayments.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
+                    {((totalLoanPayments / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-orange-50 p-4 rounded-xl border border-orange-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <FileText className="h-5 w-5 text-orange-600" />
+                    <div>
+                      <p className="text-orange-600 text-sm font-medium">Contas</p>
+                      <p className="text-lg font-bold text-orange-700">R$ {totalBills.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">
+                    {((totalBills / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Shield className="h-5 w-5 text-blue-600" />
+                    <div>
+                      <p className="text-blue-600 text-sm font-medium">Previdência</p>
+                      <p className="text-lg font-bold text-blue-700">R$ {totalRetirementContribution.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
+                    {((totalRetirementContribution / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Home className="h-5 w-5 text-purple-600" />
+                    <div>
+                      <p className="text-purple-600 text-sm font-medium">Imóveis</p>
+                      <p className="text-lg font-bold text-purple-700">R$ {totalRealEstateExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
+                    {((totalRealEstateExpenses / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-teal-50 p-4 rounded-xl border border-teal-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Car className="h-5 w-5 text-teal-600" />
+                    <div>
+                      <p className="text-teal-600 text-sm font-medium">Veículos</p>
+                      <p className="text-lg font-bold text-teal-700">R$ {totalVehicleExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-teal-500 bg-teal-50 px-2 py-0.5 rounded-full">
+                    {((totalVehicleExpenses / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Landmark className="h-5 w-5 text-indigo-600" />
+                    <div>
+                      <p className="text-indigo-600 text-sm font-medium">Impostos</p>
+                      <p className="text-lg font-bold text-indigo-700">R$ {totalTaxes.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">
+                    {((totalTaxes / totalMonthlyExpensesComplete) * 100).toFixed(1)}%
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-pink-50 p-4 rounded-xl border border-pink-100">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-3">
+                    <Users className="h-5 w-5 text-pink-600" />
+                    <div>
+                      <p className="text-pink-600 text-sm font-medium">Funcionários</p>
+                      <p className="text-lg font-bold text-pink-700">R$ {(0).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                  <div className="text-xs text-pink-500 bg-pink-50 px-2 py-0.5 rounded-full">
+                    0%
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          {/* Investment Expenses Section */}
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">Alocação para Investimentos</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <Target className="h-5 w-5 text-indigo-600" />
+                    <h4 className="font-medium text-gray-800">Metas Financeiras</h4>
+                  </div>
+                  <button 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      navigate('/?tab=financial-goals');
+                    }}
+                    className="text-xs text-indigo-600 hover:text-indigo-700 hover:underline"
+                  >
+                    Ver detalhes
+                  </button>
+                </div>
+                <p className="text-xl font-bold text-indigo-700">
+                  R$ {totalFinancialGoals > 0 ? (totalFinancialGoals / 12).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}/mês
+                </p>
+                <div className="flex items-center mt-2">
+                  <span className="text-xs text-indigo-600">Poupança direcionada a objetivos</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Seção de Patrimônio */}
+      <div className="space-y-6">
+        <div className="flex items-center space-x-3">
+          <div className="bg-gradient-to-r from-blue-500 to-purple-500 w-1 h-8 rounded-full"></div>
+          <h2 className="text-2xl font-bold text-gray-800">Gestão de Patrimônio</h2>
+        </div>
+
+        {/* Cards Secundários - Ativos */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Ativos Líquidos */}
+          <div 
+            onClick={() => setSelectedBreakdown('liquid-assets')}
+            className="group relative overflow-hidden bg-gradient-to-br from-emerald-500 to-teal-600 rounded-3xl p-8 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
+                  <Wallet className="h-8 w-8" />
+                </div>
+                <BarChart3 className="h-6 w-6 opacity-60" />
+              </div>
+              <div>
+                <p className="text-emerald-100 text-sm font-medium mb-2">Ativos Líquidos</p>
+                <p className="text-4xl font-bold mb-2">R$ {liquidAssets.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
+                <div className="flex items-center space-x-2">
+                  <div className="bg-white/20 px-3 py-1 rounded-full">
+                    <span className="text-sm">Disponível</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div 
+            onClick={() => setSelectedBreakdown('financial-goals')}
+            className="group relative overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
+                  <Target className="h-8 w-8" />
+                </div>
+                <DollarSign className="h-6 w-6 opacity-60" />
+              </div>
+              <div>
+                <p className="text-indigo-100 text-sm font-medium mb-2">Metas Financeiras</p>
+                <p className="text-4xl font-bold mb-2">R$ {totalFinancialGoals.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
+                <div className="flex items-center space-x-1 mt-2">
+                  <PiggyBank className="h-4 w-4 text-indigo-200" />
+                  <span className="text-sm text-indigo-100">Alocação para objetivos</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Ativos Imobilizados */}
+          <div 
+            onClick={() => setSelectedBreakdown('immobilized-assets')}
+            className="group relative overflow-hidden bg-gradient-to-br from-blue-600 to-indigo-700 rounded-3xl p-8 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
+                  <Landmark className="h-8 w-8" />
+                </div>
+                <Building className="h-6 w-6 opacity-60" />
+              </div>
+              <div>
+                <p className="text-blue-100 text-sm font-medium mb-2">Ativos Imobilizados</p>
+                <p className="text-4xl font-bold mb-2">R$ {immobilizedAssets.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
+                <div className="flex items-center space-x-2">
+                  <div className="bg-white/20 px-3 py-1 rounded-full">
+                    <span className="text-sm">Longo Prazo</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Métricas Detalhadas */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
+          <div 
+            onClick={() => setSelectedBreakdown('investments')}
+            className="bg-white p-6 rounded-2xl shadow-lg border border-purple-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-purple-600 text-sm font-medium">Investimentos</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">
+                  R$ {totalInvestmentValue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                </p>
+                <p className="text-sm text-green-600 mt-1">
+                  +R$ {totalInvestmentIncome.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}/mês
+                </p>
+              </div>
+              <div className="bg-purple-100 p-3 rounded-xl">
+                <Building className="h-6 w-6 text-purple-600" />
+              </div>
+            </div>
+          </div>
+
+          <div 
+            onClick={() => setSelectedBreakdown('real-estate')}
+            className="bg-white p-6 rounded-2xl shadow-lg border border-orange-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-orange-600 text-sm font-medium">Imóveis</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">
+                  R$ {totalRealEstateValue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                </p>
+                <p className="text-sm text-green-600 mt-1">
+                  +R$ {totalRealEstateIncome.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}/mês
+                </p>
+              </div>
+              <div className="bg-orange-100 p-3 rounded-xl">
+                <Home className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
+          </div>
+          
+          <div 
+            onClick={() => setSelectedBreakdown('financial-goals')}
+            className="bg-white p-6 rounded-2xl shadow-lg border border-indigo-200 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-indigo-600 text-sm font-medium">Metas Financeiras</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">
+                  R$ {totalFinancialGoals.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                </p>
+                <p className="text-sm text-indigo-600 mt-1">
+                  Economia direcionada
+                </p>
+              </div>
+              <div className="bg-indigo-100 p-3 rounded-xl">
+                <Target className="h-6 w-6 text-indigo-600" />
+              </div>
+            </div>
+          </div>
+
+          <div 
+            onClick={() => setSelectedBreakdown('retirement')}
+            className="bg-white p-6 rounded-2xl shadow-lg border border-green-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-green-600 text-sm font-medium">Previdência</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">
+                  R$ {totalRetirementSaved.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                </p>
+                <p className="text-sm text-blue-600 mt-1">
+                  R$ {totalRetirementContribution.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}/mês
+                </p>
+              </div>
+              <div className="bg-green-100 p-3 rounded-xl">
+                <Shield className="h-6 w-6 text-green-600" />
+              </div>
+            </div>
+          </div>
+
+          <div 
+            onClick={() => setSelectedBreakdown('vehicles')}
+            className="bg-white p-6 rounded-2xl shadow-lg border border-blue-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-blue-600 text-sm font-medium">Veículos</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">
+                  R$ {totalVehicleValue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                </p>
+                <p className="text-sm text-red-600 mt-1">
+                  -R$ {totalVehicleDepreciation.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                </p>
+              </div>
+              <div className="bg-blue-100 p-3 rounded-xl">
+                <Car className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
+          </div>
+
+          <div 
+            onClick={() => setSelectedBreakdown('exotic-assets')}
+            className="bg-white p-6 rounded-2xl shadow-lg border border-indigo-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-indigo-600 text-sm font-medium">Ativos Exóticos</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">
+                  R$ {totalExoticAssetsValue.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                </p>
+                <p className={`text-sm ${totalExoticAssetsAppreciation >= 0 ? 'text-green-600' : 'text-red-600'} mt-1`}>
+                  {totalExoticAssetsAppreciation >= 0 ? '+' : ''}R$ {totalExoticAssetsAppreciation.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                </p>
+              </div>
+              <div className="bg-indigo-100 p-3 rounded-xl">
+                <Gem className="h-6 w-6 text-indigo-600" />
+              </div>
+            </div>
+          </div>
+
+          <div 
+            onClick={() => setSelectedBreakdown('taxes')}
+            className="bg-white p-6 rounded-2xl shadow-lg border border-indigo-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-indigo-600 text-sm font-medium">Impostos</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">
+                  R$ {totalTaxes.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                </p>
+                <p className="text-sm text-indigo-600 mt-1">
+                  Mensal
+                </p>
+              </div>
+              <div className="bg-indigo-100 p-3 rounded-xl">
+                <Landmark className="h-6 w-6 text-indigo-600" />
+              </div>
+            </div>
+          </div>
+
+          <div 
+            onClick={() => setSelectedBreakdown('debts')}
+            className="bg-white p-6 rounded-2xl shadow-lg border border-red-100 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-red-600 text-sm font-medium">Dívidas</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">
+                  R$ {totalDebt.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                </p>
+                <p className="text-sm text-red-600 mt-1">
+                  R$ {totalLoanPayments.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}/mês
+                </p>
+              </div>
+              <div className="bg-red-100 p-3 rounded-xl">
+                <CreditCard className="h-6 w-6 text-red-600" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Gráfico de Evolução Patrimonial */}
+      <WealthEvolutionChart />
+
+      {/* Insights da IA */}
+      <div className="bg-white rounded-2xl shadow-lg p-6 mt-8">
+        <div className="flex items-center space-x-3 mb-6">
+          <div className="flex items-center space-x-3">
+            <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-2 rounded-xl">
+              <Brain className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-800">Insights da IA</h2>
+          </div>
+          <a href="/smart-alerts" className="text-sm text-blue-600 hover:text-blue-700 flex items-center ml-auto">
+            <Bell className="h-4 w-4 mr-1" />
+            <span>Ver todos os alertas</span>
+          </a>
+        </div>
+        
+        <div className="space-y-4">
+          {aiInsights.slice(0, 3).map((insight) => {
+            const Icon = getInsightIcon(insight.type);
+            const colorClass = getInsightColor(insight.type);
+            
+            return (
+              <div key={insight.id} className="flex items-start space-x-4 p-4 rounded-xl hover:bg-gray-50 transition-colors duration-200">
+                <div className={`p-2 rounded-lg ${colorClass}`}>
+                  <Icon className="h-5 w-5" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-800">{insight.title}</h3>
+                  <p className="text-gray-600 text-sm mt-1">{insight.description}</p>
+                  <div className="flex items-center space-x-2 mt-2">
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      insight.impact === 'high' ? 'bg-red-100 text-red-700' :
+                      insight.impact === 'medium' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-green-100 text-green-700'
                     }`}>
-                      {isOverdue ? `${Math.abs(daysUntilDue)} dias em atraso` :
-                       isDueSoon ? `Vence em ${daysUntilDue} dias` :
-                       `Vence em ${daysUntilDue} dias`}
-                    </p>
+                      Impacto {insight.impact === 'high' ? 'Alto' : insight.impact === 'medium' ? 'Médio' : 'Baixo'}
+                    </span>
+                    <span className="text-xs text-gray-500">{insight.date}</span>
                   </div>
                 </div>
               </div>
@@ -592,581 +831,163 @@ export default function Bills() {
         </div>
       </div>
 
-      {/* Lista completa de contas */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <h2 className="text-xl font-semibold text-gray-800">Todas as Contas</h2>
-          {pendingCount > 0 && (
-            <button
-              onClick={markAllAsPaid}
-              className="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors duration-200 flex items-center space-x-2"
-            >
-              <CheckCircle className="h-4 w-4" />
-              <span>Marcar Todas como Pagas</span>
-            </button>
-          )}
-        </div>
-        
-        <div className="divide-y divide-gray-100">
-          {bills.length === 0 ? (
-            <div className="p-12 text-center">
-              <Receipt className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma conta cadastrada</h3>
-              <p className="text-gray-500">Adicione suas contas para acompanhar os vencimentos.</p>
-            </div>
-          ) : (
-            bills.map((bill) => (
-              <div key={bill.id} className="p-6 hover:bg-gray-50 transition-colors duration-200">
-                {editingId === bill.id ? (
-                  // Modo de edição
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <input
-                        type="text"
-                        value={editForm.name || ''}
-                        onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
-                        className="p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                        placeholder="Nome da conta"
-                      />
-                      <input
-                        type="text"
-                        value={editForm.company || ''}
-                        onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
-                        className="p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                        placeholder="Empresa"
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                      <input
-                        type="number"
-                        value={editForm.amount || ''}
-                        onChange={(e) => setEditForm({ ...editForm, amount: Number(e.target.value) })}
-                        className="p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                        placeholder="Valor"
-                        step="0.01"
-                      />
-                      <input
-                        type="number"
-                        value={editForm.due_day || ''}
-                        onChange={(e) => setEditForm({ ...editForm, due_day: Number(e.target.value) })}
-                        className="p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                        placeholder="Dia do vencimento (1-31)"
-                        min="1"
-                        max="31"
-                      />
-                      <select
-                        value={editForm.category || ''}
-                        onChange={(e) => setEditForm({ ...editForm, category: e.target.value })}
-                        className="p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                      >
-                        {categories.map(category => (
-                          <option key={category.value} value={category.value}>
-                            {category.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-4">
-                        <label className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={editForm.is_recurring || false}
-                            onChange={(e) => setEditForm({ ...editForm, is_recurring: e.target.checked })}
-                            className="rounded text-blue-600"
-                          />
-                          <span className="text-gray-700">Recorrente</span>
-                        </label>
-                        <label className="flex items-center space-x-2">
-                          <input
-                            type="checkbox"
-                            checked={editForm.is_active || false}
-                            onChange={(e) => setEditForm({ ...editForm, is_active: e.target.checked })}
-                            className="rounded text-blue-600"
-                          />
-                          <span className="text-gray-700">Ativa</span>
-                        </label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <button
-                          onClick={handleSaveEdit}
-                          className="p-2 text-green-600 hover:bg-green-50 rounded-lg transition-colors duration-200"
-                        >
-                          <Save className="h-4 w-4" />
-                        </button>
-                        <button
-                          onClick={handleCancelEdit}
-                          className="p-2 text-gray-400 hover:bg-gray-50 rounded-lg transition-colors duration-200"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  // Modo de visualização
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4">
-                      <div className={`w-12 h-12 rounded-xl flex items-center justify-center ${
-                        bill.is_active ? 'bg-blue-500' : 'bg-gray-400'
-                      }`}>
-                        <Receipt className="h-6 w-6 text-white" />
-                      </div>
-                      
-                      <div>
-                        <div className="flex items-center space-x-3">
-                          <h3 className="font-medium text-gray-800">{bill.name}</h3>
-                          
-                          {/* Main category tag */}
-                          <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
-                            {bill.category}
-                          </span>
-                          
-                          {bill.associated_with && bill.associated_name && (
-                            <span className={`text-xs px-2 py-1 rounded-full ${
-                              bill.associated_with === 'property' ? 'bg-orange-100 text-orange-700' :
-                              bill.associated_with === 'vehicle' ? 'bg-blue-100 text-blue-700' :
-                              bill.associated_with === 'employee' ? 'bg-purple-100 text-purple-700' :
-                              bill.associated_with === 'loan' ? 'bg-red-100 text-red-700' :
-                              'bg-gray-100 text-gray-700'
-                            } flex items-center space-x-1`}>
-                              {bill.associated_with === 'property' && <Home className="h-3 w-3" />}
-                              {bill.associated_with === 'vehicle' && <Car className="h-3 w-3" />}
-                              {bill.associated_with === 'employee' && <Users className="h-3 w-3" />}
-                              {bill.associated_with === 'loan' && <CreditCard className="h-3 w-3" />}
-                              <span>{bill.associated_name}</span>
-                            </span>
-                          )}
-
-                          {bill.is_goal_contribution && bill.financial_goal_id && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 flex items-center space-x-1">
-                              <Target className="h-3 w-3" />
-                              <span>Meta Financeira</span>
-                            </span>
-                          )}
-                          
-                          {getBillStatus(bill) === 'pending' && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 flex items-center space-x-1">
-                              <Tag className="h-3 w-3" />
-                              <span>Pendente</span>
-                            </span>
-                          )}
-                          {bill.payment_status === 'paid' && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 flex items-center space-x-1">
-                              <CheckCircle className="h-3 w-3" />
-                              <span>Pago</span>
-                            </span>
-                          )}
-                          {bill.payment_status === 'partial' && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 flex items-center space-x-1">
-                              <CheckCircle className="h-3 w-3" />
-                              <span>Pago Parcial</span>
-                            </span>
-                          )}
-                          {bill.payment_status === 'overdue' && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 flex items-center space-x-1">
-                              <AlertTriangle className="h-3 w-3" />
-                              <span>Atrasado</span>
-                            </span>
-                          )}
-                          {!bill.is_active && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
-                              Inativa
-                            </span>
-                          )}
-                        </div>
-                        
-                        <div className="flex items-center space-x-2 mt-1">
-                          <span className="text-sm text-gray-500">{bill.company}</span>
-                          <span className="text-gray-300">•</span>
-                          <span className="text-sm text-gray-500">
-                            Vence dia {bill.due_day}
-                          </span>
-                          {bill.payment_status === 'paid' && bill.payment_date && (
-                            <>
-                              <span className="text-gray-300">•</span>
-                              <span className="text-sm text-green-600">
-                                Pago em {new Date(bill.payment_date).toLocaleDateString('pt-BR')}
-                              </span>
-                            </>
-                          )}
-                          {bill.last_paid && (
-                            <>
-                              {bill.payment_status !== 'paid' && (
-                                <>
-                                  <span className="text-gray-300">•</span>
-                                  <span className="text-sm text-gray-500">
-                                    Último pagamento: {new Date(bill.last_paid).toLocaleDateString('pt-BR')}
-                                  </span>
-                                </>
-                              )}
-                            </>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div className="flex items-center space-x-3">
-                      <div className="text-right">
-                        <div className="flex items-center space-x-4">
-                          <div>
-                            <p className={`font-semibold text-lg ${bill.payment_status === 'paid' ? 'text-green-600' : 'text-gray-800'}`}>
-                              R$ {bill.amount.toLocaleString('pt-BR')}
-                            </p>
-                            {bill.financial_goal_id && (
-                              <p className="text-sm text-indigo-600">
-                                Meta: {financialGoals.find(g => g.id === bill.financial_goal_id)?.name || 'Meta Financeira'}
-                              </p>
-                            )}
-                            {bill.payment_status === 'paid' && bill.payment_date && (
-                              <p className="text-sm text-green-600">
-                                Pago em: {new Date(bill.payment_date).toLocaleDateString('pt-BR')}
-                              </p>
-                            )}
-                            {bill.is_active && (
-                              <p className="text-sm text-gray-500">
-                                Próximo: {new Date(bill.next_due).toLocaleDateString('pt-BR')}
-                              </p>
-                            )}
-                          </div>
-                          
-                          {/* Financial goal button */}
-                          {!isGoalContribution(bill) && financialGoals.length > 0 && (
-                            <div className="dropdown">
-                              <button
-                                className="p-1 text-gray-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-lg transition-colors duration-200 relative group"
-                                title="Associar a uma meta financeira"
-                              >
-                                <Target className="h-4 w-4" />
-                                
-                                <div className="hidden group-hover:block absolute right-0 top-full mt-1 bg-white shadow-lg rounded-lg z-10 w-64 border border-gray-200">
-                                  <div className="p-2 text-xs font-medium text-gray-700 border-b border-gray-100">
-                                    Associar a uma meta:
-                                  </div>
-                                  <div className="max-h-48 overflow-y-auto">
-                                    {financialGoals.map(goal => (
-                                      <button
-                                        key={goal.id}
-                                        className="w-full text-left px-3 py-2 hover:bg-gray-50 text-sm flex items-center space-x-2"
-                                        onClick={() => associateBillWithGoal(bill.id, goal.id)}
-                                      >
-                                        <PiggyBank className="h-3 w-3 text-indigo-500" />
-                                        <span className="truncate">{goal.name}</span>
-                                      </button>
-                                    ))}
-                                  </div>
-                                </div>
-                              </button>
-                            </div>
-                          )}
-
-                          {/* Email notification status */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              toggleEmailReminder(bill.id);
-                            }}
-                            title={bill.send_email_reminder ? "Desativar notificações por email" : "Ativar notificações por email"}
-                            className={`p-1 rounded-full ${
-                              bill.send_email_reminder 
-                                ? 'text-blue-600 hover:bg-blue-50' 
-                                : 'text-gray-400 hover:bg-gray-50'
-                            } transition-colors duration-200`}
-                          >
-                            <Mail className="h-4 w-4" />
-                          </button>
-                        </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        {bill.is_active && bill.payment_status !== 'paid' && (
-                          <button
-                            onClick={() => {
-                              const amount = prompt('Valor pago:', bill.amount.toString());
-                              if (amount !== null) {
-                                const method = prompt('Método de pagamento (opcional):', '');
-                                markAsPaid(bill.id, parseFloat(amount), method || undefined);
-                              }
-                            }}
-                            className="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs rounded-lg hover:from-green-600 hover:to-green-700 transition-colors duration-200 flex items-center"
-                          >
-                            <DollarSign className="h-3 w-3 mr-1" />
-                            <span>Pagar</span>
-                          </button>
-                        )}
-                        
-                        <button 
-                          onClick={() => handleEditBill(bill)}
-                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </button>
-                        <button 
-                          onClick={() => handleDeleteBill(bill.id)}
-                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Modal de adicionar conta */}
-      {showAddModal && (
+      {/* Modal de Ficha Técnica */}
+      {selectedBreakdown && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-800">Nova Conta</h2>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <h2 className="text-2xl font-semibold text-gray-800">
+                Ficha Técnica - {
+                  selectedBreakdown === 'liquid-assets' ? 'Ativos Líquidos' :
+                  selectedBreakdown === 'immobilized-assets' ? 'Ativos Imobilizados' :
+                  selectedBreakdown === 'income' ? 'Renda Mensal' :
+                  selectedBreakdown === 'expenses' ? 'Gastos Mensais' :
+                  selectedBreakdown === 'balance' ? 'Saldo Mensal' :
+                  selectedBreakdown === 'assets' ? 'Total de Ativos' :
+                  selectedBreakdown === 'investments' ? 'Investimentos' :
+                  selectedBreakdown === 'real-estate' ? 'Imóveis' :
+                  selectedBreakdown === 'retirement' ? 'Previdência' :
+                  selectedBreakdown === 'bank-accounts' ? 'Contas Bancárias' :
+                  selectedBreakdown === 'vehicles' ? 'Veículos' :
+                  selectedBreakdown === 'exotic-assets' ? 'Ativos Exóticos' :
+                  selectedBreakdown === 'taxes' ? 'Impostos' :
+                  selectedBreakdown === 'financial-goals' ? 'Metas Financeiras' :
+                  selectedBreakdown === 'debts' ? 'Dívidas' : ''
+                }
+              </h2>
+              <button
+                onClick={() => setSelectedBreakdown(null)}
+                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors duration-200"
+              >
+                <X className="h-6 w-6" />
+              </button>
             </div>
             
-            <form onSubmit={(e) => {
-              e.preventDefault();
-              const formData = new FormData(e.currentTarget);
-              handleAddBill({
-                name: formData.get('name') as string,
-                company: formData.get('company') as string,
-                amount: Number(formData.get('amount')),
-                due_day: Number(formData.get('due_day')),
-                category: formData.get('category') as string,
-                is_recurring: formData.has('is_recurring'),
-                is_active: true,
-                last_paid: undefined,
-              });
-            }} className="p-6 space-y-4">
-              <input
-                type="text"
-                name="name"
-                placeholder="Nome da conta (ex: Energia Elétrica)"
-                required
-                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              />
-              
-              <input
-                type="text"
-                name="company"
-                placeholder="Empresa (ex: CEMIG)"
-                required
-                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              />
-              
-              <div className="grid grid-cols-2 gap-4">
-                <input
-                  type="number"
-                  name="amount"
-                  placeholder="Valor (R$)"
-                  step="0.01"
-                  required
-                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                />
-                
-                <input
-                  type="number"
-                  name="due_day"
-                  placeholder="Dia do vencimento (1-31)"
-                  min="1"
-                  max="31"
-                  required
-                  className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                />
-              </div>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Associar a Entidade (opcional)
-                </label>
-                
-                {properties.length > 0 && (
-                  <details className="mb-2">
-                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
-                      <Home className="h-4 w-4 mr-2 text-gray-600" />
-                      Imóveis
-                    </summary>
-                    <div className="ml-4 mt-2 space-y-2">
-                      {properties.map(property => (
-                        <label key={property.id} className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="associated_with"
-                            value={`property-${property.id}`}
-                            className="rounded-full text-blue-600"
-                          />
-                          <span className="text-sm text-gray-700">{property.address}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </details>
-                )}
-                
-                {vehicles.length > 0 && (
-                  <details className="mb-2">
-                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
-                      <Car className="h-4 w-4 mr-2 text-gray-600" />
-                      Veículos
-                    </summary>
-                    <div className="ml-4 mt-2 space-y-2">
-                      {vehicles.map(vehicle => (
-                        <label key={vehicle.id} className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="associated_with"
-                            value={`vehicle-${vehicle.id}`}
-                            className="rounded-full text-blue-600"
-                          />
-                          <span className="text-sm text-gray-700">{vehicle.brand} {vehicle.model}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </details>
-                )}
-                
-                {employees.length > 0 && (
-                  <details className="mb-2">
-                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
-                      <Users className="h-4 w-4 mr-2 text-gray-600" />
-                      Funcionários
-                    </summary>
-                    <div className="ml-4 mt-2 space-y-2">
-                      {employees.map(employee => (
-                        <label key={employee.id} className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="associated_with"
-                            value={`employee-${employee.id}`}
-                            className="rounded-full text-blue-600"
-                          />
-                          <span className="text-sm text-gray-700">{employee.name}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </details>
-                )}
-                
-                {loans.length > 0 && (
-                  <details className="mb-2">
-                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
-                      <CreditCard className="h-4 w-4 mr-2 text-gray-600" />
-                      Empréstimos
-                    </summary>
-                    <div className="ml-4 mt-2 space-y-2">
-                      {loans.map(loan => (
-                        <label key={loan.id} className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="radio"
-                            name="associated_with"
-                            value={`loan-${loan.id}`}
-                            className="rounded-full text-blue-600"
-                          />
-                          <span className="text-sm text-gray-700">{loan.bank} - {loan.type}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </details>
-                )}
-              </div>
-              
-              <div className="mb-4">
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Associar a Meta Financeira (opcional)
-                </label>
-                
-                {financialGoals.length > 0 ? (
-                  <div className="space-y-2 border border-gray-200 rounded-lg p-3">
-                    <div className="flex items-center space-x-2 text-sm">
-                      <Target className="h-4 w-4 text-indigo-600" />
-                      <span className="font-medium text-gray-700">Metas Disponíveis</span>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 gap-2 mt-2">
-                      {financialGoals.map(goal => (
-                        <label key={goal.id} className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
-                          <input
-                            type="radio"
-                            name="financial_goal_id"
-                            value={goal.id}
-                            className="text-indigo-600"
-                          />
-                          <div>
-                            <p className="text-sm font-medium text-gray-800">{goal.name}</p>
-                            <p className="text-xs text-gray-500">
-                              Meta: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(goal.target_amount)} | 
-                              Progresso: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(goal.current_amount)}
-                            </p>
-                          </div>
-                        </label>
-                      ))}
-                    </div>
-                    
-                    <div className="mt-2">
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input type="checkbox" name="is_goal_contribution" className="rounded text-indigo-600" />
-                        <span className="text-sm text-gray-700">Marcar como contribuição para a meta</span>
-                      </label>
-                      <p className="text-xs text-gray-500 mt-1">
-                        Quando esta conta for paga, o valor será automaticamente adicionado à meta selecionada.
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-gray-50 rounded-lg p-3 text-center">
-                    <p className="text-sm text-gray-600">Você não tem metas financeiras ativas.</p>
-                    <a href="/?tab=financial-goals" className="text-sm text-indigo-600 hover:underline mt-1 inline-block">
-                      Criar uma meta financeira
-                    </a>
-                  </div>
-                )}
-              </div>
-              
-              <select
-                name="category"
-                required
-                className="w-full p-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-              >
-                <option value="">Selecione uma categoria</option>
-                {categories.map(category => (
-                  <option key={category.value} value={category.value}>
-                    {category.label}
-                  </option>
-                ))}
-              </select>
-              
-              <label className="flex items-center space-x-2">
-                <input type="checkbox" name="is_recurring" className="rounded text-blue-600" defaultChecked />
-                <span className="text-gray-700">Conta recorrente (mensal)</span>
-              </label>
-              
-              <div className="flex items-center space-x-2 mt-4">
-                <input type="checkbox" name="send_email_reminder" className="rounded text-blue-600" defaultChecked />
-                <label className="text-gray-700 flex items-center space-x-2">
-                  <Mail className="h-4 w-4 text-blue-500" />
-                  <span>Receber notificações por email</span>
-                </label>
-              </div>
-              
-              <div className="flex space-x-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowAddModal(false)}
-                  className="flex-1 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200"
-                >
-                  Adicionar
-                </button>
-              </div>
-            </form>
+            <div className="overflow-y-auto max-h-[calc(90vh-120px)]">
+              <FinancialBreakdown type={selectedBreakdown} />
+            </div>
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Financial Goals Breakdown Component
+function FinancialGoalsBreakdown() {
+  const navigate = useNavigate();
+  const [goals, setGoals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    // Fetch goals data - in a real implementation this would come from supabase
+    // For now we'll use static data
+    setLoading(true);
+    
+    const mockGoals = [
+      {
+        id: '1',
+        name: 'Viagem para Europa',
+        targetAmount: 15000,
+        currentAmount: 5000,
+        targetDate: '2025-12-20',
+        category: 'travel',
+        progress: 33.33
+      },
+      {
+        id: '2',
+        name: 'Abrir consultoria financeira',
+        targetAmount: 50000,
+        currentAmount: 12500,
+        targetDate: '2026-06-30',
+        category: 'business',
+        progress: 25
+      }
+    ];
+    
+    setTimeout(() => {
+      setGoals(mockGoals);
+      setLoading(false);
+    }, 500);
+    
+  }, []);
+  
+  return (
+    <div className="p-6 space-y-6">
+      <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-indigo-800 mb-1">Total em Metas Financeiras</h3>
+            <p className="text-3xl font-bold text-indigo-700">
+              R$ {goals.reduce((sum, g) => sum + g.targetAmount, 0).toLocaleString('pt-BR')}
+            </p>
+          </div>
+          <Target className="h-8 w-8 text-indigo-600" />
+        </div>
+      </div>
+      
+      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-100 mb-4">
+        <h3 className="font-medium text-indigo-800 mb-2">Sobre Metas Financeiras</h3>
+        <p className="text-gray-700">
+          Metas financeiras são consideradas uma alocação do seu patrimônio, pois representam capital que você está 
+          reservando para objetivos específicos. Ao mesmo tempo, as contribuições mensais para estas metas entram como 
+          despesas de investimento no seu fluxo de caixa.
+        </p>
+      </div>
+      
+      <div className="space-y-4">
+        <h3 className="font-semibold text-gray-800">Suas Metas Financeiras</h3>
+        
+        {loading ? (
+          <div className="animate-pulse space-y-3">
+            <div className="h-16 bg-gray-200 rounded-lg"></div>
+            <div className="h-16 bg-gray-200 rounded-lg"></div>
+          </div>
+        ) : goals.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500">Nenhuma meta financeira configurada.</p>
+            <button
+              onClick={() => navigate('/?tab=financial-goals')}
+              className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              Configurar Metas
+            </button>
+          </div>
+        ) : (
+          goals.map((goal, index) => (
+            <div key={index} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+              <div className="flex justify-between mb-2">
+                <h4 className="font-medium text-gray-800">{goal.name}</h4>
+                <span className="text-indigo-600 font-medium">
+                  {goal.progress}% concluído
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Meta: R$ {goal.targetAmount.toLocaleString('pt-BR')}</span>
+                <span className="text-green-600">
+                  Economizado: R$ {goal.currentAmount.toLocaleString('pt-BR')}
+                </span>
+              </div>
+              <div className="mt-2 w-full bg-gray-100 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full" 
+                  style={{ width: `${goal.progress}%` }}
+                ></div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+      
+      <div className="mt-6 flex justify-center">
+        <button
+          onClick={() => navigate('/?tab=financial-goals')}
+          className="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200 flex items-center space-x-2"
+        >
+          <Target className="h-4 w-4" />
+          <span>Gerenciar Metas Financeiras</span>
+        </button>
+      </div>
     </div>
   );
 }
