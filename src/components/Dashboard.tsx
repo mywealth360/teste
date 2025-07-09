@@ -313,63 +313,6 @@ export default function Dashboard() {
       {/* Wealth Evolution Chart */}
       <WealthEvolutionChart />
 
-      {/* Breakdown Sections */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Expense Categories */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 overflow-hidden">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">Despesas por Categoria</h2>
-          <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-            {expenseCategories.map((category, index) => {
-              const color = getCategoryColor(category.category);
-              const Icon = category.icon || FileText;
-              return (
-                <div key={index} className="bg-gray-50 p-3 rounded-xl hover:shadow-md transition-shadow">
-                  <div className="flex items-center mb-2">
-                    <div className={`w-7 h-7 ${color} rounded-lg flex items-center justify-center mr-2`}>
-                      <Icon className="h-3.5 w-3.5 text-white" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-900 truncate">{category.category}</p>
-                      <p className="text-xs text-gray-500">{formatPercentage(category.percentage)}</p>
-                    </div>
-                  </div>
-                  <p className="text-base font-bold text-gray-900">{formatCurrency(category.amount)}</p>
-                  <div className="w-full bg-gray-200 rounded-full h-1 mt-1">
-                    <div className={`${color} h-1.5 rounded-full`} style={{ width: `${Math.min(100, category.percentage)}%` }}></div>
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-
-        {/* Income Categories */}
-        <div className="bg-white rounded-2xl shadow-lg p-6 overflow-hidden">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">Receitas por Categoria</h2>
-          <div className="grid grid-cols-1 gap-4">
-            {incomeCategories.map((category, index) => (
-              <div key={index} className="bg-gray-50 p-4 rounded-xl hover:shadow-md transition-shadow">
-                <div className="flex items-center mb-2">
-                  <div className="w-8 h-8 bg-green-500 rounded-lg flex items-center justify-center mr-3">
-                    <DollarSign className="h-4 w-4 text-white" />
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium text-gray-900">{category.category}</p>
-                    <p className="text-xs text-gray-500">{formatPercentage(category.percentage)}</p>
-                  </div>
-                  <div className="ml-auto">
-                    <p className="text-lg font-bold text-green-600">{formatCurrency(category.amount)}</p>
-                  </div>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
-                  <div className="bg-green-500 h-1.5 rounded-full" style={{ width: `${Math.min(100, category.percentage)}%` }}></div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
       {/* Asset Breakdown */}
       <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">Composição do Patrimônio</h2>
