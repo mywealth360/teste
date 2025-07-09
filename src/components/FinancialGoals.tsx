@@ -353,7 +353,7 @@ export default function FinancialGoals() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex justify-between items-center">
-        <div>
+        <div className="flex-1">
           <h1 className="text-3xl font-bold text-gray-800">Metas Financeiras</h1>
           <p className="text-gray-500 mt-1">Estabeleça metas claras e acompanhe seu progresso</p>
         </div>
@@ -377,7 +377,7 @@ export default function FinancialGoals() {
       </div>
       
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-2xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>

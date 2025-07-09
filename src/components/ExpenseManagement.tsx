@@ -523,7 +523,7 @@ export default function ExpenseManagement() {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Gestão de Gastos</h1>
-          <p className="text-gray-500 mt-1">Visão completa de todas as suas despesas</p>
+          <p className="text-gray-500 mt-1">Visão gerencial de todas as suas despesas</p>
         </div>
       </div>
 
@@ -686,33 +686,32 @@ export default function ExpenseManagement() {
       </div>
 
       {/* Gráfico por categoria */}
-      {categories.length > 0 && (
-        <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-6">Gastos por Categoria</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {categories.map(category => {
-              const amount = expensesByCategory[category];
-              const percentage = (amount / totalExpenses) * 100;
-              
-              return (
-                <div key={category} className="bg-gray-50 p-4 rounded-xl">
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="font-medium text-gray-800">{category}</h3>
-                    <span className="text-sm text-gray-500">{percentage.toFixed(1)}%</span>
+      <div className="bg-white rounded-2xl shadow-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-6">Gastos por Categoria</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4">
+          {expenseCategories.map((category, index) => {
+            const Icon = category.icon || FileText;
+            const colorClass = getCategoryColor(category.category);
+            return (
+              <div key={index} className="bg-gray-50 p-4 rounded-xl">
+                <div className="flex items-center space-x-3 mb-2">
+                  <div className={`w-8 h-8 ${colorClass} rounded-lg flex items-center justify-center`}>
+                    <Icon className="h-4 w-4 text-white" />
                   </div>
-                  <p className="text-lg font-bold text-gray-800">R$ {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-                  <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div
-                      className="bg-gradient-to-r from-blue-500 to-purple-600 h-2 rounded-full"
-                      style={{ width: `${percentage}%` }}
-                    ></div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{category.category}</p>
                   </div>
+                  <div className="text-xs text-gray-500">{formatPercentage(category.percentage)}</div>
                 </div>
-              );
-            })}
-          </div>
+                <p className="text-lg font-bold text-gray-900">{formatCurrency(category.amount)}</p>
+                <div className="w-full bg-gray-200 rounded-full h-1.5 mt-2">
+                  <div className={`${colorClass} h-1.5 rounded-full`} style={{ width: `${Math.min(100, category.percentage)}%` }}></div>
+                </div>
+              </div>
+            );
+          })}
         </div>
-      )}
+      </div>
 
       {/* Lista de despesas */}
       <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
