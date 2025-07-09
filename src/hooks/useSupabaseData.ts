@@ -371,7 +371,7 @@ export function useDashboardData() {
 
 // Specific hooks for common tables
 export function useIncomeSources() {
-  return useSupabaseDataGeneric<{
+  return useSupabaseData<{
     id: string;
     name: string;
     amount: number;
@@ -387,7 +387,7 @@ export function useIncomeSources() {
 }
 
 export function useTransactions() {
-  return useSupabaseDataGeneric<{
+  return useSupabaseData<{
     id: string;
     type: string;
     amount: number;
@@ -403,7 +403,7 @@ export function useTransactions() {
 }
 
 export function useInvestments() {
-  return useSupabaseDataGeneric<{
+  return useSupabaseData<{
     id: string;
     type: string;
     name: string;
@@ -425,7 +425,7 @@ export function useInvestments() {
 }
 
 export function useRealEstate() {
-  return useSupabaseDataGeneric<{
+  return useSupabaseData<{
     id: string;
     type: string;
     address: string;
@@ -444,7 +444,7 @@ export function useRealEstate() {
 }
 
 export function useVehicles() {
-  return useSupabaseDataGeneric<{
+  return useSupabaseData<{
     id: string;
     type: string;
     brand: string;
@@ -464,7 +464,7 @@ export function useVehicles() {
 }
 
 export function useExoticAssets() {
-  return useSupabaseDataGeneric<{
+  return useSupabaseData<{
     id: string;
     name: string;
     category: string;
@@ -483,7 +483,7 @@ export function useExoticAssets() {
 }
 
 export function useBills() {
-  return useSupabaseDataGeneric<{
+  return useSupabaseData<{
     id: string;
     name: string;
     company: string;
@@ -507,7 +507,7 @@ export function useBills() {
 }
 
 export function useEmployees() {
-  return useSupabaseDataGeneric<{
+  return useSupabaseData<{
     id: string;
     name: string;
     role: string;
@@ -534,7 +534,7 @@ export function useEmployees() {
 }
 
 export function useFinancialGoals() {
-  return useSupabaseDataGeneric<{
+  return useSupabaseData<{
     id: string;
     name: string;
     target_amount: number;
@@ -551,7 +551,7 @@ export function useFinancialGoals() {
 }
 
 export function useAlerts() {
-  return useSupabaseDataGeneric<{
+  return useSupabaseData<{
     id: string;
     type: string;
     title: string;
@@ -568,152 +568,4 @@ export function useAlerts() {
     table: 'alerts',
     orderBy: { column: 'date', ascending: false }
   });
-}
-
-// Rename the original function to avoid conflicts
-export function useSupabaseDataGeneric<T = any>(options: DataFetchOptions): UseSupabaseDataResult<T> {
-  const { user } = useAuth();
-  const [data, setData] = useState<T[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  const fetchData = async () => {
-    if (!user) {
-      setData([]);
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      let query = supabase
-        .from(options.table)
-        .select(options.columns || '*')
-        .eq('user_id', user.id);
-
-      // Apply additional filters
-      if (options.filter) {
-        Object.entries(options.filter).forEach(([key, value]) => {
-          query = query.eq(key, value);
-        });
-      }
-
-      // Apply ordering
-      if (options.orderBy) {
-        query = query.order(options.orderBy.column, { 
-          ascending: options.orderBy.ascending ?? true 
-        });
-      }
-
-      // Apply limit
-      if (options.limit) {
-        query = query.limit(options.limit);
-      }
-
-      const { data: result, error } = await query;
-
-      if (error) throw error;
-      setData(result || []);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      console.error('Error fetching data:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const create = async (newData: Partial<T>): Promise<T | null> => {
-    if (!user) {
-      setError('User not authenticated');
-      return null;
-    }
-
-    try {
-      const { data: result, error } = await supabase
-        .from(options.table)
-        .insert([{ ...newData, user_id: user.id }])
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      // Update local state
-      setData(prev => [result, ...prev]);
-      return result;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Create failed');
-      console.error('Error creating data:', err);
-      return null;
-    }
-  };
-
-  const update = async (id: string, updateData: Partial<T>): Promise<T | null> => {
-    if (!user) {
-      setError('User not authenticated');
-      return null;
-    }
-
-    try {
-      const { data: result, error } = await supabase
-        .from(options.table)
-        .update(updateData)
-        .eq('id', id)
-        .eq('user_id', user.id)
-        .select()
-        .single();
-
-      if (error) throw error;
-      
-      // Update local state
-      setData(prev => prev.map(item => 
-        (item as any).id === id ? result : item
-      ));
-      return result;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Update failed');
-      console.error('Error updating data:', err);
-      return null;
-    }
-  };
-
-  const deleteItem = async (id: string): Promise<boolean> => {
-    if (!user) {
-      setError('User not authenticated');
-      return false;
-    }
-
-    try {
-      const { error } = await supabase
-        .from(options.table)
-        .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
-
-      if (error) throw error;
-      
-      // Update local state
-      setData(prev => prev.filter(item => (item as any).id !== id));
-      return true;
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Delete failed');
-      console.error('Error deleting data:', err);
-      return false;
-    }
-  };
-
-  useEffect(() => {
-    fetchData();
-  }, [user, options.table, JSON.stringify(options.filter)]);
-
-  return {
-    data,
-    loading,
-    error,
-    refetch: fetchData,
-    create,
-    update,
-    delete: deleteItem
-  };
 }
