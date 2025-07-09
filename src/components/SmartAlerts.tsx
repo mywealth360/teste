@@ -98,7 +98,6 @@ export default function SmartAlerts() {
       if (employeesError) throw employeesError;
 
       // Create alerts for upcoming employee vacations
-      const today = new Date();
       employees?.forEach(employee => {
         if (employee.next_vacation) {
           const nextVacation = new Date(employee.next_vacation);
@@ -140,7 +139,6 @@ export default function SmartAlerts() {
         }
 
         // FGTS payment alerts - due on the 7th of each month
-        const today = new Date();
         const nextMonth = new Date();
         nextMonth.setMonth(today.getMonth() + 1);
         const fgtsDate = new Date(today.getFullYear(), today.getMonth(), 7);
