@@ -1,29 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Plus, 
-  Target, 
-  Trash2, 
-  Edit, 
-  TrendingUp, 
-  Calendar, 
-  AlertTriangle, 
-  Info,
-  ChevronRight, 
-  ChevronDown, 
-  PiggyBank, 
-  Airplane, 
-  Briefcase, 
-  Home, 
-  GraduationCap, 
-  Package, 
-  Calculator,
-  DollarSign,
-  Check,
-  Clock,
-  X,
-  Save,
-  File
-} from 'lucide-react';
+import { Plus, Target, Trash2, Edit, TrendingUp, Calendar, AlertTriangle, Info, ChevronRight, ChevronDown, PiggyBank, Airplay as Airplane, Briefcase, Home, GraduationCap, Package, Calculator, DollarSign, Check, Clock, X, Save, File } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
