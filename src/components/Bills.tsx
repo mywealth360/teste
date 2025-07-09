@@ -1,5 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Receipt, Calendar, Building, Bell, Edit, Trash2, AlertTriangle, Save, X, CheckCircle, Tag, Home, Car, Users, CreditCard, Shield, FileText, Mail, DollarSign, Clock, Target, PiggyBank } from 'lucide-react';
+import { 
+  Plus, Receipt, Calendar, Building, Bell, Edit, Trash2, AlertTriangle, Save, X, 
+  CheckCircle, Tag, Home, Car, Users, CreditCard, Target, FileText, Mail, DollarSign, Clock, PiggyBank, Shield
+} from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -25,11 +28,6 @@ interface Bill {
   associated_with?: 'property' | 'vehicle' | 'employee' | 'loan';
   associated_id?: string;
   associated_name?: string;
-  payment_status?: 'pending' | 'paid' | 'overdue' | 'partial';
-  payment_date?: string;
-  payment_method?: string;
-  send_email_reminder?: boolean;
-  reminder_days_before?: number;
   financial_goal_id?: string;
   is_goal_contribution?: boolean;
 }
@@ -74,7 +72,10 @@ Original categories array - keeping as a fallback
 
 export default function Bills() {
   const { user } = useAuth();
+  
   const [bills, setBills] = useState<Bill[]>([]);
+  const [financialGoals, setFinancialGoals] = useState<FinancialGoal[]>([]);
+  
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Bill>>({});
@@ -88,14 +89,11 @@ export default function Bills() {
   const [employees, setEmployees] = useState<any[]>([]);
   const [loans, setLoans] = useState<any[]>([]);
 
-  // Financial goals for bill association
-  const [financialGoals, setFinancialGoals] = useState<FinancialGoal[]>([]);
-
   useEffect(() => {
     if (user) {
       fetchBills();
-      fetchAssociatedEntities();
       fetchFinancialGoals();
+      fetchAssociatedEntities();
     }
   }, [user]);
 
@@ -150,17 +148,16 @@ export default function Bills() {
     }
   };
   
+  // Fetch financial goals for bill association
   const fetchFinancialGoals = async () => {
-    if (!user) return;
-    
     try {
       const { data, error } = await supabase
         .from('financial_goals')
         .select('id, name, target_amount, current_amount, target_date, status')
-        .eq('user_id', user.id)
+        .eq('user_id', user?.id)
         .eq('status', 'active')
         .order('priority', { ascending: false });
-        
+      
       if (error) throw error;
       setFinancialGoals(data || []);
     } catch (err) {
@@ -252,14 +249,17 @@ export default function Bills() {
     }
   };
 
-  const markAsPaid = async (billId: string, amount?: number, method?: string) => {
+  // Mark bill as paid
+  const markAsPaid = async (billId: string, amount?: number, paymentMethod?: string) => {
     try {
-      // In production, call the mark_bill_as_paid database function
-      const { error } = await supabase.rpc('mark_bill_as_paid', {
+      const today = new Date().toISOString().split('T')[0];
+      
+      // Call the mark_bill_as_paid database function
+      const { data, error } = await supabase.rpc('mark_bill_as_paid', {
         bill_id: billId,
-        payment_date_val: new Date().toISOString().split('T')[0],
+        payment_date_val: today,
         payment_amount_val: amount,
-        payment_method_val: method
+        payment_method_val: paymentMethod
       });
 
       if (error) throw error;
@@ -304,30 +304,7 @@ export default function Bills() {
     }
   };
 
-  const totalMonthlyBills = bills
-    .filter(bill => bill.is_active && bill.is_recurring)
-    .reduce((sum, bill) => sum + bill.amount, 0);
-
-  const upcomingBills = bills
-    .filter(bill => bill.is_active)
-    .sort((a, b) => new Date(a.next_due).getTime() - new Date(b.next_due).getTime())
-    .slice(0, 5);
-
-  const overdueBills = bills.filter(bill => {
-    const dueDate = new Date(bill.next_due);
-    const today = new Date();
-    return bill.is_active && dueDate < today;
-  });
-
-  const getDaysUntilDue = (dueDate: string) => {
-    const due = new Date(dueDate);
-    const today = new Date();
-    const diffTime = due.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
-  };
-
-  const getBillStatus = (bill: Bill): 'paid' | 'partial' | 'overdue' | 'pending' => {
+  const getBillStatus = (bill: Bill) => {
     if (bill.payment_status === 'paid') {
       return 'paid';
     }
@@ -344,11 +321,6 @@ export default function Bills() {
     return 'pending';
   };
 
-  // Check if bill is associated with a financial goal
-  const isGoalContribution = (bill: Bill) => {
-    return bill.is_goal_contribution && bill.financial_goal_id;
-  };
-  
   // Toggle email reminder for a bill
   const toggleEmailReminder = async (billId: string) => {
     try {
@@ -405,6 +377,34 @@ export default function Bills() {
       console.error('Error associating bill with goal:', err);
       setError('Erro ao associar conta à meta financeira');
     }
+  };
+
+  const totalMonthlyBills = bills
+    .filter(bill => bill.is_active && bill.is_recurring)
+    .reduce((sum, bill) => sum + bill.amount, 0);
+
+  const upcomingBills = bills
+    .filter(bill => bill.is_active)
+    .sort((a, b) => new Date(a.next_due).getTime() - new Date(b.next_due).getTime())
+    .slice(0, 5);
+
+  const overdueBills = bills.filter(bill => {
+    const dueDate = new Date(bill.next_due);
+    const today = new Date();
+    return bill.is_active && dueDate < today;
+  });
+
+  const getDaysUntilDue = (dueDate: string) => {
+    const due = new Date(dueDate);
+    const today = new Date();
+    const diffTime = due.getTime() - today.getTime();
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    return diffDays;
+  };
+
+  // Check if bill is associated with a financial goal
+  const isGoalContribution = (bill: Bill) => {
+    return bill.is_goal_contribution && bill.financial_goal_id;
   };
 
   if (loading) {
@@ -660,8 +660,8 @@ export default function Bills() {
                         className="p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
                       >
                         {categories.map(category => (
-                          <option key={category} value={category}>
-                            {category}
+                          <option key={category.value} value={category.value}>
+                            {category.label}
                           </option>
                         ))}
                       </select>
@@ -737,41 +737,36 @@ export default function Bills() {
                               <span>{bill.associated_name}</span>
                             </span>
                           )}
-                          
-                          {/* Financial goal tag */}
-                          {isGoalContribution(bill) && (
+
+                          {bill.is_goal_contribution && bill.financial_goal_id && (
                             <span className="text-xs px-2 py-1 rounded-full bg-indigo-100 text-indigo-700 flex items-center space-x-1">
                               <Target className="h-3 w-3" />
                               <span>Meta Financeira</span>
                             </span>
                           )}
-
-                          {/* Payment status tag */}
+                          
+                          {getBillStatus(bill) === 'pending' && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 flex items-center space-x-1">
+                              <Tag className="h-3 w-3" />
+                              <span>Pendente</span>
+                            </span>
+                          )}
                           {bill.payment_status === 'paid' && (
                             <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 flex items-center space-x-1">
                               <CheckCircle className="h-3 w-3" />
                               <span>Pago</span>
                             </span>
                           )}
-                          
                           {bill.payment_status === 'partial' && (
                             <span className="text-xs px-2 py-1 rounded-full bg-yellow-100 text-yellow-700 flex items-center space-x-1">
                               <CheckCircle className="h-3 w-3" />
                               <span>Pago Parcial</span>
                             </span>
                           )}
-
                           {bill.payment_status === 'overdue' && (
                             <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 flex items-center space-x-1">
                               <AlertTriangle className="h-3 w-3" />
                               <span>Atrasado</span>
-                            </span>
-                          )}
-
-                          {getBillStatus(bill) === 'pending' && (
-                            <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 flex items-center space-x-1">
-                              <Tag className="h-3 w-3" />
-                              <span>Pendente</span>
                             </span>
                           )}
                           {!bill.is_active && (
@@ -884,7 +879,7 @@ export default function Bills() {
                       </div>
                       
                       <div className="flex items-center space-x-2">
-                        {bill.is_active && (bill.payment_status === 'pending' || bill.payment_status === 'partial' || bill.payment_status === 'overdue') && (
+                        {bill.is_active && bill.payment_status !== 'paid' && (
                           <button
                             onClick={() => {
                               const amount = prompt('Valor pago:', bill.amount.toString());
@@ -893,12 +888,13 @@ export default function Bills() {
                                 markAsPaid(bill.id, parseFloat(amount), method || undefined);
                               }
                             }}
-                            className="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm rounded-lg hover:from-green-600 hover:to-green-700 transition-colors duration-200 flex items-center"
+                            className="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-xs rounded-lg hover:from-green-600 hover:to-green-700 transition-colors duration-200 flex items-center"
                           >
                             <DollarSign className="h-3 w-3 mr-1" />
-                            <span>Marcar como Pago</span>
+                            <span>Pagar</span>
                           </button>
                         )}
+                        
                         <button 
                           onClick={() => handleEditBill(bill)}
                           className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
@@ -1072,42 +1068,57 @@ export default function Bills() {
                     </div>
                   </details>
                 )}
-
-                {/* Financial goals section */}
-                {financialGoals.length > 0 && (
-                  <details className="mb-2">
-                    <summary className="cursor-pointer py-2 px-3 bg-gray-50 rounded-lg text-gray-700 flex items-center">
-                      <Target className="h-4 w-4 mr-2 text-indigo-600" />
-                      Metas Financeiras
-                    </summary>
-                    <div className="ml-4 mt-2 space-y-2">
+              </div>
+              
+              <div className="mb-4">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Associar a Meta Financeira (opcional)
+                </label>
+                
+                {financialGoals.length > 0 ? (
+                  <div className="space-y-2 border border-gray-200 rounded-lg p-3">
+                    <div className="flex items-center space-x-2 text-sm">
+                      <Target className="h-4 w-4 text-indigo-600" />
+                      <span className="font-medium text-gray-700">Metas Disponíveis</span>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 gap-2 mt-2">
                       {financialGoals.map(goal => (
-                        <label key={goal.id} className="flex items-center space-x-2 cursor-pointer">
+                        <label key={goal.id} className="flex items-center space-x-2 cursor-pointer p-2 rounded-lg hover:bg-gray-50">
                           <input
                             type="radio"
                             name="financial_goal_id"
                             value={goal.id}
-                            className="rounded-full text-indigo-600"
+                            className="text-indigo-600"
                           />
-                          <span className="text-sm text-gray-700 flex items-center">
-                            <PiggyBank className="h-3 w-3 mr-1 text-indigo-500" />
-                            {goal.name} - Meta: {goal.target_amount.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}
-                          </span>
+                          <div>
+                            <p className="text-sm font-medium text-gray-800">{goal.name}</p>
+                            <p className="text-xs text-gray-500">
+                              Meta: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(goal.target_amount)} | 
+                              Progresso: {new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(goal.current_amount)}
+                            </p>
+                          </div>
                         </label>
                       ))}
-                      <div className="pt-2 text-xs text-indigo-600 border-t border-indigo-100 mt-2">
-                        <label className="flex items-center space-x-2 cursor-pointer">
-                          <input
-                            type="checkbox"
-                            name="is_goal_contribution"
-                            className="rounded text-indigo-600"
-                            defaultChecked
-                          />
-                          <span>Contar pagamentos como contribuição para a meta</span>
-                        </label>
-                      </div>
                     </div>
-                  </details>
+                    
+                    <div className="mt-2">
+                      <label className="flex items-center space-x-2 cursor-pointer">
+                        <input type="checkbox" name="is_goal_contribution" className="rounded text-indigo-600" />
+                        <span className="text-sm text-gray-700">Marcar como contribuição para a meta</span>
+                      </label>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Quando esta conta for paga, o valor será automaticamente adicionado à meta selecionada.
+                      </p>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-gray-50 rounded-lg p-3 text-center">
+                    <p className="text-sm text-gray-600">Você não tem metas financeiras ativas.</p>
+                    <a href="/?tab=financial-goals" className="text-sm text-indigo-600 hover:underline mt-1 inline-block">
+                      Criar uma meta financeira
+                    </a>
+                  </div>
                 )}
               </div>
               
@@ -1128,38 +1139,15 @@ export default function Bills() {
                 <input type="checkbox" name="is_recurring" className="rounded text-blue-600" defaultChecked />
                 <span className="text-gray-700">Conta recorrente (mensal)</span>
               </label>
-
-              <div className="bg-indigo-50 p-3 rounded-lg border border-indigo-100 mt-4">
-                <div className="flex items-center space-x-2 mb-2">
-                  <CheckCircle className="h-4 w-4 text-indigo-600" />
-                  <h3 className="font-medium text-indigo-700">Funcionalidades adicionais</h3>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
-                  <label className="flex items-center space-x-2 text-sm">
-                    <input type="checkbox" name="send_email_reminder" className="rounded text-indigo-600" defaultChecked />
-                    <span className="text-indigo-700 flex items-center">
-                      <Mail className="h-3 w-3 mr-1" />
-                      <span>Alertas por email</span>
-                    </span>
-                  </label>
-                  <div className="flex items-center space-x-2 text-sm">
-                    <span className="text-indigo-700">Lembrar</span>
-                    <select
-                      name="reminder_days_before"
-                      className="border border-indigo-200 rounded text-indigo-700 text-sm py-0 bg-indigo-50"
-                      defaultValue="3"
-                    >
-                      <option value="1">1 dia</option>
-                      <option value="2">2 dias</option>
-                      <option value="3">3 dias</option>
-                      <option value="5">5 dias</option>
-                      <option value="7">7 dias</option>
-                    </select>
-                    <span className="text-indigo-700">antes</span>
-                  </div>
-                </div>
+              
+              <div className="flex items-center space-x-2 mt-4">
+                <input type="checkbox" name="send_email_reminder" className="rounded text-blue-600" defaultChecked />
+                <label className="text-gray-700 flex items-center space-x-2">
+                  <Mail className="h-4 w-4 text-blue-500" />
+                  <span>Receber notificações por email</span>
+                </label>
               </div>
-
+              
               <div className="flex space-x-3 pt-4">
                 <button
                   type="button"
