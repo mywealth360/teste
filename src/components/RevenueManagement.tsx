@@ -21,7 +21,7 @@ export default function RevenueManagement() {
   const { user } = useAuth();
   const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
   const [loading, setLoading] = useState(true);
-  const [totalMonthlyIncome, setTotalMonthlyIncome] = useState(1300);
+  const [totalMonthlyIncome, setTotalMonthlyIncome] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -136,12 +136,32 @@ export default function RevenueManagement() {
       // Combine all income sources
       const allIncomeSources = [
         ...(incomeSources || [])
-      ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      ];
 
       setIncomeSources(allIncomeSources);
       
-      // Set total monthly income to 1300 to match the UI
-      setTotalMonthlyIncome(1300);
+      // Calculate actual total monthly income
+      const total = allIncomeSources
+        .filter(source => source.is_active)
+        .reduce((sum, source) => {
+          let monthlyAmount = source.amount;
+          
+          switch (source.frequency) {
+            case 'weekly':
+              monthlyAmount = source.amount * 4.33;
+              break;
+            case 'yearly':
+              monthlyAmount = source.amount / 12;
+              break;
+            case 'one-time':
+              monthlyAmount = 0;
+              break;
+          }
+          
+          return sum + monthlyAmount;
+        }, 0);
+      
+      setTotalMonthlyIncome(total);
     } catch (error) {
       console.error('Error fetching income sources:', error);
     } finally {
@@ -186,57 +206,12 @@ export default function RevenueManagement() {
   const handleDelete = async (id: string) => {
     if (!confirm('Tem certeza que deseja excluir esta fonte de renda?')) return;
 
-    // Check if it's a transaction ID
-    if (id.startsWith('transaction-')) {
-      try {
-        // Extract the transaction ID
-        const transactionId = id.replace('transaction-', '');
-        
-        // Delete the transaction
-        const { error } = await supabase
-          .from('transactions')
-          .delete()
-          .eq('id', transactionId);
-        
-        if (error) throw error;
-        fetchIncomeSources();
-      } catch (error) {
-        console.error('Error deleting transaction:', error);
-      }
-      return;
-    }
-
     try {
-      let error;
-      
-      if (id.startsWith('rental-')) {
-        // Extract the real estate ID and delete from real_estate table
-        const realEstateId = id.replace('rental-', '');
-        const result = await supabase
-          .from('real_estate')
-          .delete()
-          .eq('id', realEstateId);
-        error = result.error;
-      } else if (id.startsWith('dividend-')) {
-        // Extract the investment ID and delete from investments table
-        const investmentId = id.replace('dividend-', '');
-        // For dividend sources, we don't delete the investment, just update to remove dividend info
-        const result = await supabase
-          .from('investments')
-          .update({
-            dividend_yield: null,
-            monthly_income: null
-          })
-          .eq('id', investmentId);
-        error = result.error;
-      } else {
-        // Regular income source - delete from income_sources table
-        const result = await supabase
-          .from('income_sources')
-          .delete()
-          .eq('id', id);
-        error = result.error;
-      }
+      // Delete from income_sources table
+      const { error } = await supabase
+        .from('income_sources')
+        .delete()
+        .eq('id', id);
 
       if (error) throw error;
       fetchIncomeSources();
@@ -554,32 +529,18 @@ export default function RevenueManagement() {
                            source.category}
                         </span>
                         {!source.is_active && (
-                          <span className="text-xs px-2 py-1 rounded-full bg-gray-100 text-gray-700">
-                            Inativa
-                          </span>
-                        )}
-                      </div>
-                      
-                      <div className="flex items-center space-x-2 mt-1">
-                        <span className="text-sm text-gray-500">
-                          {formatFrequency(source.frequency)}
-                        </span>
-                        {source.next_payment && (
-                          <>
-                            <span className="text-gray-300">•</span>
-                            <span className="text-sm text-gray-500">
-                              Próximo: {new Date(source.next_payment).toLocaleDateString('pt-BR')}
-                            </span>
-                          </>
-                        )}
-                        {source.tax_rate > 0 && (
-                          <>
-                            <span className="text-gray-300">•</span>
-                            <span className="text-sm text-gray-500">
-                              Imposto: {source.tax_rate}%
-                            </span>
-                          </>
-                        )}
+                      <div className="flex items-center space-x-2">
+                        <button 
+                          className="p-2 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors duration-200"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </button>
+                        <button 
+                          onClick={() => handleDelete(source.id)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
                       </div>
                     </div>
                   </div>
