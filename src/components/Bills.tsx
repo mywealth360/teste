@@ -362,7 +362,7 @@ export default function Bills() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
         <div className="flex items-center space-x-3">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Contas a Pagar</h1>
@@ -375,11 +375,11 @@ export default function Bills() {
             </div>
           )}
         </div>
-        <div className="flex space-x-3">
+        <div className="flex flex-wrap gap-3">
           {overdueBills.length > 0 && (
             <button 
               onClick={markAllAsPaid}
-              className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-xl hover:from-green-600 hover:to-green-700 transition-all duration-200 shadow-lg"
+              className="flex items-center space-x-2 px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-200 shadow-md"
             >
               <CheckCircle className="h-4 w-4" />
               <span>Pagar Todas</span>
@@ -387,7 +387,7 @@ export default function Bills() {
           )}
           <button 
             onClick={() => setShowAddModal(true)}
-            className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg"
+            className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-md"
           >
             <Plus className="h-4 w-4" />
             <span>Nova Conta</span>
@@ -444,7 +444,7 @@ export default function Bills() {
       )}
 
       {/* Resumo */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
         <div className="bg-blue-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
@@ -483,7 +483,7 @@ export default function Bills() {
       </div>
 
       {/* Próximas contas */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="bg-white rounded-xl shadow-md p-6">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">Próximas Contas</h2>
         <div className="space-y-4">
           {upcomingBills.map((bill) => {
@@ -535,13 +535,13 @@ export default function Bills() {
       </div>
 
       {/* Lista completa de contas */}
-      <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+      <div className="bg-white rounded-xl shadow-md overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
           <h2 className="text-xl font-semibold text-gray-800">Todas as Contas</h2>
           {pendingCount > 0 && (
             <button
               onClick={markAllAsPaid}
-              className="px-4 py-2 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors duration-200 flex items-center space-x-2"
+              className="px-4 py-2 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center space-x-2 shadow-sm"
             >
               <CheckCircle className="h-4 w-4" />
               <span>Marcar Todas como Pagas</span>
@@ -755,7 +755,7 @@ export default function Bills() {
                                 markAsPaid(bill.id, parseFloat(amount), method || undefined);
                               }
                             }}
-                            className="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm rounded-lg hover:from-green-600 hover:to-green-700 transition-colors duration-200 flex items-center"
+                            className="px-3 py-1 bg-green-600 text-white text-sm rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center shadow-sm"
                           >
                             <DollarSign className="h-3 w-3 mr-1" />
                             <span>Marcar como Pago</span>
@@ -972,7 +972,7 @@ export default function Bills() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200"
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-sm"
                 >
                   Adicionar
                 </button>
