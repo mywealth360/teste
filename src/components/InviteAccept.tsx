@@ -197,16 +197,10 @@ export default function InviteAccept() {
           </p>
         </div>
 
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  readOnly={inviteDetails?.email ? true : false}
-          <div className="space-y-6">
-            <div className="bg-white p-4 rounded-xl border border-blue-100 mb-6">
-                  className={`w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl ${
-                    inviteDetails?.email ? 'bg-gray-100' : 'focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500'
-                  }`}
-                Este convite foi enviado para <strong>{inviteDetails?.email}</strong>. Por favor, faça login ou crie uma conta com este email para aceitar o convite.
-              </p>
-            </div>
+            <p className="text-gray-600">
+              Este convite foi enviado para <strong>{inviteDetails?.email}</strong>. Por favor, faça login ou crie uma conta com este email para aceitar o convite.
+            </p>
+          </div>
             
             {error && (
               <div className="bg-white border border-red-200 rounded-xl p-4">
@@ -240,6 +234,7 @@ export default function InviteAccept() {
                     type="email"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    readOnly={inviteDetails?.email ? true : false}
                     placeholder="seu@email.com"
                     required
                     className="w-full pl-10 pr-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
