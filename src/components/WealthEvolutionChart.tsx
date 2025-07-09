@@ -1,0 +1,132 @@
+import React from 'react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+// Simulated data for wealth evolution
+const generateWealthData = () => {
+  const months = [
+    'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
+    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+  ];
+  
+  const currentYear = new Date().getFullYear();
+  const data = [];
+  
+  let baseValue = 450000;
+  let investmentsValue = 200000;
+  let realEstateValue = 150000;
+  let bankValue = 50000;
+  let otherValue = 50000;
+  
+  for (let i = 0; i < 12; i++) {
+    // Simulate some growth and fluctuation
+    const investmentGrowth = investmentsValue * (0.005 + Math.random() * 0.01);
+    const realEstateGrowth = realEstateValue * (0.002 + Math.random() * 0.005);
+    const bankGrowth = bankValue * 0.001;
+    const otherGrowth = otherValue * (0.001 + Math.random() * 0.005);
+    
+    investmentsValue += investmentGrowth;
+    realEstateValue += realEstateGrowth;
+    bankValue += bankGrowth;
+    otherValue += otherGrowth;
+    
+    baseValue = investmentsValue + realEstateValue + bankValue + otherValue;
+    
+    data.push({
+      month: `${months[i]}/${currentYear}`,
+      total: Math.round(baseValue),
+      investimentos: Math.round(investmentsValue),
+      imoveis: Math.round(realEstateValue),
+      contas: Math.round(bankValue),
+      outros: Math.round(otherValue)
+    });
+  }
+  
+  return data;
+};
+
+const wealthData = generateWealthData();
+
+export default function WealthEvolutionChart() {
+  return (
+    <div className="bg-white rounded-2xl shadow-lg p-6">
+      <h2 className="text-xl font-semibold text-gray-800 mb-6">Evolução Patrimonial</h2>
+      <div className="h-80">
+        <ResponsiveContainer width="100%" height="100%">
+          <LineChart
+            data={wealthData}
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis 
+              dataKey="month" 
+              stroke="#6b7280"
+              fontSize={12}
+              tickLine={false}
+            />
+            <YAxis 
+              stroke="#6b7280"
+              fontSize={12}
+              tickLine={false}
+              tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+            />
+            <Tooltip 
+              contentStyle={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+              }}
+              formatter={(value: any) => [`R$ ${value.toLocaleString('pt-BR')}`, '']}
+              labelStyle={{ color: '#374151', fontWeight: 'bold' }}
+            />
+            <Legend 
+              wrapperStyle={{ paddingTop: '20px' }}
+              iconType="circle"
+            />
+            <Line
+              type="monotone"
+              dataKey="total"
+              stroke="#10b981"
+              strokeWidth={3}
+              dot={{ fill: '#10b981', strokeWidth: 2, r: 4 }}
+              activeDot={{ r: 6, stroke: '#10b981', strokeWidth: 2 }}
+              name="Total"
+            />
+            <Line
+              type="monotone"
+              dataKey="investimentos"
+              stroke="#3b82f6"
+              strokeWidth={2}
+              dot={{ fill: '#3b82f6', strokeWidth: 2, r: 3 }}
+              name="Investimentos"
+            />
+            <Line
+              type="monotone"
+              dataKey="imoveis"
+              stroke="#f59e0b"
+              strokeWidth={2}
+              dot={{ fill: '#f59e0b', strokeWidth: 2, r: 3 }}
+              name="Imóveis"
+            />
+            <Line
+              type="monotone"
+              dataKey="contas"
+              stroke="#8b5cf6"
+              strokeWidth={2}
+              dot={{ fill: '#8b5cf6', strokeWidth: 2, r: 3 }}
+              name="Contas"
+            />
+            <Line
+              type="monotone"
+              dataKey="outros"
+              stroke="#ec4899"
+              strokeWidth={2}
+              dot={{ fill: '#ec4899', strokeWidth: 2, r: 3 }}
+              name="Outros"
+            />
+          </LineChart>
+        </ResponsiveContainer>
+      </div>
+    </div>
+  );
+}
