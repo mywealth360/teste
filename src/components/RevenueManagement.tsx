@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { DollarSign, Plus, Edit2, Trash2, TrendingUp, Home, Building } from 'lucide-react';
+import { DollarSign, Plus, Edit2, Trash2, TrendingUp, Home, Building, Receipt } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -65,6 +65,15 @@ export default function RevenueManagement() {
         
       if (investmentsError) throw investmentsError;
       
+      // Fetch transaction income
+      const { data: transactionsData, error: transactionsError } = await supabase
+        .from('transactions')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('type', 'income');
+        
+      if (transactionsError) throw transactionsError;
+      
       // Convert rental properties to income sources format
       const rentalIncome = (realEstateData || []).map(property => ({
         id: `rental-${property.id}`,
@@ -108,11 +117,27 @@ export default function RevenueManagement() {
           };
         });
       
+      // Convert transactions to income sources format
+      const transactionIncome = (transactionsData || []).map(transaction => ({
+        id: `transaction-${transaction.id}`,
+        user_id: transaction.user_id,
+        name: transaction.description,
+        amount: transaction.amount,
+        frequency: transaction.is_recurring ? 'monthly' as const : 'one-time' as const,
+        category: transaction.category || 'Transações',
+        next_payment: null,
+        is_active: true,
+        tax_rate: transaction.tax_rate || 0,
+        created_at: transaction.created_at,
+        updated_at: transaction.updated_at
+      }));
+      
       // Combine all income sources
       const allIncomeSources = [
         ...(incomeSources || []),
         ...rentalIncome,
-        ...dividendIncome
+        ...dividendIncome,
+        ...transactionIncome
       ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
 
       setIncomeSources(allIncomeSources);
@@ -281,6 +306,8 @@ export default function RevenueManagement() {
        return <Home className="h-5 w-5 text-orange-500" />;
       case 'dividendos':
        return <Building className="h-5 w-5 text-blue-500" />;
+     case 'transações':
+       return <Receipt className="h-5 w-5 text-purple-500" />;
      case 'invest':
        return <TrendingUp className="h-5 w-5 text-indigo-500" />;
      case 'carga':
