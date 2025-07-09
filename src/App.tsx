@@ -26,7 +26,6 @@ import RevenueManagement from './components/RevenueManagement';
 import PatrimonyManagement from './components/PatrimonyManagement';
 import FloatingChatButton from './components/FloatingChatButton';
 import LandingPage from './components/LandingPage';
-import SubscriptionPage from './components/SubscriptionPage';
 import Success from './pages/Success';
 import Cancel from './pages/Cancel';
 import UserProfile from './components/UserProfile';
