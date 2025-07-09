@@ -505,47 +505,108 @@ export default function SmartAlerts() {
                     !alert.isRead ? 'border-l-4 border-blue-500' : ''
                   }`}
                 >
-                  <div className="flex items-start space-x-4">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getTypeBackground(alert.type)}`}>
-                      {getTypeIcon(alert.type)}
-                    </div>
-                    
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <h3 className="font-medium text-gray-900">{alert.title}</h3>
-                            <span className={`inline-flex items-center rounded-full w-2 h-2 ${getPriorityColor(alert.priority)}`}></span>
-                          </div>
-                          <p className="text-gray-600 mt-1">{alert.description}</p>
-                        </div>
-                        
-                        <button
-                          onClick={() => markAsRead(alert.id)}
-                          className="text-gray-400 hover:text-gray-600 ml-2 flex-shrink-0"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
+                  <div className="flex items-start justify-between">
+                    <div className="flex items-start space-x-4">
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center ${getTypeBackground(alert.type)}`}>
+                        {getTypeIcon(alert.type)}
                       </div>
                       
-                      <div className="flex items-center justify-between mt-3">
-                        <div className="flex items-center space-x-2">
-                          <Clock className="h-4 w-4 text-gray-400" />
-                          <span className="text-sm text-gray-500">
-                            {new Date(alert.date).toLocaleDateString('pt-BR')}
-                          </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-start">
+                          <div>
+                            <div className="flex items-center space-x-2">
+                              <h3 className="font-medium text-gray-900">{alert.title}</h3>
+                              <span className={`inline-flex items-center rounded-full w-2 h-2 ${getPriorityColor(alert.priority)}`}></span>
+                            </div>
+                            <p className="text-gray-600 mt-1">{alert.description}</p>
+                          </div>
                         </div>
                         
-                        {alert.actionPath && (
-                          <button
-                            onClick={() => handleAlertAction(alert)}
-                            className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1"
-                          >
-                            <span>{alert.actionLabel || 'Ver detalhes'}</span>
-                            <ChevronRight className="h-4 w-4" />
-                          </button>
-                        )}
+                        <div className="flex items-center justify-between mt-3">
+                          <div className="flex items-center space-x-2">
+                            <Clock className="h-4 w-4 text-gray-400" />
+                            <span className="text-sm text-gray-500">
+                              {new Date(alert.date).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
+                          
+                          <div className="flex items-center space-x-2">
+                            {alert.actionPath && (
+                              <button
+                                onClick={() => handleAlertAction(alert)}
+                                className="text-blue-600 hover:text-blue-700 text-sm font-medium flex items-center space-x-1"
+                              >
+                                <span>{alert.actionLabel || 'Ver detalhes'}</span>
+                                <ChevronRight className="h-4 w-4" />
+                              </button>
+                            )}
+                            
+                            {alert.type === 'bill' && (
+                              <button
+                                onClick={() => {
+                                  if (alert.relatedId) {
+                                    const billId = alert.relatedId;
+                                    // Call the mark_bill_as_paid function
+                                    fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/rpc/mark_bill_as_paid`, {
+                                      method: 'POST',
+                                      headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${supabase.auth.getSession().then(({ data }) => data.session?.access_token)}`
+                                      },
+                                      body: JSON.stringify({ 
+                                        bill_id: billId,
+                                        payment_date_val: new Date().toISOString().split('T')[0]
+                                      })
+                                    }).then(() => {
+                                      // Mark alert as read
+                                      markAsRead(alert.id);
+                                      // Refresh alerts
+                                      generateAlerts();
+                                    });
+                                  }
+                                }}
+                                className="px-3 py-1 bg-green-500 text-white text-xs rounded-lg hover:bg-green-600 transition-colors"
+                              >
+                                Marcar como Pago
+                              </button>
+                            )}
+                          </div>
+                        </div>
                       </div>
+                    </div>
+                    
+                    <div className="flex flex-col items-center ml-2">
+                      <button
+                        onClick={() => markAsRead(alert.id)}
+                        className="text-gray-400 hover:text-gray-600 p-1 rounded hover:bg-gray-100"
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                      
+                      {alert.type === 'bill' && (
+                        <button
+                          onClick={() => window.location.href = '/bills'}
+                          className="mt-1 text-gray-400 hover:text-blue-600 p-1 rounded hover:bg-gray-100" 
+                          title="Ver em contas"
+                        >
+                          <FileText className="h-4 w-4" />
+                        </button>
+                      )}
+                      
+                      <button
+                        onClick={() => {
+                          // Call the send-alert-email edge function
+                          supabase.functions.invoke('send-alert-email', {
+                            body: { alertId: alert.id }
+                          }).then(() => {
+                            alert('Email de alerta enviado!');
+                          });
+                        }}
+                        className="mt-1 text-gray-400 hover:text-blue-600 p-1 rounded hover:bg-gray-100"
+                        title="Enviar por email"
+                      >
+                        <Mail className="h-4 w-4" />
+                      </button>
                     </div>
                   </div>
                 </div>

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Receipt, Calendar, Building, Bell, Edit, Trash2, AlertTriangle, Save, X, CheckCircle, Tag, Home, Car, Users, CreditCard, Shield, FileText } from 'lucide-react';
+import { Plus, Receipt, Calendar, Building, Bell, Edit, Trash2, AlertTriangle, Save, X, CheckCircle, Tag, Home, Car, Users, CreditCard, Shield, FileText, Mail, DollarSign, Clock } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -9,6 +9,12 @@ interface Bill {
   company: string;
   amount: number;
   due_day: number;
+  payment_status?: 'pending' | 'paid' | 'overdue' | 'partial';
+  payment_date?: string;
+  payment_amount?: number;
+  payment_method?: string;
+  send_email_reminder?: boolean;
+  reminder_days_before?: number;
   category: string;
   is_recurring: boolean;
   is_active: boolean;
@@ -209,21 +215,18 @@ export default function Bills() {
     }
   };
 
-  const markAsPaid = async (billId: string) => {
+  // Mark bill as paid
+  const markAsPaid = async (billId: string, amount?: number, paymentMethod?: string) => {
     try {
-      const bill = bills.find(b => b.id === billId);
-      if (!bill) return;
-
-      const today = new Date();
-      const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, bill.due_day);
-
-      const { error } = await supabase
-        .from('bills')
-        .update({
-          last_paid: today.toISOString().split('T')[0],
-          next_due: nextMonth.toISOString().split('T')[0]
-        })
-        .eq('id', billId);
+      const today = new Date().toISOString().split('T')[0];
+      
+      // In production, call the mark_bill_as_paid database function
+      const { data, error } = await supabase.rpc('mark_bill_as_paid', {
+        bill_id: billId,
+        payment_date_val: today,
+        payment_amount_val: amount,
+        payment_method_val: paymentMethod
+      });
 
       if (error) throw error;
       fetchBills();
@@ -290,10 +293,60 @@ export default function Bills() {
     return diffDays;
   };
 
-  const isPending = (bill: Bill) => {
-    const dueDate = new Date(bill.next_due);
-    const today = new Date();
-    return bill.is_active && dueDate <= today;
+  const getBillStatus = (bill: Bill) => {
+    if (bill.payment_status === 'paid') {
+      return 'paid';
+    }
+    
+    if (bill.payment_status === 'partial') {
+      return 'partial';
+    }
+    
+    if (bill.payment_status === 'overdue' || 
+        (bill.next_due && new Date(bill.next_due) < new Date())) {
+      return 'overdue';
+    }
+    
+    return 'pending';
+  };
+
+  // Toggle email reminder for a bill
+  const toggleEmailReminder = async (billId: string) => {
+    try {
+      const bill = bills.find(b => b.id === billId);
+      if (!bill) return;
+      
+      const { error } = await supabase
+        .from('bills')
+        .update({
+          send_email_reminder: !bill.send_email_reminder
+        })
+        .eq('id', billId);
+
+      if (error) throw error;
+      fetchBills();
+    } catch (err) {
+      console.error('Error toggling email reminder:', err);
+      setError('Erro ao atualizar preferência de notificação');
+    }
+  };
+  
+  // Set reminder days before
+  const setReminderDays = async (billId: string, days: number) => {
+    try {
+      const { error } = await supabase
+        .from('bills')
+        .update({
+          reminder_days_before: days
+        })
+        .eq('id', billId);
+
+      if (error) throw error;
+      fetchBills();
+    } catch (err) {
+      console.error('Error setting reminder days:', err);
+      setError('Erro ao atualizar dias de notificação');
+    }
   };
 
   if (loading) {
@@ -539,7 +592,7 @@ export default function Bills() {
                         value={editForm.due_day || ''}
                         onChange={(e) => setEditForm({ ...editForm, due_day: Number(e.target.value) })}
                         className="p-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
-                        placeholder="Dia do vencimento"
+                        placeholder="Dia do vencimento (1-31)"
                         min="1"
                         max="31"
                       />
@@ -625,7 +678,7 @@ export default function Bills() {
                             </span>
                           )}
                           
-                          {isPending(bill) && (
+                          {getBillStatus(bill) === 'pending' && (
                             <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 flex items-center space-x-1">
                               <Tag className="h-3 w-3" />
                               <span>Pendente</span>
@@ -644,6 +697,14 @@ export default function Bills() {
                           <span className="text-sm text-gray-500">
                             Vence dia {bill.due_day}
                           </span>
+                          {bill.payment_status === 'paid' && bill.payment_date && (
+                            <>
+                              <span className="text-gray-300">•</span>
+                              <span className="text-sm text-green-600">
+                                Pago em {new Date(bill.payment_date).toLocaleDateString('pt-BR')}
+                              </span>
+                            </>
+                          )}
                           {bill.last_paid && (
                             <>
                               <span className="text-gray-300">•</span>
@@ -666,15 +727,38 @@ export default function Bills() {
                             Próximo: {new Date(bill.next_due).toLocaleDateString('pt-BR')}
                           </p>
                         )}
+                        
+                        {/* Email notification status */}
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            toggleEmailReminder(bill.id);
+                          }}
+                          title={bill.send_email_reminder ? "Desativar notificações por email" : "Ativar notificações por email"}
+                          className={`p-1 rounded-full ${
+                            bill.send_email_reminder 
+                              ? 'text-blue-600 hover:bg-blue-50' 
+                              : 'text-gray-400 hover:bg-gray-50'
+                          } transition-colors duration-200`}
+                        >
+                          <Mail className="h-4 w-4" />
+                        </button>
                       </div>
                       
                       <div className="flex items-center space-x-2">
-                        {bill.is_active && isPending(bill) && (
+                        {bill.is_active && bill.payment_status !== 'paid' && (
                           <button
-                            onClick={() => markAsPaid(bill.id)}
-                            className="px-3 py-1 bg-green-500 text-white text-sm rounded-lg hover:bg-green-600 transition-colors duration-200"
+                            onClick={() => {
+                              const amount = prompt('Valor pago:', bill.amount.toString());
+                              if (amount !== null) {
+                                const method = prompt('Método de pagamento (opcional):', '');
+                                markAsPaid(bill.id, parseFloat(amount), method || undefined);
+                              }
+                            }}
+                            className="px-3 py-1 bg-gradient-to-r from-green-500 to-green-600 text-white text-sm rounded-lg hover:from-green-600 hover:to-green-700 transition-colors duration-200 flex items-center"
                           >
-                            Pagar
+                            <DollarSign className="h-3 w-3 mr-1" />
+                            <span>Marcar como Pago</span>
                           </button>
                         )}
                         <button 
@@ -750,7 +834,7 @@ export default function Bills() {
                 <input
                   type="number"
                   name="due_day"
-                  placeholder="Dia do vencimento"
+                  placeholder="Dia do vencimento (1-31)"
                   min="1"
                   max="31"
                   required
@@ -869,6 +953,14 @@ export default function Bills() {
                 <input type="checkbox" name="is_recurring" className="rounded text-blue-600" defaultChecked />
                 <span className="text-gray-700">Conta recorrente (mensal)</span>
               </label>
+              
+              <div className="flex items-center space-x-2 mt-4">
+                <input type="checkbox" name="send_email_reminder" className="rounded text-blue-600" defaultChecked />
+                <label className="text-gray-700 flex items-center space-x-2">
+                  <Mail className="h-4 w-4 text-blue-500" />
+                  <span>Receber notificações por email</span>
+                </label>
+              </div>
               
               <div className="flex space-x-3 pt-4">
                 <button

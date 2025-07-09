@@ -506,8 +506,58 @@ export default function FinancialBreakdown({ type }: BreakdownProps) {
               )}
             </div>
           </div>
+      );  
+      
+      case 'financial-goals':
+        return (
+          <div className="p-6 space-y-6">
+            <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-semibold text-indigo-800 mb-1">Metas Financeiras</h3>
+                  <p className="text-3xl font-bold text-indigo-700">
+                    R$ {totalFinancialGoals.toLocaleString('pt-BR')}
+                  </p>
+                </div>
+                <Target className="h-8 w-8 text-indigo-600" />
+              </div>
+            </div>
+            
+            <div className="space-y-4">
+              <h3 className="font-semibold text-gray-800">Detalhamento de Metas</h3>
+              <p className="text-gray-600">As metas financeiras funcionam como uma alocação do seu patrimônio e também como despesas de investimento.</p>
+              
+              <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                <div className="flex items-center space-x-3 mb-2">
+                  <Target className="h-5 w-5 text-indigo-600" />
+                  <h3 className="font-medium text-gray-800">Como Meta Financeira Funciona</h3>
+                </div>
+                <p className="text-sm text-gray-600 mb-3">
+                  As metas financeiras têm dupla função no sistema:
+                </p>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                  <div className="bg-indigo-50 p-3 rounded-lg">
+                    <p className="font-medium text-indigo-800">Como Patrimônio</p>
+                    <p className="text-indigo-600">O valor acumulado para suas metas é considerado parte do seu patrimônio, similar a uma conta bancária dedicada.</p>
+                  </div>
+                  <div className="bg-green-50 p-3 rounded-lg">
+                    <p className="font-medium text-green-800">Como Despesa Mensal</p>
+                    <p className="text-green-600">As contribuições mensais para atingir suas metas são tratadas como despesas recorrentes no seu fluxo de caixa.</p>
+                  </div>
+                </div>
+              </div>
+              
+              <button
+                onClick={() => window.location.href = '/?tab=financial-goals'}
+                className="w-full py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 flex items-center justify-center space-x-2"
+              >
+                <Target className="h-4 w-4" />
+                <span>Gerenciar Metas Financeiras</span>
+              </button>
+            </div>
+          </div>
         );
-        
+      
       case 'balance':
         return (
           <div className="p-6 space-y-6">
