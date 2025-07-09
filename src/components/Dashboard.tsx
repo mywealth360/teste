@@ -328,71 +328,7 @@ export default function Dashboard() {
         )}
       </div>
 
-      {/* Asset Distribution Chart */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">Distribuição de Patrimônio</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-lg font-medium text-gray-700 mb-4">Por Categoria</h3>
-            <div className="relative h-64">
-              <div className="absolute inset-0 flex items-center justify-center">
-                <div className="w-48 h-48 rounded-full border-8 border-blue-500 relative">
-                  <div className="absolute top-0 left-0 w-full h-full rounded-full border-8 border-green-500" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 50%, 0 50%)' }}></div>
-                  <div className="absolute top-0 left-0 w-full h-full rounded-full border-8 border-purple-500" style={{ clipPath: 'polygon(100% 0, 100% 100%, 75% 100%, 75% 50%, 100% 50%)' }}></div>
-                  <div className="absolute top-0 left-0 w-full h-full rounded-full border-8 border-orange-500" style={{ clipPath: 'polygon(0 50%, 75% 50%, 75% 100%, 0 100%)' }}></div>
-                </div>
-              </div>
-              <div className="absolute bottom-0 w-full">
-                <div className="flex flex-wrap justify-center gap-4">
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full mr-2"></div>
-                    <span className="text-sm text-gray-600">Investimentos (40%)</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-green-500 rounded-full mr-2"></div>
-                    <span className="text-sm text-gray-600">Imóveis (35%)</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-purple-500 rounded-full mr-2"></div>
-                    <span className="text-sm text-gray-600">Veículos (15%)</span>
-                  </div>
-                  <div className="flex items-center">
-                    <div className="w-3 h-3 bg-orange-500 rounded-full mr-2"></div>
-                    <span className="text-sm text-gray-600">Outros (10%)</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div>
-            <h3 className="text-lg font-medium text-gray-700 mb-4">Evolução Patrimonial</h3>
-            <div className="h-64 relative">
-              <div className="absolute inset-x-0 bottom-0 h-px bg-gray-200"></div>
-              <div className="absolute inset-y-0 left-0 w-px bg-gray-200"></div>
-              
-              {/* Bars */}
-              <div className="absolute bottom-0 left-10 w-12 h-32 bg-blue-500 rounded-t-lg"></div>
-              <div className="absolute bottom-0 left-32 w-12 h-40 bg-blue-500 rounded-t-lg"></div>
-              <div className="absolute bottom-0 left-54 w-12 h-48 bg-blue-500 rounded-t-lg"></div>
-              <div className="absolute bottom-0 left-76 w-12 h-56 bg-blue-500 rounded-t-lg"></div>
-              <div className="absolute bottom-0 left-98 w-12 h-60 bg-blue-500 rounded-t-lg"></div>
-              
-              {/* X-axis labels */}
-              <div className="absolute bottom-[-20px] left-10 text-xs text-gray-500">Jan</div>
-              <div className="absolute bottom-[-20px] left-32 text-xs text-gray-500">Mar</div>
-              <div className="absolute bottom-[-20px] left-54 text-xs text-gray-500">Mai</div>
-              <div className="absolute bottom-[-20px] left-76 text-xs text-gray-500">Jul</div>
-              <div className="absolute bottom-[-20px] left-98 text-xs text-gray-500">Set</div>
-              
-              {/* Y-axis labels */}
-              <div className="absolute left-[-30px] bottom-0 text-xs text-gray-500">0</div>
-              <div className="absolute left-[-30px] bottom-[30px] text-xs text-gray-500">500k</div>
-              <div className="absolute left-[-30px] bottom-[60px] text-xs text-gray-500">1M</div>
-            </div>
-          </div>
-        </div>
-      </div>
+    
 
       {/* Debt Overview */}
       <div className="bg-white rounded-2xl shadow-lg p-6">
