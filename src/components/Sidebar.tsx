@@ -33,6 +33,7 @@ import { useAuth } from '../contexts/AuthContext';
 import SubscriptionStatus from './SubscriptionStatus';
 import SubscriptionButton from './subscription/SubscriptionButton';
 import { products } from '../stripe-config';
+import UpgradeModal from './UpgradeModal';
 
 interface SidebarProps {
   activeTab: string;
@@ -80,6 +81,7 @@ const otherSections = [
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const { user, signOut, isAdmin, userPlan, isInTrial } = useAuth();
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [restrictedFeature, setRestrictedFeature] = useState<string | undefined>(undefined);
   const [expandedSections, setExpandedSections] = useState({
     revenue: true,
     expense: true,
@@ -93,6 +95,12 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
 
   const handleTabClick = (tabId: string, isRestricted: boolean) => {
     if (isRestricted && userPlan === 'starter') {
+      // Get the feature name from the tab ID
+      const feature = 
+        patrimonySections.find(s => s.id === tabId)?.label || 
+        otherSections.find(s => s.id === tabId)?.label;
+      
+      setRestrictedFeature(feature);
       setShowUpgradeModal(true);
       return;
     }
@@ -359,72 +367,11 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       </div>
       
       {/* Modal de Upgrade */}
-      {showUpgradeModal && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md">
-            <div className="p-6 border-b border-gray-100">
-              <h2 className="text-xl font-semibold text-gray-800">Recurso Exclusivo</h2>
-            </div>
-            
-            <div className="p-6 space-y-4">
-              <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                <div className="flex items-center space-x-3 mb-2">
-                  <Lock className="h-5 w-5 text-blue-600" />
-                  <h3 className="font-medium text-blue-800">
-                    {isInTrial 
-                      ? 'Recurso disponível após o período de teste' 
-                      : 'Recurso Exclusivo do Plano Family'}
-                  </h3>
-                </div>
-                <p className="text-gray-700">
-                  Este recurso está disponível apenas para assinantes do plano Family.
-                </p>
-              </div>
-              
-              <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-100">
-                <h3 className="font-medium text-indigo-800 mb-2">Plano Family inclui:</h3>
-                <ul className="space-y-2 text-gray-700">
-                  <li className="flex items-start space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Gestão completa de patrimônio e ativos</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Controle de imóveis e veículos</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Ativos exóticos e colecionáveis</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Gestão de funcionários</span>
-                  </li>
-                  <li className="flex items-start space-x-2">
-                    <CheckCircle className="h-4 w-4 text-green-500" />
-                    <span>Múltiplos usuários</span>
-                  </li>
-                </ul>
-              </div>
-              
-              <div className="flex space-x-3 pt-4">
-                <button
-                  onClick={() => setShowUpgradeModal(false)}
-                  className="flex-1 py-3 border border-gray-200 text-gray-700 rounded-xl hover:bg-gray-50 transition-colors duration-200"
-                >
-                  Mais tarde
-                </button> 
-                <SubscriptionButton
-                  priceId="price_1Ri18dGlaiiCwjLcoXmjeH1N"
-                  mode="subscription"
-                >
-                  Fazer Upgrade
-                </SubscriptionButton>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <UpgradeModal 
+        isOpen={showUpgradeModal} 
+        onClose={() => setShowUpgradeModal(false)}
+        featureName={restrictedFeature}
+      />
     </div>
   );
 }

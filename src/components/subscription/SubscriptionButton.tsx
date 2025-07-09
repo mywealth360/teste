@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
-import Button from '../ui/Button'; 
+import Button from '../ui/Button';
+import { Loader2 } from 'lucide-react';
 
 interface SubscriptionButtonProps {
   priceId: string;
@@ -29,8 +30,7 @@ export default function SubscriptionButton({
       setLoading(true);
 
       const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
-      
-      
+
       if (sessionError) {
         throw new Error('Erro ao obter sessão do usuário');
       } 
@@ -76,10 +76,17 @@ export default function SubscriptionButton({
   return (
     <Button
       onClick={handleSubscribe}
-      disabled={loading}
+      disabled={loading || !user}
       className={className}
     > 
-      {loading ? 'Processando...' : children}
+      {loading ? (
+        <span className="flex items-center space-x-2">
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <span>Processando...</span>
+        </span>
+      ) : (
+        children
+      )}
     </Button>
   );
 }

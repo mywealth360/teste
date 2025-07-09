@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { useAuth } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Sidebar from './components/Sidebar';
 import InviteAccept from './components/InviteAccept';
@@ -27,12 +28,46 @@ import LandingPage from './components/LandingPage';
 import Success from './pages/Success';
 import Cancel from './pages/Cancel';
 import UserProfile from './components/UserProfile';
+import TrialExpiredModal from './components/TrialExpiredModal';
+import PaymentFailedModal from './components/PaymentFailedModal';
 import AdminPanel from './components/AdminPanel';
-import { useAuth } from './contexts/AuthContext';
 
 function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { isAdmin } = useAuth();
+  const { isAdmin, isInTrial, trialExpiresAt } = useAuth();
+  const [showTrialExpiredModal, setShowTrialExpiredModal] = useState(false);
+  const [showPaymentFailedModal, setShowPaymentFailedModal] = useState(false);
+  
+  // Check if trial has expired
+  React.useEffect(() => {
+    if (isInTrial && trialExpiresAt) {
+      const now = new Date();
+      if (trialExpiresAt < now) {
+        setShowTrialExpiredModal(true);
+      }
+    }
+  }, [isInTrial, trialExpiresAt]);
+  
+  // Listen for payment failed events (in a real app, this would come from a webhook)
+  React.useEffect(() => {
+    const handlePaymentFailed = () => {
+      setShowPaymentFailedModal(true);
+    };
+    
+    // Simulate a payment failed event after 10 seconds (for demo purposes)
+    // In a real app, this would be triggered by a webhook from Stripe
+    // const timer = setTimeout(() => {
+    //   handlePaymentFailed();
+    // }, 10000);
+    
+    // Listen for custom event from webhook handler
+    window.addEventListener('paymentFailed', handlePaymentFailed);
+    
+    return () => {
+      // clearTimeout(timer);
+      window.removeEventListener('paymentFailed', handlePaymentFailed);
+    };
+  }, []);
 
   const renderContent = () => {
     switch (activeTab) {
@@ -100,6 +135,16 @@ function AppContent() {
         {renderContent()}
       </main>
       <FloatingChatButton />
+      
+      {/* Modals */}
+      <TrialExpiredModal 
+        isOpen={showTrialExpiredModal} 
+        onClose={() => setShowTrialExpiredModal(false)} 
+      />
+      <PaymentFailedModal 
+        isOpen={showPaymentFailedModal} 
+        onClose={() => setShowPaymentFailedModal(false)} 
+      />
     </div>
   );
 }

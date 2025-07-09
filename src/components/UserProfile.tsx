@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { User, Settings, Phone, Calendar, MapPin, Mail, Shield, CreditCard, CheckCircle, AlertTriangle } from 'lucide-react';
+import PhoneVerification from './PhoneVerification';
 
 interface Profile {
   id: string;
@@ -33,7 +34,7 @@ export default function UserProfile() {
     birth_date: ''
   });
   const [verificationCode, setVerificationCode] = useState('');
-  const [showVerificationForm, setShowVerificationForm] = useState(false);
+  const [showPhoneVerification, setShowPhoneVerification] = useState(false);
   const [verificationError, setVerificationError] = useState('');
   const [verificationSuccess, setVerificationSuccess] = useState('');
 
@@ -61,11 +62,6 @@ export default function UserProfile() {
         address: data.address || '',
         birth_date: data.birth_date || ''
       });
-      
-      // Check if verification is in progress
-      if (data.phone && !data.phone_verified && data.phone_verification_code) {
-        setShowVerificationForm(true);
-      }
     } catch (error) {
       console.error('Error fetching profile:', error);
     } finally {
@@ -77,36 +73,19 @@ export default function UserProfile() {
     e.preventDefault();
     if (!user || !profile) return;
 
-    setSaving(true);
-    try {
-      // Check if phone number changed
-      const phoneChanged = profile.phone !== formData.phone;
-      
+    setSaving(true); 
+    try {      
       const { error } = await supabase
         .from('profiles')
         .update({
           full_name: formData.full_name || null,
-          phone: formData.phone || null,
           address: formData.address || null,
           birth_date: formData.birth_date || null,
-          // If phone changed, reset verification
-          ...(phoneChanged && {
-            phone_verified: false,
-            phone_verification_status: 'pending'
-          }),
           updated_at: new Date().toISOString()
         })
         .eq('user_id', user.id);
 
       if (error) throw error;
-
-      // If phone changed and new phone provided, show verification form
-      if (phoneChanged && formData.phone) {
-        setShowVerificationForm(true);
-        // In a real app, this would trigger an SMS via Twilio
-        // For demo, we'll simulate it
-        await simulateSendVerificationCode();
-      }
 
       await fetchProfile();
       alert('Perfil atualizado com sucesso!');
@@ -115,111 +94,6 @@ export default function UserProfile() {
       alert('Erro ao atualizar perfil. Tente novamente.');
     } finally {
       setSaving(false);
-    }
-  };
-
-  const simulateSendVerificationCode = async () => {
-    if (!user) return;
-    
-    try {
-      // Generate a random 6-digit code
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      
-      // Set expiration time (30 minutes from now)
-      const expiresAt = new Date();
-      expiresAt.setMinutes(expiresAt.getMinutes() + 30);
-      
-      // Save to database
-      const { error } = await supabase
-        .from('profiles')
-        .update({
-          phone_verification_code: code,
-          phone_verification_expires: expiresAt.toISOString(),
-          phone_verification_attempts: 0,
-          phone_verification_status: 'pending'
-        })
-        .eq('user_id', user.id);
-      
-      if (error) throw error;
-      
-      // In a real app, this would send an SMS via Twilio
-      console.log(`Verification code: ${code}`); // For demo purposes only
-      
-      // Show success message
-      setVerificationSuccess('Código de verificação enviado para seu telefone.');
-      setTimeout(() => setVerificationSuccess(''), 5000);
-      
-    } catch (error) {
-      console.error('Error sending verification code:', error);
-      setVerificationError('Erro ao enviar código de verificação.');
-    }
-  };
-
-  const handleVerifyCode = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!user || !profile) return;
-    
-    try {
-      // In a real app, this would verify against the database
-      // For demo, we'll simulate it
-      
-      // Check if code matches and hasn't expired
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('phone_verification_code, phone_verification_expires, phone_verification_attempts')
-        .eq('user_id', user.id)
-        .single();
-      
-      if (error) throw error;
-      
-      // Check if code has expired
-      if (data.phone_verification_expires && new Date(data.phone_verification_expires) < new Date()) {
-        setVerificationError('Código expirado. Solicite um novo código.');
-        return;
-      }
-      
-      // Check if too many attempts
-      if (data.phone_verification_attempts >= 5) {
-        setVerificationError('Muitas tentativas. Solicite um novo código.');
-        return;
-      }
-      
-      // Increment attempts
-      await supabase
-        .from('profiles')
-        .update({
-          phone_verification_attempts: (data.phone_verification_attempts || 0) + 1
-        })
-        .eq('user_id', user.id);
-      
-      // Check if code matches
-      if (data.phone_verification_code !== verificationCode) {
-        setVerificationError('Código inválido. Tente novamente.');
-        return;
-      }
-      
-      // Code is valid, mark phone as verified
-      const { error: updateError } = await supabase
-        .from('profiles')
-        .update({
-          phone_verified: true,
-          phone_verification_status: 'verified',
-          phone_verification_code: null,
-          phone_verification_expires: null
-        })
-        .eq('user_id', user.id);
-      
-      if (updateError) throw updateError;
-      
-      // Show success and refresh
-      setVerificationSuccess('Telefone verificado com sucesso!');
-      setShowVerificationForm(false);
-      setVerificationCode('');
-      await fetchProfile();
-      
-    } catch (error) {
-      console.error('Error verifying code:', error);
-      setVerificationError('Erro ao verificar código.');
     }
   };
 
@@ -258,7 +132,7 @@ export default function UserProfile() {
         </div>
 
         <div className="p-6">
-          {/* Account Status */}
+          {/* Account Status Section */}
           <div className="mb-8 p-4 bg-gray-50 rounded-xl">
             <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
               <Settings className="w-5 h-5 mr-2" />
@@ -292,65 +166,30 @@ export default function UserProfile() {
                 <p className="text-sm text-gray-600">Telefone Verificado</p>
                 <div className="flex items-center mt-1">
                   {profile.phone_verified ? (
-                    <>
+                    <div className="flex items-center">
                       <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
                       <p className="font-semibold text-green-600">Verificado</p>
-                    </>
+                    </div>
                   ) : (
-                    <>
+                    <div className="flex items-center">
                       <AlertTriangle className="h-4 w-4 text-orange-600 mr-2" />
                       <p className="font-semibold text-orange-600">Não verificado</p>
-                    </>
+                    </div>
                   )}
                 </div>
               </div>
             </div>
           </div>
 
-          {/* Phone Verification Form */}
-          {showVerificationForm && (
-            <div className="mb-8 p-4 bg-blue-50 rounded-xl border border-blue-100">
-              <h3 className="text-lg font-semibold text-blue-800 mb-3">Verificar Telefone</h3>
-              <p className="text-sm text-blue-700 mb-4">
-                Um código de verificação foi enviado para o seu telefone. Por favor, insira o código abaixo para verificar seu número.
-              </p>
-              
-              {verificationError && (
-                <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                  {verificationError}
-                </div>
-              )}
-              
-              {verificationSuccess && (
-                <div className="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg text-green-700 text-sm">
-                  {verificationSuccess}
-                </div>
-              )}
-              
-              <form onSubmit={handleVerifyCode} className="flex space-x-3">
-                <input
-                  type="text"
-                  value={verificationCode}
-                  onChange={(e) => setVerificationCode(e.target.value)}
-                  placeholder="Código de verificação"
-                  className="flex-1 px-3 py-2 border border-blue-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                  maxLength={6}
-                />
-                <button
-                  type="submit"
-                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Verificar
-                </button>
-                <button
-                  type="button"
-                  onClick={simulateSendVerificationCode}
-                  className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors"
-                >
-                  Reenviar
-                </button>
-              </form>
-            </div>
+          {/* Phone Verification Component */}
+          {showPhoneVerification && (
+            <PhoneVerification 
+              onVerified={() => {
+                setShowPhoneVerification(false);
+                fetchProfile();
+              }}
+              className="mb-8"
+            />
           )}
 
           {/* Profile Form */}
@@ -372,6 +211,47 @@ export default function UserProfile() {
               </div>
 
               <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+                  <Phone className="w-4 h-4 inline mr-1" />
+                  Telefone
+                </label>
+                <div className="flex items-center space-x-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="tel"
+                      id="phone"
+                      name="phone"
+                      value={profile.phone || ''}
+                      disabled
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-500"
+                      placeholder="(11) 99999-9999"
+                    />
+                    {profile.phone_verified && (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full flex items-center">
+                          <CheckCircle className="w-3 h-3 mr-1" />
+                          Verificado
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowPhoneVerification(true)}
+                    className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                  >
+                    {profile.phone ? (profile.phone_verified ? 'Alterar' : 'Verificar') : 'Adicionar'}
+                  </button>
+                </div>
+                {profile.phone && !profile.phone_verified && !showPhoneVerification && (
+                  <p className="text-xs text-orange-600 mt-1 flex items-center">
+                    <AlertTriangle className="w-3 h-3 mr-1" />
+                    Telefone não verificado. Clique em "Verificar" para confirmar seu número.
+                  </p>
+                )}
+              </div>
+
+              <div>
                 <label htmlFor="full_name" className="block text-sm font-medium text-gray-700 mb-2">
                   <User className="w-4 h-4 inline mr-1" />
                   Nome Completo
@@ -385,38 +265,6 @@ export default function UserProfile() {
                   className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   placeholder="Seu nome completo"
                 />
-              </div>
-
-              <div>
-                <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
-                  <Phone className="w-4 h-4 inline mr-1" />
-                  Telefone
-                </label>
-                <div className="relative">
-                  <input
-                    type="tel"
-                    id="phone"
-                    name="phone"
-                    value={formData.phone}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                    placeholder="(11) 99999-9999"
-                  />
-                  {profile.phone_verified && (
-                    <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-                      <span className="bg-green-100 text-green-700 text-xs px-2 py-1 rounded-full flex items-center">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Verificado
-                      </span>
-                    </div>
-                  )}
-                </div>
-                {profile.phone && !profile.phone_verified && (
-                  <p className="text-xs text-orange-600 mt-1 flex items-center">
-                    <AlertTriangle className="w-3 h-3 mr-1" />
-                    Telefone não verificado. Atualize para receber um código de verificação.
-                  </p>
-                )}
               </div>
 
               <div>

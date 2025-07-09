@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { getProductByPriceId } from '../stripe-config';
 import { formatDate } from '../utils/formatters';
+import { AlertTriangle } from 'lucide-react';
 
 interface SubscriptionData {
   subscription_status: string | null;
@@ -16,6 +16,7 @@ export default function SubscriptionStatus() {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [paymentIssue, setPaymentIssue] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -38,6 +39,14 @@ export default function SubscriptionStatus() {
       }
 
       console.log('Subscription data from DB:', data);
+      
+      // Check for payment issues
+      if (data?.subscription_status === 'past_due' || data?.subscription_status === 'unpaid') {
+        setPaymentIssue(true);
+      } else {
+        setPaymentIssue(false);
+      }
+      
       setSubscription(data);
     } catch (err) {
       console.error('Error fetching subscription:', err);
@@ -46,6 +55,18 @@ export default function SubscriptionStatus() {
       setLoading(false);
     }
   };
+
+  // If there's a payment issue, show a warning
+  if (paymentIssue) {
+    return (
+      <div className="text-white text-sm">
+        <p className="text-xs text-red-300 mt-1 flex items-center">
+          <AlertTriangle className="h-3 w-3 mr-1" />
+          Problema com pagamento. Atualize seus dados.
+        </p>
+      </div>
+    );
+  }
 
   // Show trial information if user is in trial period
   if (isInTrial && trialExpiresAt) {
