@@ -210,7 +210,7 @@ export default function Dashboard() {
       <div className="space-y-6">
         <div className="flex items-center space-x-3">
           <div className="bg-gradient-to-r from-green-500 to-red-500 w-1 h-8 rounded-full"></div>
-          <h2 className="text-2xl font-bold text-gray-800">Fluxo de Caixa Mensal (R$)</h2>
+          <h2 className="text-2xl font-bold text-gray-800">Fluxo de Caixa Mensal</h2>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -223,7 +223,7 @@ export default function Dashboard() {
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-6">
                 <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
-                  <TrendingUp className="h-8 w-8" />
+                  <TrendingUp className="h-8 w-8 text-white" />
                 </div>
                 <DollarSign className="h-6 w-6 opacity-60" />
               </div>
@@ -267,7 +267,7 @@ export default function Dashboard() {
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-6">
                 <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
-                  <TrendingDown className="h-8 w-8" />
+                  <TrendingDown className="h-8 w-8 text-white" />
                 </div>
                 <Receipt className="h-6 w-6 opacity-60" />
               </div>
@@ -308,8 +308,8 @@ export default function Dashboard() {
               </div>
               <div>
                 <p className="text-white/80 text-sm font-medium mb-2">Saldo Mensal</p>
-                <p className="text-4xl font-bold mb-2">
-                  <span className="text-white">{netMonthlyIncomeComplete < 0 ? '-' : ''}R$ {Math.abs(netMonthlyIncomeComplete).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+                <p className="text-4xl font-bold mb-2 text-white">
+                  {netMonthlyIncomeComplete < 0 ? '-' : ''}R$ {Math.abs(netMonthlyIncomeComplete).toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                 </p>
                 <div className="flex items-center space-x-2">
                   <div className="bg-white/20 px-3 py-1 rounded-full flex items-center space-x-1">
@@ -338,7 +338,7 @@ export default function Dashboard() {
                     <DollarSign className="h-5 w-5 text-green-600" />
                     <div>
                       <p className="text-green-600 text-sm font-medium">Fontes de Renda</p>
-                      <p className="text-lg font-bold text-green-700">R$ {totalMonthlyIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-lg font-bold text-green-700">R$ {totalMonthlyIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   </div>
                   <div className="text-xs text-green-500 bg-green-50 px-2 py-0.5 rounded-full">
@@ -353,7 +353,7 @@ export default function Dashboard() {
                     <Building className="h-5 w-5 text-blue-600" />
                     <div>
                       <p className="text-blue-600 text-sm font-medium">Investimentos</p>
-                      <p className="text-lg font-bold text-blue-700">R$ {totalInvestmentIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-lg font-bold text-blue-700">R$ {totalInvestmentIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   </div>
                   <div className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
@@ -368,7 +368,7 @@ export default function Dashboard() {
                     <Home className="h-5 w-5 text-purple-600" />
                     <div>
                       <p className="text-purple-600 text-sm font-medium">Aluguéis</p>
-                      <p className="text-lg font-bold text-purple-700">R$ {totalRealEstateIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-lg font-bold text-purple-700">R$ {totalRealEstateIncome.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   </div>
                   <div className="text-xs text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
@@ -388,7 +388,7 @@ export default function Dashboard() {
                     <Receipt className="h-5 w-5 text-blue-600" />
                     <div>
                       <p className="text-blue-600 text-sm font-medium">Transações</p>
-                      <p className="text-lg font-bold text-blue-700">R$ {totalMonthlyExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-lg font-bold text-blue-700">R$ {totalMonthlyExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   </div>
                   <div className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
@@ -403,7 +403,7 @@ export default function Dashboard() {
                     <CreditCard className="h-5 w-5 text-red-600" />
                     <div>
                       <p className="text-red-600 text-sm font-medium">Empréstimos</p>
-                      <p className="text-lg font-bold text-red-700">R$ {totalLoanPayments.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-lg font-bold text-red-700">R$ {totalLoanPayments.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   </div>
                   <div className="text-xs text-red-500 bg-red-50 px-2 py-0.5 rounded-full">
@@ -418,7 +418,7 @@ export default function Dashboard() {
                     <FileText className="h-5 w-5 text-orange-600" />
                     <div>
                       <p className="text-orange-600 text-sm font-medium">Contas</p>
-                      <p className="text-lg font-bold text-orange-700">R$ {totalBills.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-lg font-bold text-orange-700">R$ {totalBills.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   </div>
                   <div className="text-xs text-orange-500 bg-orange-50 px-2 py-0.5 rounded-full">
@@ -433,7 +433,7 @@ export default function Dashboard() {
                     <Shield className="h-5 w-5 text-blue-600" />
                     <div>
                       <p className="text-blue-600 text-sm font-medium">Previdência</p>
-                      <p className="text-lg font-bold text-blue-700">R$ {totalRetirementContribution.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-lg font-bold text-blue-700">R$ {totalRetirementContribution.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   </div>
                   <div className="text-xs text-blue-500 bg-blue-50 px-2 py-0.5 rounded-full">
@@ -448,7 +448,7 @@ export default function Dashboard() {
                     <Home className="h-5 w-5 text-purple-600" />
                     <div>
                       <p className="text-purple-600 text-sm font-medium">Imóveis</p>
-                      <p className="text-lg font-bold text-purple-700">R$ {totalRealEstateExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-lg font-bold text-purple-700">R$ {totalRealEstateExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   </div>
                   <div className="text-xs text-purple-500 bg-purple-50 px-2 py-0.5 rounded-full">
@@ -463,7 +463,7 @@ export default function Dashboard() {
                     <Car className="h-5 w-5 text-teal-600" />
                     <div>
                       <p className="text-teal-600 text-sm font-medium">Veículos</p>
-                      <p className="text-lg font-bold text-teal-700">R$ {totalVehicleExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-lg font-bold text-teal-700">R$ {totalVehicleExpenses.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   </div>
                   <div className="text-xs text-teal-500 bg-teal-50 px-2 py-0.5 rounded-full">
@@ -478,7 +478,7 @@ export default function Dashboard() {
                     <Landmark className="h-5 w-5 text-indigo-600" />
                     <div>
                       <p className="text-indigo-600 text-sm font-medium">Impostos</p>
-                      <p className="text-lg font-bold text-indigo-700">R$ {totalTaxes.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      <p className="text-lg font-bold text-indigo-700">R$ {totalTaxes.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
                     </div>
                   </div>
                   <div className="text-xs text-indigo-500 bg-indigo-50 px-2 py-0.5 rounded-full">
