@@ -56,7 +56,7 @@ export default function RevenueManagement() {
   const fetchAllRevenues = async () => {
     try {
       setLoading(true);
-      setError(null); 
+      setError(null);
 
       // Buscar todos os tipos de receitas
       const [
@@ -92,7 +92,7 @@ export default function RevenueManagement() {
       // Processar investimentos com renda
       (investmentData.data || []).forEach(investment => {
         let monthlyIncome = 0;
-        
+
         // Calcular renda mensal com base no tipo de investimento
         if (investment.type === 'acoes' || investment.type === 'fundos-imobiliarios') {
           if (investment.dividend_yield && investment.quantity && investment.current_price) {
@@ -100,6 +100,9 @@ export default function RevenueManagement() {
             monthlyIncome = (currentValue * investment.dividend_yield) / 100 / 12;
           } else if (investment.monthly_income) {
             monthlyIncome = investment.monthly_income;
+          } else if (investment.dividend_yield && investment.amount) {
+            // Handle dividend yield without quantity/price but with amount
+            monthlyIncome = (investment.amount * investment.dividend_yield) / 100 / 12;
           }
         } else if (investment.interest_rate && investment.amount) {
           monthlyIncome = (investment.amount * investment.interest_rate) / 100 / 12;
@@ -108,7 +111,8 @@ export default function RevenueManagement() {
         }
         
         // Apenas adicionar se houver renda mensal
-        if (monthlyIncome > 0) {
+        // Only add investments that actually generate income
+        if (monthlyIncome > 0 && monthlyIncome != null) {
           allRevenues.push({
             id: `investment-${investment.id}`,
             type: 'investment',
@@ -220,18 +224,28 @@ export default function RevenueManagement() {
     // Calculate totals by source type
     const totalsByType = filtered.reduce((acc, revenue) => {
       const monthlyAmount = calculateMonthlyRevenue(revenue);
-      if (!acc[revenue.type]) {
-        acc[revenue.type] = 0;
+      // Validate the monthly amount before adding
+      if (monthlyAmount > 0) {
+        if (!acc[revenue.type]) {
+          acc[revenue.type] = 0;
+        }
+        acc[revenue.type] += monthlyAmount;
       }
-      acc[revenue.type] += monthlyAmount;
       return acc;
     }, {} as Record<string, number>);
 
     // Update localStorage with data for dashboard
     if (typeof window !== 'undefined') {
       // Prepare to update localStorage with category data for dashboard
-      localStorage.setItem('revenueCategories', JSON.stringify(revenuesByCategory));
-      localStorage.setItem('revenuesByType', JSON.stringify(totalsByType));
+      const timestamp = new Date().getTime();
+      localStorage.setItem('revenueCategories', JSON.stringify({
+        data: revenuesByCategory,
+        timestamp: timestamp
+      }));
+      localStorage.setItem('revenuesByType', JSON.stringify({
+        data: totalsByType,
+        timestamp: timestamp
+      }));
     }
 
     setFilteredRevenues(filtered);
@@ -443,10 +457,7 @@ export default function RevenueManagement() {
           </select>
 
           <button
-            onClick={() => {
-              // Export revenue categories data for dashboard
-              localStorage.setItem('revenueCategories', JSON.stringify(revenuesByCategory));
-            }}
+            onClick={() => fetchAllRevenues()}
             className="hidden"
           >
             Sync
