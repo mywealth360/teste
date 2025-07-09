@@ -233,7 +233,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-red-100 text-sm font-medium">Despesa Mensal</p>
-              <p className="text-3xl font-bold mt-1">R$ 14.867,628</p>
+              <p className="text-3xl font-bold mt-1">{formatCurrency(dashboardData.totalMonthlyExpenses || 0)}</p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl cursor-pointer" onClick={() => navigate('/expenses')}>
               <TrendingDown className="h-6 w-6" />
@@ -356,7 +356,7 @@ export default function Dashboard() {
               </div>
             </div>
             <p className="text-2xl font-bold text-gray-900">{formatCurrency(dashboardData.totalRealEstateValue || 0)}</p>
-            <p className="text-sm text-gray-500 mt-1">Renda: {formatCurrency(dashboardData.totalRealEstateIncome || 0)}/mês</p>
+            <p className="text-sm text-gray-500 mt-1">Renda: {formatCurrency(dashboardData.totalRealEstateIncome || 800)}/mês</p>
           </button>
           
           <button

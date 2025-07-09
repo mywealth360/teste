@@ -383,7 +383,7 @@ export default function FinancialGoals() {
             <div>
               <p className="text-blue-100 text-sm font-medium">Total em Metas</p>
               <p className="text-3xl font-bold mt-1">
-                {formatCurrency(goals.reduce((sum, goal) => sum + goal.target_amount, 0))}
+                {formatCurrency(goals.reduce((sum, goal) => sum + goal.current_amount, 0))}
               </p>
             </div>
             <div className="bg-white/20 p-3 rounded-xl">

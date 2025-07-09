@@ -289,6 +289,19 @@ export function useDashboardData() {
                         source.frequency === 'weekly' ? 4.33 :
                         source.frequency === 'yearly' ? 1/12 : 1;
       return sum + (source.amount * multiplier);
+    }, 0) + 
+    // Add real estate rental income
+    realEstate.data.reduce((sum, property) => sum + (property.monthly_rent || 0), 0) +
+    // Add investment dividend income
+    investments.data.reduce((sum, investment) => {
+      // Calculate monthly dividend income
+      if (investment.dividend_yield && investment.quantity && investment.current_price) {
+        const currentValue = investment.quantity * investment.current_price;
+        return sum + ((currentValue * investment.dividend_yield) / 100 / 12);
+      } else if (investment.monthly_income) {
+        return sum + investment.monthly_income;
+      }
+      return sum;
     }, 0);
 
   // Calculate total monthly expenses by summing up all expense categories
@@ -344,17 +357,41 @@ export function useDashboardData() {
 
   const totalFinancialGoals = financialGoals.data
     .filter(goal => goal.status === 'active')
-    .reduce((sum, goal) => sum + goal.current_amount, 0);
+    .reduce((sum, goal) => sum + goal.current_amount, 0); // Only count current amount, not target amount
 
   const totalAssets = totalInvestmentValue + totalRealEstateValue + totalRetirementSaved + 
                      totalBankBalance + totalVehicleValue + totalExoticAssetsValue;
   
   const netWorth = totalAssets - totalDebt;
 
-  // Calculate taxes (simplified calculation)
-  const totalTaxes = (totalMonthlyIncome * 0.15) + // Simplified income tax
-                     (totalInvestmentIncome * 0.15) + // Investment tax
-                     (totalRealEstateIncome * 0.15); // Real estate tax
+  // Calculate taxes based on registered tax rates
+  const totalTaxes = 
+    // Income source taxes
+    incomeSources.data
+      .filter(source => source.is_active && source.tax_rate)
+      .reduce((sum, source) => {
+        const monthlyAmount = source.frequency === 'monthly' ? source.amount : 
+                             source.frequency === 'weekly' ? source.amount * 4.33 :
+                             source.frequency === 'yearly' ? source.amount / 12 : 0;
+        return sum + (monthlyAmount * (source.tax_rate / 100));
+      }, 0) +
+    // Investment taxes
+    investments.data
+      .filter(inv => inv.tax_rate)
+      .reduce((sum, inv) => {
+        let monthlyIncome = 0;
+        if (inv.dividend_yield && inv.quantity && inv.current_price) {
+          const currentValue = inv.quantity * inv.current_price;
+          monthlyIncome = (currentValue * inv.dividend_yield) / 100 / 12;
+        } else if (inv.monthly_income) {
+          monthlyIncome = inv.monthly_income;
+        }
+        return sum + (monthlyIncome * (inv.tax_rate / 100));
+      }, 0) +
+    // Real estate rental taxes
+    realEstate.data
+      .filter(prop => prop.is_rented && prop.monthly_rent && prop.tax_rate)
+      .reduce((sum, prop) => sum + (prop.monthly_rent * (prop.tax_rate / 100)), 0);
 
   return {
     totalMonthlyIncome,
