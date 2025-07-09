@@ -186,10 +186,40 @@ export default function RevenueManagement() {
     if (!confirm('Tem certeza que deseja excluir esta fonte de renda?')) return;
 
     try {
-      const { error } = await supabase
-        .from('income_sources')
-        .delete()
-        .eq('id', id);
+      let error;
+      
+      if (id.startsWith('rental-')) {
+        // Extract the real estate ID and delete from real_estate table
+        const realEstateId = id.replace('rental-', '');
+        const result = await supabase
+          .from('real_estate')
+          .delete()
+          .eq('id', realEstateId);
+        error = result.error;
+      } else if (id.startsWith('dividend-')) {
+        // Extract the investment ID and delete from investments table
+        const investmentId = id.replace('dividend-', '');
+        const result = await supabase
+          .from('investments')
+          .delete()
+          .eq('id', investmentId);
+        error = result.error;
+      } else if (id.startsWith('transaction-')) {
+        // Extract the transaction ID and delete from transactions table
+        const transactionId = id.replace('transaction-', '');
+        const result = await supabase
+          .from('transactions')
+          .delete()
+          .eq('id', transactionId);
+        error = result.error;
+      } else {
+        // Regular income source - delete from income_sources table
+        const result = await supabase
+          .from('income_sources')
+          .delete()
+          .eq('id', id);
+        error = result.error;
+      }
 
       if (error) throw error;
       fetchIncomeSources();
@@ -599,6 +629,18 @@ export default function RevenueManagement() {
                         <button 
                           onClick={() => handleDelete(source.id)}
                           className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )}
+                    
+                    {(source.id.startsWith('rental-') || source.id.startsWith('dividend-') || source.id.startsWith('transaction-')) && (
+                      <div className="flex items-center space-x-2">
+                        <button 
+                          onClick={() => handleDelete(source.id)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                          title="Excluir fonte de renda"
                         >
                           <Trash2 className="h-4 w-4" />
                         </button>
