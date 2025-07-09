@@ -10,6 +10,7 @@ import {
   FileText,
   CreditCard,
   Shield,
+  Target,
   Home,
   Building,
   AlertTriangle,
@@ -24,7 +25,7 @@ import { useAuth } from '../contexts/AuthContext';
 
 interface ExpenseItem {
   id: string;
-  type: 'transaction' | 'loan' | 'bill' | 'retirement' | 'real_estate_expense' | 'vehicle_expense' | 'tax' | 'employee_expense';
+  type: 'transaction' | 'loan' | 'bill' | 'retirement' | 'real_estate_expense' | 'vehicle_expense' | 'tax' | 'employee_expense' | 'financial_goal';
   description: string;
   amount: number;
   category: string;
@@ -67,7 +68,8 @@ export default function ExpenseManagement() {
         realEstateData,
         vehicleData,
         incomeData,
-        employeeData
+        employeeData,
+        financialGoalsData
       ] = await Promise.all([
         supabase.from('transactions').select('*').eq('user_id', user?.id).eq('type', 'expense'),
         supabase.from('loans').select('*').eq('user_id', user?.id),
@@ -76,7 +78,8 @@ export default function ExpenseManagement() {
         supabase.from('real_estate').select('*').eq('user_id', user?.id),
         supabase.from('vehicles').select('*').eq('user_id', user?.id),
         supabase.from('income_sources').select('*').eq('user_id', user?.id).eq('is_active', true),
-        supabase.from('employees').select('*').eq('user_id', user?.id).eq('status', 'active')
+        supabase.from('employees').select('*').eq('user_id', user?.id).eq('status', 'active'),
+        supabase.from('financial_goals').select('*').eq('user_id', user?.id).eq('status', 'active')
       ]);
 
       const allExpenses: ExpenseItem[] = [];
@@ -336,6 +339,34 @@ export default function ExpenseManagement() {
           });
         }
       });
+      
+      // Process financial goals as investment expenses
+      (financialGoalsData.data || []).forEach(goal => {
+        // Calculate monthly contribution needed for this goal
+        const targetDate = new Date(goal.target_date);
+        const now = new Date();
+        const diffMs = targetDate.getTime() - now.getTime();
+        
+        if (diffMs > 0) {
+          const diffMonths = Math.max(1, Math.ceil(diffMs / (1000 * 60 * 60 * 24 * 30)));
+          const remainingAmount = goal.target_amount - goal.current_amount;
+          const monthlyContribution = remainingAmount / diffMonths;
+          
+          if (monthlyContribution > 0) {
+            allExpenses.push({
+              id: `goal-${goal.id}`,
+              type: 'financial_goal',
+              description: `Meta: ${goal.name}`,
+              amount: monthlyContribution,
+              category: 'Investimentos',
+              date: new Date().toISOString().split('T')[0],
+              source: 'Meta Financeira',
+              frequency: 'monthly',
+              recurring: true
+            });
+          }
+        }
+      });
 
       setExpenses(allExpenses);
     } catch (err) {
@@ -401,6 +432,7 @@ export default function ExpenseManagement() {
       case 'vehicle_expense': return Car;
       case 'tax': return Landmark;
       case 'employee_expense': return Users;
+      case 'financial_goal': return Target;
       default: return Receipt;
     }
   };
@@ -415,6 +447,7 @@ export default function ExpenseManagement() {
       case 'vehicle_expense': return 'bg-teal-100 text-teal-600';
       case 'tax': return 'bg-indigo-100 text-indigo-600';
       case 'employee_expense': return 'bg-pink-100 text-pink-600';
+      case 'financial_goal': return 'bg-indigo-100 text-indigo-600';
       default: return 'bg-gray-100 text-gray-600';
     }
   };
@@ -562,6 +595,21 @@ export default function ExpenseManagement() {
           </div>
         </div>
 
+        <div className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-2xl text-white shadow-lg">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-indigo-100 text-sm font-medium">Metas Financeiras</p>
+              <p className="text-3xl font-bold mt-1">R$ {totalsByType['financial_goal'] ? 
+                totalsByType['financial_goal'].toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : 
+                "0,00"}</p>
+              <p className="text-indigo-100 text-sm">{filteredExpenses.filter(e => e.type === 'financial_goal').length} metas</p>
+            </div>
+            <div className="bg-white/20 p-3 rounded-xl">
+              <Target className="h-6 w-6" />
+            </div>
+          </div>
+        </div>
+        
         <div className="bg-gradient-to-br from-teal-500 to-teal-600 p-6 rounded-2xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>

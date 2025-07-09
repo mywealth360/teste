@@ -350,7 +350,7 @@ export default function RevenueManagement() {
             </div>
           </div>
         </div>
-
+      
         <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-2xl text-white shadow-lg">
           <div className="flex items-center justify-between">
             <div>

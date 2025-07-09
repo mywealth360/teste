@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Bell,
   TrendingUp, 
   TrendingDown, 
-  DollarSign, 
+  DollarSign,
   Target,
   Brain,
   AlertTriangle,
@@ -24,16 +24,20 @@ import {
   BarChart3,
   Car,
   Gem,
-  Users
+  Users,
+  ChevronRight,
+  PiggyBank
 } from 'lucide-react';
 import { useSupabaseData } from '../hooks/useSupabaseData';
 import { useMonthlyRenewal } from '../hooks/useMonthlyRenewal';
 import { aiInsights } from '../data/mockData';
+import { useNavigate } from 'react-router-dom';
 import AlertsIndicator from './AlertsIndicator';
 import WealthEvolutionChart from './WealthEvolutionChart';
 import FinancialBreakdown from './FinancialBreakdown';
 
 export default function Dashboard() {
+  const navigate = useNavigate();
   const {
     totalMonthlyIncome,
     totalMonthlyExpenses,
@@ -54,6 +58,7 @@ export default function Dashboard() {
     totalVehicleExpenses,
     totalExoticAssetsValue,
     totalExoticAssetsAppreciation,
+    totalFinancialGoals,
     totalAssets,
     netWorth,
     totalTaxes,
@@ -173,6 +178,34 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Financial Goals Quick View */}
+      <div 
+        onClick={() => navigate('/?tab=financial-goals')} 
+        className="bg-white p-6 rounded-2xl shadow-lg border border-indigo-100 cursor-pointer hover:shadow-xl transition-all duration-200 mb-8"
+      >
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center space-x-3">
+            <div className="p-2 bg-gradient-to-r from-indigo-500 to-purple-600 rounded-xl">
+              <Target className="h-5 w-5 text-white" />
+            </div>
+            <h2 className="text-xl font-semibold text-gray-800">Metas Financeiras</h2>
+          </div>
+          <span className="text-sm text-blue-600 flex items-center">
+            Ver todas <ChevronRight className="h-4 w-4 ml-1" />
+          </span>
+        </div>
+        
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-indigo-50 p-3 rounded-lg">
+            <p className="text-sm text-indigo-600">Total de Metas</p>
+            <p className="text-xl font-bold text-indigo-700">R$ {totalFinancialGoals.toLocaleString('pt-BR')}</p>
+            <div className="flex items-center text-xs text-indigo-500 mt-1">
+              <PiggyBank className="h-3 w-3 mr-1" /> Alocação patrimonial
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Seção de Renda e Custos */}
       <div className="space-y-6">
         <div className="flex items-center space-x-3">
@@ -286,7 +319,7 @@ export default function Dashboard() {
                 <div className="flex flex-wrap gap-1 mt-2">
                   <div className="bg-white/30 px-2 py-0.5 rounded-full text-xs text-white">
                     Proporção: {totalMonthlyIncomeComplete > 0 ? 
-                      ((totalMonthlyExpensesComplete / totalMonthlyIncomeComplete) * 100).toFixed(0) : '100'}% da renda
+                      ((totalMonthlyExpensesComplete / totalMonthlyIncomeComplete) * 100).toFixed(0) : '0'}% da renda
                   </div>
                 </div>
               </div>
@@ -470,6 +503,36 @@ export default function Dashboard() {
               </div>
             </div>
           </div>
+          
+          {/* Investment Expenses Section */}
+          <div className="mt-6">
+            <h3 className="text-lg font-semibold text-gray-800 mb-3">Alocação para Investimentos</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center space-x-2">
+                    <Target className="h-5 w-5 text-indigo-600" />
+                    <h4 className="font-medium text-gray-800">Metas Financeiras</h4>
+                  </div>
+                  <button 
+                    onClick={(e) => { 
+                      e.stopPropagation(); 
+                      navigate('/?tab=financial-goals');
+                    }}
+                    className="text-xs text-indigo-600 hover:text-indigo-700 hover:underline"
+                  >
+                    Ver detalhes
+                  </button>
+                </div>
+                <p className="text-xl font-bold text-indigo-700">
+                  R$ {totalFinancialGoals > 0 ? (totalFinancialGoals / 12).toLocaleString('pt-BR', { minimumFractionDigits: 2 }) : '0,00'}/mês
+                </p>
+                <div className="flex items-center mt-2">
+                  <span className="text-xs text-indigo-600">Poupança direcionada a objetivos</span>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -481,7 +544,7 @@ export default function Dashboard() {
         </div>
 
         {/* Cards Secundários - Ativos */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Ativos Líquidos */}
           <div 
             onClick={() => setSelectedBreakdown('liquid-assets')}
@@ -502,6 +565,29 @@ export default function Dashboard() {
                   <div className="bg-white/20 px-3 py-1 rounded-full">
                     <span className="text-sm">Disponível</span>
                   </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div 
+            onClick={() => setSelectedBreakdown('financial-goals')}
+            className="group relative overflow-hidden bg-gradient-to-br from-indigo-500 to-purple-600 rounded-3xl p-8 text-white shadow-2xl hover:shadow-3xl transition-all duration-500 cursor-pointer hover:scale-105"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-white/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-6">
+                <div className="bg-white/20 p-4 rounded-2xl backdrop-blur-sm">
+                  <Target className="h-8 w-8" />
+                </div>
+                <DollarSign className="h-6 w-6 opacity-60" />
+              </div>
+              <div>
+                <p className="text-indigo-100 text-sm font-medium mb-2">Metas Financeiras</p>
+                <p className="text-4xl font-bold mb-2">R$ {totalFinancialGoals.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}</p>
+                <div className="flex items-center space-x-1 mt-2">
+                  <PiggyBank className="h-4 w-4 text-indigo-200" />
+                  <span className="text-sm text-indigo-100">Alocação para objetivos</span>
                 </div>
               </div>
             </div>
@@ -571,6 +657,26 @@ export default function Dashboard() {
               </div>
               <div className="bg-orange-100 p-3 rounded-xl">
                 <Home className="h-6 w-6 text-orange-600" />
+              </div>
+            </div>
+          </div>
+          
+          <div 
+            onClick={() => setSelectedBreakdown('financial-goals')}
+            className="bg-white p-6 rounded-2xl shadow-lg border border-indigo-200 hover:shadow-xl transition-all duration-300 cursor-pointer hover:scale-105"
+          >
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-indigo-600 text-sm font-medium">Metas Financeiras</p>
+                <p className="text-2xl font-bold text-gray-800 mt-1">
+                  R$ {totalFinancialGoals.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}
+                </p>
+                <p className="text-sm text-indigo-600 mt-1">
+                  Economia direcionada
+                </p>
+              </div>
+              <div className="bg-indigo-100 p-3 rounded-xl">
+                <Target className="h-6 w-6 text-indigo-600" />
               </div>
             </div>
           </div>
@@ -681,7 +787,7 @@ export default function Dashboard() {
       <WealthEvolutionChart />
 
       {/* Insights da IA */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="bg-white rounded-2xl shadow-lg p-6 mt-8">
         <div className="flex items-center space-x-3 mb-6">
           <div className="flex items-center space-x-3">
             <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-2 rounded-xl">
@@ -745,6 +851,7 @@ export default function Dashboard() {
                   selectedBreakdown === 'vehicles' ? 'Veículos' :
                   selectedBreakdown === 'exotic-assets' ? 'Ativos Exóticos' :
                   selectedBreakdown === 'taxes' ? 'Impostos' :
+                  selectedBreakdown === 'financial-goals' ? 'Metas Financeiras' :
                   selectedBreakdown === 'debts' ? 'Dívidas' : ''
                 }
               </h2>
@@ -762,6 +869,125 @@ export default function Dashboard() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// Financial Goals Breakdown Component
+function FinancialGoalsBreakdown() {
+  const navigate = useNavigate();
+  const [goals, setGoals] = useState([]);
+  const [loading, setLoading] = useState(true);
+  
+  useEffect(() => {
+    // Fetch goals data - in a real implementation this would come from supabase
+    // For now we'll use static data
+    setLoading(true);
+    
+    const mockGoals = [
+      {
+        id: '1',
+        name: 'Viagem para Europa',
+        targetAmount: 15000,
+        currentAmount: 5000,
+        targetDate: '2025-12-20',
+        category: 'travel',
+        progress: 33.33
+      },
+      {
+        id: '2',
+        name: 'Abrir consultoria financeira',
+        targetAmount: 50000,
+        currentAmount: 12500,
+        targetDate: '2026-06-30',
+        category: 'business',
+        progress: 25
+      }
+    ];
+    
+    setTimeout(() => {
+      setGoals(mockGoals);
+      setLoading(false);
+    }, 500);
+    
+  }, []);
+  
+  return (
+    <div className="p-6 space-y-6">
+      <div className="bg-indigo-50 p-4 rounded-xl border border-indigo-100">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="font-semibold text-indigo-800 mb-1">Total em Metas Financeiras</h3>
+            <p className="text-3xl font-bold text-indigo-700">
+              R$ {goals.reduce((sum, g) => sum + g.targetAmount, 0).toLocaleString('pt-BR')}
+            </p>
+          </div>
+          <Target className="h-8 w-8 text-indigo-600" />
+        </div>
+      </div>
+      
+      <div className="bg-gradient-to-br from-indigo-50 to-purple-50 p-4 rounded-xl border border-indigo-100 mb-4">
+        <h3 className="font-medium text-indigo-800 mb-2">Sobre Metas Financeiras</h3>
+        <p className="text-gray-700">
+          Metas financeiras são consideradas uma alocação do seu patrimônio, pois representam capital que você está 
+          reservando para objetivos específicos. Ao mesmo tempo, as contribuições mensais para estas metas entram como 
+          despesas de investimento no seu fluxo de caixa.
+        </p>
+      </div>
+      
+      <div className="space-y-4">
+        <h3 className="font-semibold text-gray-800">Suas Metas Financeiras</h3>
+        
+        {loading ? (
+          <div className="animate-pulse space-y-3">
+            <div className="h-16 bg-gray-200 rounded-lg"></div>
+            <div className="h-16 bg-gray-200 rounded-lg"></div>
+          </div>
+        ) : goals.length === 0 ? (
+          <div className="text-center py-8">
+            <p className="text-gray-500">Nenhuma meta financeira configurada.</p>
+            <button
+              onClick={() => navigate('/?tab=financial-goals')}
+              className="mt-4 px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              Configurar Metas
+            </button>
+          </div>
+        ) : (
+          goals.map((goal, index) => (
+            <div key={index} className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+              <div className="flex justify-between mb-2">
+                <h4 className="font-medium text-gray-800">{goal.name}</h4>
+                <span className="text-indigo-600 font-medium">
+                  {goal.progress}% concluído
+                </span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Meta: R$ {goal.targetAmount.toLocaleString('pt-BR')}</span>
+                <span className="text-green-600">
+                  Economizado: R$ {goal.currentAmount.toLocaleString('pt-BR')}
+                </span>
+              </div>
+              <div className="mt-2 w-full bg-gray-100 rounded-full h-2">
+                <div 
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600 h-2 rounded-full" 
+                  style={{ width: `${goal.progress}%` }}
+                ></div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+      
+      <div className="mt-6 flex justify-center">
+        <button
+          onClick={() => navigate('/?tab=financial-goals')}
+          className="px-6 py-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 transition-all duration-200 flex items-center space-x-2"
+        >
+          <Target className="h-4 w-4" />
+          <span>Gerenciar Metas Financeiras</span>
+        </button>
+      </div>
     </div>
   );
 }

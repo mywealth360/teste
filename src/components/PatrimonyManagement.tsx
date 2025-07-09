@@ -9,6 +9,7 @@ import {
   Shield,
   Banknote,
   PieChart,
+  Target,
   BarChart3,
   Calendar,
   Percent,
@@ -68,6 +69,7 @@ export default function PatrimonyManagement() {
     totalBankBalance,
     totalVehicleValue,
     totalExoticAssetsValue,
+    totalFinancialGoals,
     totalAssets,
     netWorth,
     totalDebt,
@@ -93,13 +95,14 @@ export default function PatrimonyManagement() {
 
   // Calcular ativos líquidos e imobilizados
   const liquidAssets = totalBankBalance + (totalInvestmentValue * 0.7);
-  const immobilizedAssets = totalRealEstateValue + totalRetirementSaved + (totalInvestmentValue * 0.3) + totalVehicleValue + totalExoticAssetsValue;
+  const immobilizedAssets = totalRealEstateValue + totalRetirementSaved + (totalInvestmentValue * 0.3) + totalVehicleValue + totalExoticAssetsValue + totalFinancialGoals;
 
   // Distribuição do patrimônio
   const assetDistribution = [
     { name: 'Investimentos', value: totalInvestmentValue, color: '#3b82f6' },
     { name: 'Imóveis', value: totalRealEstateValue, color: '#f59e0b' },
     { name: 'Previdência', value: totalRetirementSaved, color: '#10b981' },
+    { name: 'Metas Financeiras', value: totalFinancialGoals, color: '#8b5cf6' },
     { name: 'Contas Bancárias', value: totalBankBalance, color: '#06b6d4' },
     { name: 'Veículos', value: totalVehicleValue, color: '#0284c7' },
     { name: 'Ativos Exóticos', value: totalExoticAssetsValue, color: '#7c3aed' }
@@ -351,6 +354,18 @@ export default function PatrimonyManagement() {
                 <p className="text-xl font-bold text-indigo-700">{formatCurrency(immobilizedAssets)}</p>
               </div>
             </div>
+          </div>
+          
+          <div className="bg-white p-4 rounded-xl border border-indigo-100 shadow-sm">
+            <div className="flex items-center space-x-3 mb-2">
+              <Target className="h-5 w-5 text-indigo-600" />
+              <h3 className="font-semibold text-gray-800">Metas Financeiras</h3>
+            </div>
+            <p className="text-2xl font-bold text-gray-900">R$ {totalFinancialGoals.toLocaleString('pt-BR')}</p>
+            <p className="text-sm text-indigo-600 mt-1 flex items-center">
+              <PiggyBank className="h-3 w-3 mr-1" />
+              <span>Alocação para objetivos futuros</span>
+            </p>
           </div>
         </div>
       </div>

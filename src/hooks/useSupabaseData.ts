@@ -27,6 +27,7 @@ export function useSupabaseData() {
   const [totalVehicleExpenses, setTotalVehicleExpenses] = useState(0);
   const [totalExoticAssetsValue, setTotalExoticAssetsValue] = useState(0);
   const [totalExoticAssetsAppreciation, setTotalExoticAssetsAppreciation] = useState(0);
+  const [totalFinancialGoals, setTotalFinancialGoals] = useState(0);
   const [totalAssets, setTotalAssets] = useState(0);
   const [netWorth, setNetWorth] = useState(0);
   const [totalTaxes, setTotalTaxes] = useState(0);
@@ -64,7 +65,8 @@ export function useSupabaseData() {
         fetchBills(),
         fetchBankAccounts(),
         fetchVehicles(),
-        fetchExoticAssets()
+        fetchExoticAssets(),
+        fetchFinancialGoals()
       ]);
 
       // Calculate total assets
@@ -74,7 +76,8 @@ export function useSupabaseData() {
         totalRetirementSaved + 
         totalBankBalance +
         totalVehicleValue +
-        totalExoticAssetsValue;
+        totalExoticAssetsValue +
+        totalFinancialGoals;
       
       setTotalAssets(totalAssetsValue);
       
@@ -424,6 +427,33 @@ export function useSupabaseData() {
     }
   };
 
+  const fetchFinancialGoals = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('financial_goals')
+        .select('*')
+        .eq('user_id', user?.id)
+        .eq('status', 'active');
+
+      if (error) throw error;
+
+      // Calculate total amount allocated to financial goals
+      let totalGoals = 0;
+      
+      (data || []).forEach(goal => {
+        if (goal.current_amount > 0) {
+          totalGoals += goal.current_amount;
+        }
+      });
+
+      setTotalFinancialGoals(totalGoals);
+      return data;
+    } catch (err) {
+      console.error('Error fetching financial goals:', err);
+      return [];
+    }
+  };
+
   const fetchExoticAssets = async () => {
     try {
       const { data, error } = await supabase
@@ -600,6 +630,7 @@ export function useSupabaseData() {
     totalVehicleExpenses,
     totalExoticAssetsValue,
     totalExoticAssetsAppreciation,
+    totalFinancialGoals,
     totalAssets,
     netWorth,
     totalTaxes,
