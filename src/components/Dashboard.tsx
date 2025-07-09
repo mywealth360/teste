@@ -26,6 +26,79 @@ import FinancialBreakdown from './FinancialBreakdown';
 import { useDashboardData } from '../hooks/useSupabaseData';
 import { useNavigate } from 'react-router-dom';
 
+// Quick Guide component
+const QuickGuide = () => {
+  return (
+    <div className="bg-white rounded-2xl shadow-lg p-6">
+      <h2 className="text-xl font-semibold text-gray-800 mb-4">Guia Rápido</h2>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
+          <h3 className="font-medium text-blue-800 mb-2 flex items-center">
+            <DollarSign className="h-4 w-4 mr-2" />
+            Finanças
+          </h3>
+          <ul className="space-y-2 text-sm text-blue-700">
+            <li className="flex items-center">
+              <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+              <a href="/revenues" className="hover:underline">Gestão de Receitas</a>
+            </li>
+            <li className="flex items-center">
+              <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+              <a href="/expenses" className="hover:underline">Gestão de Gastos</a>
+            </li>
+            <li className="flex items-center">
+              <span className="w-2 h-2 bg-blue-500 rounded-full mr-2"></span>
+              <a href="/bills" className="hover:underline">Contas a Pagar</a>
+            </li>
+          </ul>
+        </div>
+        
+        <div className="bg-green-50 p-4 rounded-xl border border-green-100">
+          <h3 className="font-medium text-green-800 mb-2 flex items-center">
+            <Building className="h-4 w-4 mr-2" />
+            Patrimônio
+          </h3>
+          <ul className="space-y-2 text-sm text-green-700">
+            <li className="flex items-center">
+              <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+              <a href="/investments" className="hover:underline">Investimentos</a>
+            </li>
+            <li className="flex items-center">
+              <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+              <a href="/real-estate" className="hover:underline">Imóveis</a>
+            </li>
+            <li className="flex items-center">
+              <span className="w-2 h-2 bg-green-500 rounded-full mr-2"></span>
+              <a href="/vehicles" className="hover:underline">Veículos</a>
+            </li>
+          </ul>
+        </div>
+        
+        <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
+          <h3 className="font-medium text-purple-800 mb-2 flex items-center">
+            <Target className="h-4 w-4 mr-2" />
+            Planejamento
+          </h3>
+          <ul className="space-y-2 text-sm text-purple-700">
+            <li className="flex items-center">
+              <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+              <a href="/financial-goals" className="hover:underline">Metas Financeiras</a>
+            </li>
+            <li className="flex items-center">
+              <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+              <a href="/retirement" className="hover:underline">Previdência</a>
+            </li>
+            <li className="flex items-center">
+              <span className="w-2 h-2 bg-purple-500 rounded-full mr-2"></span>
+              <a href="/smart-alerts" className="hover:underline">Alertas Inteligentes</a>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -181,6 +254,9 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Quick Guide */}
+      <QuickGuide />
 
       {/* Wealth Evolution Chart */}
       <WealthEvolutionChart />
