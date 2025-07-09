@@ -158,15 +158,6 @@ export default function UserProfile() {
                       Alterar
                     </button>
                   </div>
-                    </p>
-                    <Link 
-                      to="#" 
-                      onClick={() => setActiveTab('subscription')}
-                      className="ml-2 text-xs text-blue-600 hover:text-blue-800 hover:underline"
-                    >
-                      Alterar
-                    </Link>
-                  </div>
                 </div>
               </div>
               
