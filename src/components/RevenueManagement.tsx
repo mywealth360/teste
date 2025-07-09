@@ -670,15 +670,16 @@ export default function RevenueManagement() {
                     <div className="text-right">
                       <span className="font-semibold text-lg text-green-600 whitespace-nowrap">
                         R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
-                      </span>
+                      </span> 
                       {revenue.frequency !== 'monthly' && (
                         <p className="text-sm text-gray-500">
-                          ≈ R$ {monthlyAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês
+                          ≈ <span className="font-medium">R$ {monthlyAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}/mês</span>
                         </p>
                       )}
                       {taxAmount > 0 && (
-                        <p className="text-sm text-indigo-600">
-                          Imposto: R$ {taxAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                        <p className="text-sm text-indigo-600 flex items-center mt-1">
+                          <Landmark className="h-3 w-3 mr-1" />
+                          <span>IRPF: R$ {taxAmount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</span>
                         </p>
                       )}
                     </div>

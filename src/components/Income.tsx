@@ -500,7 +500,7 @@ export default function Income() {
               <div className="relative">
                 <input
                   type="number"
-                  placeholder="Alíquota de imposto (%)"
+                  placeholder="Alíquota de IRPF (%)"
                   step="0.01"
                   min="0"
                   max="100"
@@ -514,10 +514,11 @@ export default function Income() {
               {showTaxInfo && (
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
                   <p className="text-sm text-blue-800">
-                    Taxa de imposto sugerida: {taxRate}%
+                    Alíquota sugerida de IRPF: <span className="font-medium">{taxRate}%</span>
                   </p>
-                  <p className="text-sm text-blue-600">
-                    Imposto estimado: {formatCurrency(taxAmount)}
+                  <p className="text-sm text-blue-600 flex items-center mt-1">
+                    <Landmark className="h-3 w-3 mr-1" />
+                    <span>Imposto estimado: <span className="font-medium">{formatCurrency(taxAmount)}</span></span>
                   </p>
                 </div>
               )}

@@ -461,7 +461,8 @@ export default function FinancialGoals() {
         <div className="space-y-6">
           {goals.map((goal) => {
             const CategoryIcon = getCategoryInfo(goal.category).icon;
-            const colorClass = getCategoryInfo(goal.category).color;
+            const categoryInfo = getCategoryInfo(goal.category);
+            const colorClass = categoryInfo.color;
             const progressPercentage = getProgressPercentage(goal.current_amount, goal.target_amount);
             const monthlySavingsNeeded = getMonthlySavingsNeeded(goal);
             const isEditing = editingGoal?.id === goal.id;
@@ -569,8 +570,8 @@ export default function FinancialGoals() {
                     <div className="p-6">
                       <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                         <div className="flex items-start space-x-4">
-                          <div className={`w-12 h-12 rounded-xl flex items-center justify-center bg-gradient-to-r ${colorClass}`}>
-                            <CategoryIcon className="h-6 w-6 text-white" />
+                          <div className={`w-14 h-14 rounded-xl flex items-center justify-center bg-gradient-to-r ${colorClass} shadow-md`}>
+                            <CategoryIcon className="h-7 w-7 text-white" />
                           </div>
                           
                           <div>
@@ -592,16 +593,21 @@ export default function FinancialGoals() {
                             </div>
                             
                             <p className="text-gray-600 mt-1">{goal.description}</p>
-                            
-                            <div className="flex items-center space-x-4 mt-2 text-sm">
-                              <span className="flex items-center text-gray-500">
+
+                            <div className="flex flex-wrap items-center gap-4 mt-2 text-sm">
+                              <span className="flex items-center text-gray-700">
                                 <Calendar className="h-4 w-4 mr-1" />
                                 <span>{getTimeRemaining(goal.target_date)}</span>
                               </span>
                               
-                              <span className="flex items-center text-gray-500">
+                              <span className="flex items-center text-gray-700">
                                 <DollarSign className="h-4 w-4 mr-1" />
-                                <span>Meta: {formatCurrency(goal.target_amount)}</span>
+                                <span className="font-medium">Meta: {formatCurrency(goal.target_amount)}</span>
+                              </span>
+
+                              <span className="flex items-center text-gray-700">
+                                <PiggyBank className="h-4 w-4 mr-1 text-green-600" />
+                                <span className="font-medium text-green-600">Economizado: {formatCurrency(goal.current_amount)}</span>
                               </span>
                             </div>
                           </div>
