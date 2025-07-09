@@ -77,7 +77,7 @@ export default function AIChat() {
       {/* Header */}
       <div className="p-6 border-b border-gray-100">
         <div className="flex items-center space-x-3">
-          <div className="bg-gradient-to-br from-purple-500 to-pink-600 p-3 rounded-xl">
+          <div className="bg-indigo-600 p-3 rounded-xl">
             <Bot className="h-6 w-6 text-white" />
           </div>
           <div>
@@ -94,8 +94,8 @@ export default function AIChat() {
             <div className={`flex items-start space-x-3 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
               <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
                 message.type === 'user' 
-                  ? 'bg-blue-500' 
-                  : 'bg-gradient-to-br from-purple-500 to-pink-600'
+                  ? 'bg-blue-600' 
+                  : 'bg-indigo-600'
               }`}>
                 {message.type === 'user' ? (
                   <User className="h-4 w-4 text-white" />
@@ -106,7 +106,7 @@ export default function AIChat() {
               
               <div className={`rounded-2xl p-4 ${
                 message.type === 'user'
-                  ? 'bg-blue-500 text-white'
+                  ? 'bg-blue-600 text-white'
                   : 'bg-gray-50 text-gray-800'
               }`}>
                 <p className="text-sm leading-relaxed">{message.content}</p>
@@ -130,7 +130,7 @@ export default function AIChat() {
               <button
                 key={index}
                 onClick={() => handleSuggestionClick(suggestion)}
-                className="text-xs px-3 py-2 bg-purple-50 text-purple-700 rounded-full hover:bg-purple-100 transition-colors duration-200"
+                className="text-xs px-3 py-2 bg-indigo-50 text-indigo-700 rounded-full hover:bg-indigo-100 transition-colors duration-200"
               >
                 {suggestion}
               </button>
@@ -142,7 +142,7 @@ export default function AIChat() {
         {isTyping && (
           <div className="flex justify-start">
             <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+              <div className="w-8 h-8 rounded-full bg-indigo-600 flex items-center justify-center">
                 <Bot className="h-4 w-4 text-white" />
               </div>
               <div className="bg-gray-50 rounded-2xl p-4">
@@ -173,7 +173,7 @@ export default function AIChat() {
           <button
             onClick={() => handleSendMessage(inputValue)}
             disabled={!inputValue.trim() || isTyping}
-            className="p-3 bg-gradient-to-r from-purple-500 to-pink-600 text-white rounded-xl hover:from-purple-600 hover:to-pink-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
+            className="p-3 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
           >
             <Send className="h-4 w-4" />
           </button>
