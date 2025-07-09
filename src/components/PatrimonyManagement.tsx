@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import {
   TrendingUp, TrendingDown, DollarSign, Target, Building, 
   Home, Shield, Banknote, PieChart, BarChart3, Calendar, 
   Percent,
