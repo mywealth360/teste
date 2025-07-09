@@ -71,6 +71,7 @@ export default function Dashboard() {
   useMonthlyRenewal();
 
   const [selectedBreakdown, setSelectedBreakdown] = useState<string | null>(null);
+  const [revenueCategoryData, setRevenueCategoryData] = useState<Record<string, number>>({});
 
   // Load revenue categories from localStorage
   const [revenueCategories, setRevenueCategories] = useState<Record<string, number>>({});
@@ -106,6 +107,23 @@ export default function Dashboard() {
 
   // Calculate net monthly income
   const netMonthlyIncomeComplete = totalMonthlyIncomeComplete - totalMonthlyExpensesComplete; 
+
+  // Load revenue category data from local storage
+  useEffect(() => {
+    const storedData = localStorage.getItem('revenueCategories');
+    if (storedData) {
+      try {
+        const parsedData = JSON.parse(storedData);
+        // Check if data has timestamp and is not older than 30 minutes
+        if (parsedData.timestamp && 
+            (new Date().getTime() - parsedData.timestamp < 30 * 60 * 1000)) {
+          setRevenueCategoryData(parsedData.data || {});
+        }
+      } catch (e) {
+        console.error('Error parsing revenue categories data:', e);
+      }
+    }
+  }, []);
 
   // Calculate liquid assets (bank accounts + easily liquidated investments)
   const liquidAssets = totalBankBalance + (totalInvestmentValue * 0.7); // Assuming 70% of investments are liquid
@@ -903,6 +921,41 @@ export default function Dashboard() {
 
       {/* Gráfico de Evolução Patrimonial */}
       <WealthEvolutionChart />
+
+      {/* Revenue Categories */}
+      {Object.keys(revenueCategoryData).length > 0 && (
+        <div className="bg-white p-6 rounded-2xl shadow-lg mt-8">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center">
+            <TrendingUp className="h-5 w-5 text-green-600 mr-2" /> 
+            Receitas por Categoria
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {Object.entries(revenueCategoryData)
+              .sort(([, a], [, b]) => b - a)
+              .slice(0, 6)
+              .map(([category, amount]) => (
+                <div key={category} 
+                     className="bg-green-50 p-4 rounded-xl border border-green-100 hover:shadow-md transition-shadow">
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-gray-800">{category}</h4>
+                    <span className="text-sm text-green-600 font-medium">
+                      {((amount / totalMonthlyIncomeComplete) * 100).toFixed(1)}%
+                    </span>
+                  </div>
+                  <p className="text-lg font-bold text-green-700">
+                    R$ {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                  </p>
+                  <div className="w-full bg-green-200 rounded-full h-2 mt-2">
+                    <div
+                      className="bg-gradient-to-r from-green-500 to-emerald-600 h-2 rounded-full"
+                      style={{ width: `${(amount / totalMonthlyIncomeComplete) * 100}%` }}
+                    ></div>
+                  </div>
+                </div>
+              ))}
+          </div>
+        </div>
+      )}
 
       {/* Insights da IA */}
       <div className="bg-white rounded-2xl shadow-lg p-6 mt-8">

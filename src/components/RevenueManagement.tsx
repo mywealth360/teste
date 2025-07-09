@@ -224,21 +224,50 @@ export default function RevenueManagement() {
     // Calculate totals by source type
     const totalsByType = filtered.reduce((acc, revenue) => {
       const monthlyAmount = calculateMonthlyRevenue(revenue);
-      // Validate the monthly amount before adding
+      // Ensure only valid revenue types are added (skip 'invest' if it doesn't exist)
+      if (monthlyAmount > 0 && !acc[revenue.type]) {
       if (monthlyAmount > 0) {
         if (!acc[revenue.type]) {
           acc[revenue.type] = 0;
         }
         acc[revenue.type] += monthlyAmount;
       }
-      return acc;
+      
+      // Only add to the total if there's actual revenue
+      if (monthlyAmount > 0) {
+        acc[revenue.type] += monthlyAmount;
+      }
+      
     }, {} as Record<string, number>);
 
     // Update localStorage with data for dashboard
     if (typeof window !== 'undefined') {
-      // Prepare to update localStorage with category data for dashboard
-      const timestamp = new Date().getTime();
+      const timestamp = Date.now();
+      // Only save categories with non-zero values
+      const validCategories = Object.entries(revenuesByCategory)
+        .filter(([_, value]) => value > 0)
+        .reduce((obj, [key, value]) => {
+          obj[key] = value;
+          return obj;
+        }, {} as Record<string, number>);
+      
+      // Only save types with non-zero values
+      const validTypes = Object.entries(totalsByType)
+        .filter(([_, value]) => value > 0)
+        .reduce((obj, [key, value]) => {
+          obj[key] = value;
+          return obj;
+        }, {} as Record<string, number>);
+      
       localStorage.setItem('revenueCategories', JSON.stringify({
+        data: validCategories,
+        timestamp
+      }));
+      
+      localStorage.setItem('revenuesByType', JSON.stringify({
+        data: validTypes,
+        timestamp
+      }));
         data: revenuesByCategory,
         timestamp: timestamp
       }));
@@ -598,79 +627,104 @@ export default function RevenueManagement() {
                     className="bg-gradient-to-r from-purple-500 to-purple-600 h-2 rounded-full"
                     style={{ width: `${(totalsByType['transaction'] / totalRevenues) * 100}%` }}
                   ></div>
-                </div>
-                <p className="text-xs text-purple-600 mt-1 text-right">
-                  {((totalsByType['transaction'] / totalRevenues) * 100).toFixed(1)}%
-                </p>
+        <div className="space-y-6 max-h-96 overflow-y-auto pr-2">
+          {/* Only show real estate section if there are entries */}
+          {filteredRevenues.filter(r => r.type === 'real_estate').length > 0 && (
+            <div>
+              <h3 className="font-medium text-gray-700 border-b border-gray-200 pb-2 mb-3">Aluguéis de Imóveis</h3>
+              <div className="space-y-2">
+                {filteredRevenues.filter(r => r.type === 'real_estate').map((revenue, idx) => (
+                  <div key={`re-${idx}`} className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+                    <div className="flex justify-between">
+                      <div>
+                        <p className="font-medium text-gray-800">{revenue.description}</p>
+                        <p className="text-sm text-gray-600">{revenue.source}</p>
+                      </div>
+                      <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
-        </div>
-      </div>
-
-      {/* Detalhamento de Receitas por Fonte */}
-      <div className="bg-white p-6 rounded-2xl shadow-lg">
-        <h2 className="text-xl font-semibold text-gray-800 mb-2">Detalhamento de Receitas</h2>
-        <p className="text-gray-500 mb-4 text-sm">Lista completa de todas as suas fontes de receita</p>
-        <div className="space-y-4 max-h-96 overflow-y-auto pr-2">
-          <h3 className="font-medium text-gray-700">Aluguéis de Imóveis</h3>
-          {filteredRevenues.filter(r => r.type === 'real_estate').map((revenue, idx) => (
-            <div key={`re-${idx}`} className="bg-purple-50 p-3 rounded-lg border border-purple-100">
-              <div className="flex justify-between">
-                <div>
-                  <p className="font-medium text-gray-800">{revenue.description}</p>
-                  <p className="text-sm text-gray-600">{revenue.source}</p>
-                </div>
-                <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-              </div>
-            </div>
-          ))}
           
-          <h3 className="font-medium text-gray-700 mt-6">Dividendos de Investimentos</h3>
-          {filteredRevenues.filter(r => r.type === 'investment').map((revenue, idx) => (
-            <div key={`inv-${idx}`} className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-              <div className="flex justify-between">
-                <div>
-                  <p className="font-medium text-gray-800">{revenue.description}</p>
-                  <p className="text-sm text-gray-600">{revenue.source}</p>
-                </div>
-                <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
-              </div>
-            </div>
-          ))}
-          
-          <h3 className="font-medium text-gray-700 mt-6">Fontes de Renda</h3>
-          {filteredRevenues.filter(r => r.type === 'income_source').map((revenue, idx) => (
-            <div key={`inc-${idx}`} className="bg-green-50 p-3 rounded-lg border border-green-100">
-              <div className="flex justify-between">
-                <div>
-                  <div className="flex items-center">
-                    <p className="font-medium text-gray-800">{revenue.description}</p>
-                    {revenue.tax_rate && revenue.tax_rate > 0 && (
-                      <span className="ml-2 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
-                        IRPF {revenue.tax_rate}%
-                      </span>
-                    )}
+          {/* Only show investments section if there are entries */}
+          {filteredRevenues.filter(r => r.type === 'investment').length > 0 && (
+            <div>
+              <h3 className="font-medium text-gray-700 border-b border-gray-200 pb-2 mb-3">Dividendos de Investimentos</h3>
+              <div className="space-y-2">
+                {filteredRevenues.filter(r => r.type === 'investment').map((revenue, idx) => (
+                  <div key={`inv-${idx}`} className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                    <div className="flex justify-between">
+                      <div>
+                        <div className="flex items-center">
+                          <p className="font-medium text-gray-800">{revenue.description}</p>
+                          {revenue.tax_rate && revenue.tax_rate > 0 && (
+                            <span className="ml-2 text-xs bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full">
+                              IRPF {revenue.tax_rate}%
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-sm text-gray-600">{revenue.source}</p>
+                      </div>
+                      <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                    </div>
                   </div>
-                  <p className="text-sm text-gray-600">{revenue.category} - {getFrequencyLabel(revenue.frequency)}</p>
-                </div>
-                <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                ))}
               </div>
             </div>
-          ))}
+          )}
           
-          <h3 className="font-medium text-gray-700 mt-6">Outras Receitas</h3>
-          {filteredRevenues.filter(r => r.type === 'transaction').map((revenue, idx) => (
-            <div key={`trans-${idx}`} className="bg-purple-50 p-3 rounded-lg border border-purple-100">
-              <div className="flex justify-between">
-                <div>
-                  <p className="font-medium text-gray-800">{revenue.description}</p>
-                  <p className="text-sm text-gray-600">{revenue.category}</p>
-                </div>
-                <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+          {/* Only show income sources section if there are entries */}
+          {filteredRevenues.filter(r => r.type === 'income_source' && r.category !== 'invest').length > 0 && (
+            <div>
+              <h3 className="font-medium text-gray-700 border-b border-gray-200 pb-2 mb-3">Fontes de Renda</h3>
+              <div className="space-y-2">
+                {filteredRevenues
+                  .filter(r => r.type === 'income_source' && r.category !== 'invest')
+                  .map((revenue, idx) => (
+                    <div key={`inc-${idx}`} className="bg-green-50 p-3 rounded-lg border border-green-100">
+                      <div className="flex justify-between">
+                        <div>
+                          <p className="font-medium text-gray-800">{revenue.description}</p>
+                          <p className="text-sm text-gray-600">{revenue.category} - {getFrequencyLabel(revenue.frequency)}</p>
+                        </div>
+                        <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      </div>
+                    </div>
+                  ))}
               </div>
             </div>
-          ))}
+          )}
+          
+          {/* Only show transactions section if there are entries */}
+          {filteredRevenues.filter(r => r.type === 'transaction' && r.category !== 'invest').length > 0 && (
+            <div>
+              <h3 className="font-medium text-gray-700 border-b border-gray-200 pb-2 mb-3">Outras Receitas</h3>
+              <div className="space-y-2">
+                {filteredRevenues
+                  .filter(r => r.type === 'transaction' && r.category !== 'invest')
+                  .map((revenue, idx) => (
+                    <div key={`trans-${idx}`} className="bg-purple-50 p-3 rounded-lg border border-purple-100">
+                      <div className="flex justify-between">
+                        <div>
+                          <p className="font-medium text-gray-800">{revenue.description}</p>
+                          <p className="text-sm text-gray-600">{revenue.category}</p>
+                        </div>
+                        <p className="font-semibold text-green-600">R$ {revenue.amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}</p>
+                      </div>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          )}
+          
+          {filteredRevenues.length === 0 && (
+            <div className="text-center py-8">
+              <DollarSign className="h-10 w-10 text-gray-300 mx-auto mb-3" />
+              <p className="text-gray-500">Nenhuma receita encontrada para os filtros selecionados.</p>
+            </div>
+          )}
         </div>
       </div>
 
