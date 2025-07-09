@@ -45,36 +45,37 @@ export default function AccessManagement() {
   const fetchSharedAccesses = async () => {
     try {
       setLoading(true);
-      
-      // In a real implementation, this would fetch from a shared_access table
-      // For demo purposes, we'll use mock data
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Mock data
-      const mockSharedAccesses: SharedAccess[] = [
-        {
-          id: '1',
-          owner_id: user?.id || '',
-          user_id: 'user-123',
-          user_email: 'familiar1@example.com',
-          user_name: 'Maria Silva',
-          role: 'editor',
-          created_at: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
-        },
-        {
-          id: '2',
-          owner_id: user?.id || '',
-          user_id: 'user-456',
-          user_email: 'contador@example.com',
-          user_name: 'João Contador',
-          role: 'viewer',
-          created_at: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString()
-        }
-      ];
-      
-      setSharedAccesses(mockSharedAccesses);
+      // Fetch shared accesses from the real table
+      const { data, error } = await supabase
+        .from('user_shared_access')
+        .select(`
+          id,
+          owner_id,
+          user_id,
+          role,
+          created_at,
+          profiles!shared_user_profiles(
+            email,
+            full_name
+          )
+        `)
+        .eq('owner_id', user?.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      // Format data to match component's expected structure
+      const formattedData: SharedAccess[] = (data || []).map(access => ({
+        id: access.id,
+        owner_id: access.owner_id,
+        user_id: access.user_id,
+        user_email: access.profiles?.email || '',
+        user_name: access.profiles?.full_name || '',
+        role: access.role,
+        created_at: access.created_at
+      }));
+
+      setSharedAccesses(formattedData);
     } catch (err) {
       console.error('Error fetching shared accesses:', err);
       setError('Erro ao carregar acessos compartilhados');
@@ -85,27 +86,18 @@ export default function AccessManagement() {
 
   const fetchPendingInvites = async () => {
     try {
-      // In a real implementation, this would fetch from an invites table
-      // For demo purposes, we'll use mock data
+      // Fetch pending invites from the real table
+      const { data, error } = await supabase
+        .from('invites')
+        .select('*')
+        .eq('owner_id', user?.id)
+        .eq('accepted', false)
+        .gte('expires_at', new Date().toISOString())
+        .order('created_at', { ascending: false });
       
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
+      if (error) throw error;
       
-      // Mock data
-      const mockInvites: InviteData[] = [
-        {
-          id: '1',
-          owner_id: user?.id || '',
-          email: 'pendente@example.com',
-          role: 'viewer',
-          token: 'abc123',
-          created_at: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(),
-          expires_at: new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toISOString(),
-          accepted: false
-        }
-      ];
-      
-      setPendingInvites(mockInvites);
+      setPendingInvites(data || []);
     } catch (err) {
       console.error('Error fetching pending invites:', err);
     }
@@ -168,17 +160,18 @@ export default function AccessManagement() {
     if (!confirm('Tem certeza que deseja revogar este acesso?')) return;
     
     try {
-      setLoading(true);
-      
-      // In a real implementation, this would call an API to revoke access
-      // For demo purposes, we'll just update the UI
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Update UI
-      setSharedAccesses(prev => prev.filter(access => access.id !== accessId));
-      
+      setLoading(true); 
+
+      // Delete the access record from the database
+      const { error } = await supabase
+        .from('user_shared_access')
+        .delete()
+        .eq('id', accessId);
+
+      if (error) throw error;
+
+      // Refresh the list of shared accesses
+      fetchSharedAccesses();
     } catch (err) {
       console.error('Error revoking access:', err);
       setError('Erro ao revogar acesso');
@@ -191,16 +184,18 @@ export default function AccessManagement() {
     if (!confirm('Tem certeza que deseja cancelar este convite?')) return;
     
     try {
-      setLoading(true);
-      
-      // In a real implementation, this would call an API to cancel the invite
-      // For demo purposes, we'll just update the UI
-      
-      // Simulate API call delay
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Update UI
-      setPendingInvites(prev => prev.filter(invite => invite.id !== inviteId));
+      setLoading(true); 
+
+      // Delete the invite record from the database
+      const { error } = await supabase
+        .from('invites')
+        .delete()
+        .eq('id', inviteId);
+
+      if (error) throw error;
+
+      // Refresh the list of pending invites
+      fetchPendingInvites();
       
     } catch (err) {
       console.error('Error canceling invite:', err);
