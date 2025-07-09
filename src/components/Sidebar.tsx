@@ -45,7 +45,8 @@ interface SidebarProps {
 // Seções principais
 const mainSections = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, restricted: false },
-  { id: 'smart-alerts', label: 'Alertas Inteligentes', icon: Bell, restricted: false }
+  { id: 'smart-alerts', label: 'Alertas Inteligentes', icon: Bell, restricted: false },
+  { id: 'insights', label: 'IA Insights', icon: Brain, restricted: true }
 ];
 
 // Seção de Receitas
@@ -78,8 +79,7 @@ const otherSections = [
   { id: 'financial-goals', label: 'Metas Financeiras', icon: Target, restricted: false },
   { id: 'access', label: 'Gerenciar Acessos', icon: Users, restricted: true },
   { id: 'documents', label: 'Documentos', icon: FolderOpen, restricted: false },
-  { id: 'employees', label: 'Funcionários', icon: Users, restricted: true },
-  { id: 'insights', label: 'IA Insights', icon: Brain, restricted: true }
+  { id: 'employees', label: 'Funcionários', icon: Users, restricted: true }
 ];
 
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
