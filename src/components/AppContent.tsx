@@ -31,7 +31,7 @@ import AdminPanel from './AdminPanel';
 
 export default function AppContent() {
   const [activeTab, setActiveTab] = useState('dashboard');
-  const { isAdmin, isInTrial, trialExpiresAt, userPlan } = useAuth();
+  const { isAdmin, isInTrial, trialExpiresAt, userPlan } = useAuth(); 
   const [showTrialExpiredModal, setShowTrialExpiredModal] = useState(false);
   const [showPaymentFailedModal, setShowPaymentFailedModal] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -148,46 +148,18 @@ export default function AppContent() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      {/* Mobile menu button */}
-      <div className="lg:hidden fixed top-4 left-4 z-50">
-        <button 
-          onClick={() => setSidebarOpen(!sidebarOpen)}
-          className="p-2 rounded-md bg-white shadow-md text-gray-600"
-        >
-          {sidebarOpen ? (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          ) : (
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-            </svg>
-          )}
-        </button>
-      </div>
-      
+    <div className="min-h-screen bg-gray-50">      
       {/* Sidebar */}
-      <div className={`${sidebarOpen ? 'block' : 'hidden'} lg:block`}>
-        <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
-      </div>
-      
-      {/* Overlay for mobile sidebar */}
-      {sidebarOpen && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
-          onClick={() => setSidebarOpen(false)}
-        ></div>
-      )}
+      <Sidebar activeTab={activeTab} setActiveTab={setActiveTab} />
       
       {/* Main content */}
-      <main className="pt-16 lg:pt-0 px-4 sm:px-6 lg:px-8 lg:ml-72">
-        <div className="max-w-7xl mx-auto py-6">
+      <main className="pt-16 lg:pt-0 px-4 sm:px-6 lg:px-8 lg:ml-64">
+        <div className="max-w-7xl mx-auto py-4 sm:py-6">
           {renderContent()}
         </div>
       </main>
       
-      <div className="fixed bottom-6 right-6 flex flex-col space-y-2 z-30">
+      <div className="fixed bottom-4 sm:bottom-6 right-4 sm:right-6 flex flex-col space-y-2 z-30">
         <FloatingChatButton />
       </div>
       

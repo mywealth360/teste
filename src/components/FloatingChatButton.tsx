@@ -67,18 +67,18 @@ export default function FloatingChatButton() {
   return (
     <>
       {/* Floating Button */}
-      <button
-        onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 w-12 h-12 sm:w-14 sm:h-14 bg-blue-600 text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center z-50 hover:scale-110 ${
-          isOpen ? 'hidden' : 'block'
-        }`}
-      >
-        <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
-      </button>
+      {!isOpen && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-600 text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center hover:scale-110"
+        >
+          <MessageCircle className="h-5 w-5 sm:h-6 sm:w-6" />
+        </button>
+      )}
 
       {/* Chat Window */}
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-[90vw] sm:w-80 md:w-96 h-[80vh] sm:h-[500px] bg-white rounded-xl shadow-lg border border-gray-200 z-50 flex flex-col overflow-hidden">
+        <div className="fixed bottom-0 right-0 sm:bottom-6 sm:right-6 w-full sm:w-80 md:w-96 h-[70vh] sm:h-[500px] bg-white rounded-t-xl sm:rounded-xl shadow-lg border border-gray-200 z-50 flex flex-col overflow-hidden">
           {/* Header */}
           <div className="p-4 bg-blue-600 text-white">
             <div className="flex items-center justify-between">
@@ -101,29 +101,29 @@ export default function FloatingChatButton() {
           </div>
 
           {/* Messages */}
-          <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
+          <div className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-2 sm:space-y-3">
             {messages.map((message) => (
               <div key={message.id} className={`flex ${message.type === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`flex items-start space-x-2 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
-                  <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                <div className={`flex items-start space-x-1 sm:space-x-2 max-w-[85%] ${message.type === 'user' ? 'flex-row-reverse space-x-reverse sm:space-x-reverse' : ''}`}>
+                  <div className={`w-5 h-5 sm:w-6 sm:h-6 rounded-full flex items-center justify-center ${
                     message.type === 'user' 
                       ? 'bg-blue-600' 
                       : 'bg-blue-600'
                   }`}>
                     {message.type === 'user' ? (
-                      <User className="h-3 w-3 text-white" />
+                      <User className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
                     ) : (
-                      <Bot className="h-3 w-3 text-white" />
+                      <Bot className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
                     )}
                   </div>
                   
-                  <div className={`rounded-2xl p-3 ${
+                  <div className={`rounded-2xl p-2 sm:p-3 ${
                     message.type === 'user'
                       ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-800'
                   }`}>
-                    <p className="text-xs sm:text-sm leading-relaxed">{message.content}</p>
-                    <p className={`text-xs mt-1 ${
+                    <p className="text-xs leading-relaxed">{message.content}</p>
+                    <p className={`text-[10px] sm:text-xs mt-1 ${
                       message.type === 'user' ? 'text-blue-100' : 'text-gray-500'
                     }`}>
                       {new Date(message.timestamp).toLocaleTimeString('pt-BR', { 
@@ -138,12 +138,12 @@ export default function FloatingChatButton() {
 
             {/* Suggestions */}
             {messages.length > 0 && messages[messages.length - 1].type === 'ai' && messages[messages.length - 1].suggestions && (
-              <div className="flex flex-wrap gap-1 mt-2">
+              <div className="flex flex-wrap gap-1 mt-1 sm:mt-2">
                 {messages[messages.length - 1].suggestions!.map((suggestion, index) => (
                   <button
                     key={index}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors duration-200"
+                    className="text-[10px] sm:text-xs px-2 sm:px-3 py-1 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors duration-200"
                   >
                     {suggestion}
                   </button>
@@ -153,13 +153,13 @@ export default function FloatingChatButton() {
 
             {/* Typing indicator */}
             {isTyping && (
-              <div className="flex justify-start">
-                <div className="flex items-center space-x-2">
-                  <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
-                    <Bot className="h-3 w-3 text-white" />
+              <div className="flex justify-start mt-1">
+                <div className="flex items-center space-x-1 sm:space-x-2">
+                  <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full bg-blue-600 flex items-center justify-center">
+                    <Bot className="h-2.5 w-2.5 sm:h-3 sm:w-3 text-white" />
                   </div>
-                  <div className="bg-gray-100 rounded-2xl p-3">
-                    <div className="flex space-x-1">
+                  <div className="bg-gray-100 rounded-2xl p-2 sm:p-3">
+                    <div className="flex space-x-0.5 sm:space-x-1">
                       <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce"></div>
                       <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
                       <div className="w-1 h-1 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
@@ -171,22 +171,22 @@ export default function FloatingChatButton() {
           </div>
 
           {/* Input */}
-          <div className="p-3 sm:p-4 border-t border-gray-100">
-            <div className="flex items-center space-x-2">
+          <div className="p-2 sm:p-4 border-t border-gray-100">
+            <div className="flex items-center space-x-1 sm:space-x-2">
               <input
                 type="text"
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(inputValue)}
                 placeholder="Digite sua pergunta..."
-                className="flex-1 p-2 text-xs sm:text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors duration-200 bg-white"
+                className="flex-1 p-1.5 sm:p-2 text-xs border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors duration-200 bg-white"
               />
               <button
                 onClick={() => handleSendMessage(inputValue)}
                 disabled={!inputValue.trim() || isTyping}
-                className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                className="p-1.5 sm:p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
               >
-                <Send className="h-3 w-3" />
+                <Send className="h-3 w-3 sm:h-4 sm:w-4" />
               </button>
             </div>
           </div>

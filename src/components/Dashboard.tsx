@@ -145,28 +145,28 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-0">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
-          <p className="text-gray-500 mt-1">Visão geral das suas finanças</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Dashboard</h1>
+          <p className="text-gray-500 mt-1 text-sm sm:text-base">Visão geral das suas finanças</p>
         </div>
         <div className="flex space-x-2 self-end sm:self-auto">
-          <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">
+          <button className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">
             <Calendar className="h-5 w-5" />
           </button>
-          <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">
+          <button className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">
             <Bell className="h-5 w-5" />
           </button>
         </div>
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
-        <div className="bg-green-600 p-6 rounded-xl text-white shadow-md">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
+        <div className="bg-green-600 p-4 sm:p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/80 text-sm font-medium">Receita Mensal</p>
-              <p className="text-3xl font-bold mt-1">{formatCurrency(dashboardData.totalMonthlyIncome || 0)}</p>
+              <p className="text-xl sm:text-3xl font-bold mt-1">{formatCurrency(dashboardData.totalMonthlyIncome || 0)}</p>
             </div>
             <div className="bg-white/20 p-3 rounded-lg cursor-pointer" onClick={() => navigate('/revenues')}>
               <TrendingUp className="h-6 w-6" />
@@ -174,11 +174,11 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className="bg-red-600 p-6 rounded-xl text-white shadow-md">
+        <div className="bg-red-600 p-4 sm:p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/80 text-sm font-medium">Despesa Mensal</p>
-              <p className="text-3xl font-bold mt-1">{formatCurrency(dashboardData.totalMonthlyExpenses || 0)}</p>
+              <p className="text-xl sm:text-3xl font-bold mt-1">{formatCurrency(dashboardData.totalMonthlyExpenses || 0)}</p>
             </div>
             <div className="bg-white/20 p-3 rounded-lg cursor-pointer" onClick={() => navigate('/expenses')}>
               <TrendingDown className="h-6 w-6" />
@@ -186,12 +186,12 @@ export default function Dashboard() {
           </div>
         </div>
 
-        <div className={`${dashboardData.netMonthlyIncome >= 0 ? 'bg-blue-600' : 'bg-orange-600'} p-6 rounded-xl text-white shadow-md`}>
+        <div className={`${dashboardData.netMonthlyIncome >= 0 ? 'bg-blue-600' : 'bg-orange-600'} p-4 sm:p-6 rounded-xl text-white shadow-md`}>
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/80 text-sm font-medium">Saldo Mensal</p>
-              <p className="text-3xl font-bold mt-1">{formatCurrency(Math.abs(dashboardData.netMonthlyIncome || 0))}</p>
-              <p className="text-white/80 text-sm">{dashboardData.netMonthlyIncome >= 0 ? 'Positivo' : 'Negativo'}</p>
+              <p className="text-xl sm:text-3xl font-bold mt-1">{formatCurrency(Math.abs(dashboardData.netMonthlyIncome || 0))}</p>
+              <p className="text-white/80 text-xs sm:text-sm">{dashboardData.netMonthlyIncome >= 0 ? 'Positivo' : 'Negativo'}</p>
             </div>
             <div className="bg-white/20 p-3 rounded-lg">
               <DollarSign className="h-6 w-6" />
@@ -201,18 +201,84 @@ export default function Dashboard() {
       </div>
 
       {/* Quick Guide */}
-      <QuickGuide />
+      <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3 sm:mb-4">Guia Rápido</h2>
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
+          <div className="bg-white p-3 sm:p-4 rounded-xl border border-blue-200">
+            <h3 className="font-medium text-blue-800 mb-2 flex items-center text-sm sm:text-base">
+              <DollarSign className="h-4 w-4 mr-2" />
+              Finanças
+            </h3>
+            <ul className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-blue-700">
+              <li className="flex items-center">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full mr-1 sm:mr-2"></span>
+                <a href="/revenues" className="hover:underline">Gestão de Receitas</a>
+              </li>
+              <li className="flex items-center">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full mr-1 sm:mr-2"></span>
+                <a href="/expenses" className="hover:underline">Gestão de Gastos</a>
+              </li>
+              <li className="flex items-center">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full mr-1 sm:mr-2"></span>
+                <a href="/bills" className="hover:underline">Contas a Pagar</a>
+              </li>
+            </ul>
+          </div>
+          
+          <div className="bg-white p-3 sm:p-4 rounded-xl border border-green-200">
+            <h3 className="font-medium text-green-800 mb-2 flex items-center text-sm sm:text-base">
+              <Building className="h-4 w-4 mr-2" />
+              Patrimônio
+            </h3>
+            <ul className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-green-700">
+              <li className="flex items-center">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mr-1 sm:mr-2"></span>
+                <a href="/investments" className="hover:underline">Investimentos</a>
+              </li>
+              <li className="flex items-center">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mr-1 sm:mr-2"></span>
+                <a href="/real-estate" className="hover:underline">Imóveis</a>
+              </li>
+              <li className="flex items-center">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-green-500 rounded-full mr-1 sm:mr-2"></span>
+                <a href="/vehicles" className="hover:underline">Veículos</a>
+              </li>
+            </ul>
+          </div>
+          
+          <div className="bg-white p-3 sm:p-4 rounded-xl border border-indigo-200">
+            <h3 className="font-medium text-purple-800 mb-2 flex items-center text-sm sm:text-base">
+              <Target className="h-4 w-4 mr-2" />
+              Planejamento
+            </h3>
+            <ul className="space-y-1 sm:space-y-2 text-xs sm:text-sm text-purple-700">
+              <li className="flex items-center">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full mr-1 sm:mr-2"></span>
+                <a href="/financial-goals" className="hover:underline">Metas Financeiras</a>
+              </li>
+              <li className="flex items-center">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full mr-1 sm:mr-2"></span>
+                <a href="/retirement" className="hover:underline">Previdência</a>
+              </li>
+              <li className="flex items-center">
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-purple-500 rounded-full mr-1 sm:mr-2"></span>
+                <a href="/smart-alerts" className="hover:underline">Alertas Inteligentes</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </div>
 
       {/* Wealth Evolution Chart */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
+      <div className="bg-white rounded-xl shadow-md overflow-hidden p-2 sm:p-0">
         <WealthEvolutionChart />
       </div>
 
       {/* Asset Breakdown */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
-        <h2 className="text-xl font-semibold text-gray-800 mb-6">Composição do Patrimônio</h2>
+      <div className="bg-white rounded-xl shadow-md p-4 sm:p-6 mb-4 sm:mb-6">
+        <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6">Composição do Patrimônio</h2>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" onClick={(e) => e.currentTarget === e.target && setActiveBreakdown(null)}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4" onClick={(e) => e.currentTarget === e.target && setActiveBreakdown(null)}>
           <button
             onClick={() => navigate('/investments')}
             className={`p-4 rounded-xl border-2 transition-all ${
@@ -324,7 +390,7 @@ export default function Dashboard() {
         
         {/* Detailed breakdown */}
         {activeBreakdown && (
-          <div className="mt-6 bg-white border border-gray-200 rounded-xl p-4">
+          <div className="mt-4 sm:mt-6 bg-white border border-gray-200 rounded-xl p-3 sm:p-4">
             <FinancialBreakdown type={activeBreakdown} />
           </div>
         )}

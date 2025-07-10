@@ -84,7 +84,8 @@ const otherSections = [
 
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
   const { user, signOut, isAdmin, userPlan, isInTrial, trialDaysLeft } = useAuth();
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+  const [showUpgradeModal, setShowUpgradeModal] = useState(false); 
+  const [sidebarOpen, setSidebarOpen] = useState(false);
   const [showProfileDropdown, setShowProfileDropdown] = useState(false);
   const [restrictedFeature, setRestrictedFeature] = useState<string | undefined>(undefined);
   const [expandedSections, setExpandedSections] = useState({
@@ -163,7 +164,28 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
 
   return (
     <>
-    <div className="w-64 bg-white shadow-md border-r border-gray-100 h-screen fixed left-0 top-0 z-30 overflow-y-auto transition-all duration-300">
+    {/* Mobile menu button */}
+    <div className="lg:hidden fixed top-4 left-4 z-50">
+      <button 
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="p-2 rounded-md bg-white shadow-md text-gray-600"
+      >
+        {sidebarOpen ? (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        ) : (
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+          </svg>
+        )}
+      </button>
+    </div>
+    
+    {/* Sidebar */}
+    <div className={`w-64 bg-white shadow-md border-r border-gray-100 h-screen fixed left-0 top-0 z-30 overflow-y-auto transition-all duration-300 ${
+      sidebarOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+    }`}>
       <div className="p-2 border-b border-gray-100">
         <div className="flex items-center justify-between py-4 px-2">
           <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">PROSPERA.AI</h1>
@@ -289,6 +311,14 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       </nav>
     </div>
 
+    {/* Overlay for mobile sidebar */}
+    {sidebarOpen && (
+      <div 
+        className="fixed inset-0 bg-black bg-opacity-50 z-20 lg:hidden"
+        onClick={() => setSidebarOpen(false)}
+      ></div>
+    )}
+
     {/* Profile icon in the top right corner */}
     <div className="fixed top-4 right-4 z-40">
       <button 
@@ -302,7 +332,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       
       {/* Profile dropdown */}
       {showProfileDropdown && (
-        <div className="absolute top-12 right-0 bg-white rounded-xl shadow-xl border border-gray-100 w-64 overflow-hidden">
+        <div className="absolute top-12 right-0 bg-white rounded-xl shadow-xl border border-gray-100 w-64 max-w-[90vw] overflow-hidden">
           <div className="bg-blue-600 p-3 rounded-xl text-white mb-4">
             <div className="flex items-center justify-between">
               <div className="flex-1 cursor-pointer" onClick={() => setActiveTab('subscription')}>
