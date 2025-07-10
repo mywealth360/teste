@@ -15,59 +15,54 @@ import {
   Lock,
   Sparkles
 } from 'lucide-react';
-import { aiInsights } from '../data/mockData';
+import { supabase } from '../lib/supabase';
+import { useAuth } from '../contexts/AuthContext';
 
-const additionalInsights = [
-  {
-    id: '4', 
-    type: 'feature',
-    title: 'Novo recurso: Compartilhamento Familiar',
-    description: 'Agora você pode compartilhar o acesso à sua conta com até 5 membros da família no plano Family.',
-    impact: 'high',
-    date: '2025-07-09',
-  },
-  {
-    id: '5',
-    type: 'feature',
-    title: 'Novo recurso: Convites por Email',
-    description: 'Envie convites por email para compartilhar sua conta com níveis de acesso personalizados.',
-    impact: 'medium',
-    date: '2025-07-09',
-  },
-  {
-    id: '6',
-    type: 'suggestion',
-    title: 'Otimize seus investimentos',
-    description: 'Com base no seu perfil, considere diversificar 15% da sua poupança em fundos de índice.',
-    impact: 'high',
-    date: '2024-01-12',
-  },
-  {
-    id: '7',
-    type: 'warning',
-    title: 'Padrão de gastos identificado',
-    description: 'Seus gastos com entretenimento aumentam 40% nos finais de semana.',
-    impact: 'medium',
-    date: '2024-01-11',
-  },
-  {
-    id: '8',
-    type: 'achievement',
-    title: 'Hábito financeiro melhorado',
-    description: 'Você manteve gastos dentro do orçamento por 3 meses consecutivos!',
-    impact: 'high',
-    date: '2024-01-10',
-  },
-];
-
-const allInsights = [...aiInsights, ...additionalInsights];
 
 export default function AIInsights() {
   const [selectedFilter, setSelectedFilter] = useState<'all' | 'warning' | 'suggestion' | 'achievement' | 'feature'>('all');
+  const [insights, setInsights] = useState<any[]>([]);
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [aiScore, setAiScore] = useState<number>(0);
+  const { user } = useAuth();
+
+  React.useEffect(() => {
+    if (user) {
+      generateInsights();
+    }
+  }, [user]);
+
+  const generateInsights = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+
+      const { data, error: apiError } = await supabase.functions.invoke('generate-ai-insights', {
+        body: { 
+          userId: user?.id
+        }
+      });
+
+      if (apiError) throw apiError;
+      
+      if (data) {
+        setInsights(data.insights || []);
+        setRecommendations(data.recommendations || []);
+        setAiScore(data.score || 0);
+      }
+    } catch (err) {
+      console.error('Error generating AI insights:', err);
+      setError('Erro ao gerar insights. Por favor, tente novamente.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredInsights = selectedFilter === 'all' 
-    ? allInsights 
-    : allInsights.filter(insight => insight.type === selectedFilter);
+    ? insights 
+    : insights.filter(insight => insight.type === selectedFilter);
 
   const getInsightIcon = (type: string) => {
     switch (type) {
@@ -143,7 +138,7 @@ export default function AIInsights() {
             <div>
               <p className="text-orange-600 text-sm font-medium">Alertas Ativos</p>
               <p className="text-2xl font-bold text-gray-800 mt-1">
-                {allInsights.filter(i => i.type === 'warning').length}
+                {insights.filter(i => i.type === 'warning').length}
               </p>
             </div>
             <div className="bg-orange-100 p-3 rounded-xl">
@@ -157,7 +152,7 @@ export default function AIInsights() {
             <div>
               <p className="text-blue-600 text-sm font-medium">Sugestões</p>
               <p className="text-2xl font-bold text-gray-800 mt-1">
-                {allInsights.filter(i => i.type === 'suggestion').length}
+                {insights.filter(i => i.type === 'suggestion').length}
               </p>
             </div>
             <div className="bg-blue-100 p-3 rounded-xl">
@@ -171,7 +166,7 @@ export default function AIInsights() {
             <div>
               <p className="text-green-600 text-sm font-medium">Conquistas</p>
               <p className="text-2xl font-bold text-gray-800 mt-1">
-                {allInsights.filter(i => i.type === 'achievement').length}
+                {insights.filter(i => i.type === 'achievement').length}
               </p>
             </div>
             <div className="bg-green-100 p-3 rounded-xl">
@@ -185,7 +180,7 @@ export default function AIInsights() {
             <div>
               <p className="text-indigo-600 text-sm font-medium">Novos Recursos</p>
               <p className="text-2xl font-bold text-gray-800 mt-1">
-                {allInsights.filter(i => i.type === 'feature').length}
+                {insights.filter(i => i.type === 'feature').length}
               </p>
             </div>
             <div className="bg-indigo-100 p-3 rounded-xl">
@@ -198,7 +193,7 @@ export default function AIInsights() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-white/80 text-sm font-medium">Score IA</p>
-              <p className="text-2xl font-bold mt-1">87/100</p>
+              <p className="text-2xl font-bold mt-1">{aiScore}/100</p>
             </div>
             <div className="bg-white/20 p-3 rounded-lg">
               <Zap className="h-6 w-6" />
@@ -220,17 +215,17 @@ export default function AIInsights() {
           <div className="flex items-center justify-between">
             <p className="text-gray-700">Total identificado pela IA:</p>
             <p className="font-bold text-purple-700">
-              R$ 0,00/mês
+              R$ {recommendations.reduce((sum, rec) => sum + (rec.potential_savings || 0), 0).toLocaleString('pt-BR')}/mês
             </p>
           </div>
           
           <div className="flex items-center justify-between">
             <p className="text-gray-700">Sugestões disponíveis:</p>
-            <p className="font-medium text-gray-800">0</p>
+            <p className="font-medium text-gray-800">{recommendations.filter(r => !r.is_applied).length}</p>
           </div>
           
           <button
-            onClick={() => {}}
+            onClick={() => setSelectedFilter('suggestion')}
             className="mt-3 w-full py-2 bg-gradient-to-r from-indigo-500 to-purple-600 text-white rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all duration-200 shadow-md flex items-center justify-center space-x-2"
           >
             <Sparkles className="h-4 w-4" />
@@ -240,7 +235,7 @@ export default function AIInsights() {
       </div>
 
       {/* Filtros */}
-      <div className="bg-white rounded-2xl shadow-lg p-6">
+      <div className="bg-white rounded-2xl shadow-lg p-6 overflow-x-auto">
         <div className="flex flex-wrap gap-3">
           {['all', 'feature', 'warning', 'suggestion', 'achievement'].map((filter) => (
             <button
@@ -259,61 +254,119 @@ export default function AIInsights() {
       </div>
 
       {/* Lista de insights */}
-      <div className="space-y-4">
-        {filteredInsights.map((insight) => {
-          const Icon = getInsightIcon(insight.type);
-          const colors = getInsightColor(insight.type);
-          
-          return (
-            <div key={insight.id} className={`bg-white rounded-2xl shadow-lg border ${colors.border} overflow-hidden hover:shadow-xl transition-all duration-300`}>
-              <div className="p-6">
-                <div className="flex items-start space-x-4">
-                  <div className={`p-3 rounded-xl ${colors.bg}`}>
-                    <Icon className={`h-6 w-6 ${colors.text}`} />
+      {loading ? (
+        <div className="space-y-4">
+          {[1, 2, 3].map(i => (
+            <div key={i} className="animate-pulse bg-white rounded-2xl shadow-lg p-6">
+              <div className="flex items-start space-x-4">
+                <div className="bg-gray-200 w-12 h-12 rounded-xl"></div>
+                <div className="flex-1 space-y-4">
+                  <div className="h-4 bg-gray-200 rounded w-3/4"></div>
+                  <div className="h-4 bg-gray-200 rounded w-full"></div>
+                  <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                  <div className="flex justify-between">
+                    <div className="h-4 bg-gray-200 rounded w-20"></div>
+                    <div className="h-8 bg-gray-200 rounded w-32"></div>
                   </div>
-                  
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="font-semibold text-lg text-gray-800">{insight.title}</h3>
-                      <div className="flex items-center space-x-2">
-                        <span className={`text-xs px-3 py-1 rounded-full font-medium ${
-                          insight.impact === 'high' 
-                            ? 'bg-red-100 text-red-700' 
-                            : insight.impact === 'medium' 
-                              ? 'bg-yellow-100 text-yellow-700' 
-                              : 'bg-green-100 text-green-700'
-                        }`}>
-                          Impacto {insight.impact === 'high' ? 'Alto' : insight.impact === 'medium' ? 'Médio' : 'Baixo'}
-                        </span>
-                      </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : error ? (
+        <div className="bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+          <AlertTriangle className="h-12 w-12 text-red-500 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-red-800 mb-2">Erro ao carregar insights</h3>
+          <p className="text-red-600">{error}</p>
+          <button 
+            onClick={generateInsights}
+            className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
+          >
+            Tentar Novamente
+          </button>
+        </div>
+      ) : filteredInsights.length === 0 ? (
+        <div className="bg-white rounded-xl shadow-md p-8 text-center">
+          <Brain className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+          <h3 className="text-lg font-medium text-gray-800 mb-2">Nenhum insight encontrado</h3>
+          <p className="text-gray-500">Não encontramos insights para o filtro selecionado.</p>
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredInsights.map((insight) => {
+            const Icon = getInsightIcon(insight.type);
+            const colors = getInsightColor(insight.type);
+            
+            return (
+              <div key={insight.id} className={`bg-white rounded-2xl shadow-lg border ${colors.border} overflow-hidden hover:shadow-xl transition-all duration-300`}>
+                <div className="p-6">
+                  <div className="flex items-start space-x-4">
+                    <div className={`p-3 rounded-xl ${colors.bg}`}>
+                      <Icon className={`h-6 w-6 ${colors.text}`} />
                     </div>
                     
-                    <p className="text-gray-600 mb-4 leading-relaxed">{insight.description}</p>
-                    
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-2 text-sm text-gray-500">
-                        <Calendar className="h-4 w-4" />
-                        <span>{new Date(insight.date).toLocaleDateString('pt-BR')}</span>
+                    <div className="flex-1">
+                      <div className="flex items-center justify-between mb-2">
+                        <h3 className="font-semibold text-lg text-gray-800">{insight.title}</h3>
+                        <div className="flex items-center space-x-2">
+                          <span className={`text-xs px-3 py-1 rounded-full font-medium ${
+                            insight.impact === 'high' 
+                              ? 'bg-red-100 text-red-700' 
+                              : insight.impact === 'medium' 
+                                ? 'bg-yellow-100 text-yellow-700' 
+                                : 'bg-green-100 text-green-700'
+                          }`}>
+                            Impacto {insight.impact === 'high' ? 'Alto' : insight.impact === 'medium' ? 'Médio' : 'Baixo'}
+                          </span>
+                        </div>
                       </div>
                       
-                      <div className="flex space-x-3">
-                        {insight.type === 'suggestion' && (
-                          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors duration-200">
-                            Aplicar Sugestão
-                          </button>
-                        )}
-                        <button className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors duration-200">
-                          Ver Detalhes
-                        </button>
+                      <p className="text-gray-600 mb-4 leading-relaxed">{insight.description}</p>
+                      
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-2 text-sm text-gray-500">
+                          <Calendar className="h-4 w-4" />
+                          <span>{new Date(insight.date).toLocaleDateString('pt-BR')}</span>
+                        </div>
+                        
+                        <div className="flex space-x-3">
+                          {insight.type === 'suggestion' && (
+                            <button 
+                              onClick={() => {
+                                // Handle suggestion application
+                                if (insight.id.startsWith('rec-')) {
+                                  const recId = insight.id.replace('rec-', '');
+                                  applyRecommendation(recId);
+                                }
+                              }}
+                              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium transition-colors duration-200 hover:bg-blue-700"
+                            >
+                              Aplicar Sugestão
+                            </button>
+                          )}
+                          {insight.action_path && (
+                            <a 
+                              href={insight.action_path} 
+                              className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors duration-200"
+                            >
+                              {insight.action_label || 'Ver Detalhes'}
+                            </a>
+                          )}
+                          {!insight.action_path && (
+                            <button className="px-4 py-2 bg-gray-100 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors duration-200">
+                              Ver Detalhes
+                            </button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
-      </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Seção de análise avançada */}
       <div className="bg-gradient-to-br from-indigo-50 to-purple-50 rounded-2xl p-8 border border-indigo-100">
