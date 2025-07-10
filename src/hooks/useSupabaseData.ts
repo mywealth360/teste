@@ -29,7 +29,7 @@ export function useSupabaseData<T = any>(options: DataFetchOptions): UseSupabase
   const fetchData = async () => {
     if (!user) {
       setData([]);
-      setLoading(false); 
+      setLoading(false);
       return;
     }
 
@@ -39,12 +39,8 @@ export function useSupabaseData<T = any>(options: DataFetchOptions): UseSupabase
     try {
       let query = supabase
         .from(options.table)
-        .select(options.columns || '*');
-
-      // Only add user_id filter if the table has this column
-      if (options.table !== 'profiles') {
-        query = query.eq('user_id', user.id);
-      }
+        .select(options.columns || '*')
+        .eq('user_id', user.id);
 
       // Apply additional filters
       if (options.filter) {
@@ -73,7 +69,7 @@ export function useSupabaseData<T = any>(options: DataFetchOptions): UseSupabase
       setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Error fetching data:', err);
     } finally {
-      setLoading(false); 
+      setLoading(false);
     }
   };
 
@@ -193,7 +189,7 @@ export function useDashboardData() {
     id: string;
     type: string;
     name: string;
-    company: string; 
+    company: string;
     monthly_contribution: number;
     total_contributed: number;
     expected_return: number;
@@ -586,7 +582,7 @@ export function useBills() {
   return useSupabaseData<{
     id: string;
     name: string;
-    company: string; 
+    company: string;
     amount: number;
     due_day: number;
     category: string;
@@ -600,8 +596,6 @@ export function useBills() {
     payment_method: string;
     send_email_reminder: boolean;
     reminder_days_before: number;
-    financial_goal_id: string;
-    is_goal_contribution: boolean;
   }>({
     table: 'bills',
     orderBy: { column: 'next_due', ascending: true }
