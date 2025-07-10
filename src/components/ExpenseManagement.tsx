@@ -544,4 +544,43 @@ export default function ExpenseManagement() {
       )}
     </div>
   );
+      {/* Expenses by Category */}
+      {Object.keys(expensesByType).length > 0 && (
+        <div className="bg-white rounded-xl p-6 shadow-md mb-6">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4">Despesas por Categoria</h2>
+          <div className="space-y-3">
+            {Object.entries(expensesByType)
+              .sort(([,a], [,b]) => b - a)
+              .map(([type, amount]) => {
+                const percentage = (amount / totalExpenses) * 100;
+                const IconComponent = getTypeIcon(type);
+                return (
+                  <div key={type} className="flex items-center justify-between">
+                    <div className="flex items-center space-x-3">
+                      <div className={`p-2 rounded-lg ${getTypeColor(type)}`}>
+                        <IconComponent className="h-4 w-4" />
+                      </div>
+                      <span className="font-medium text-gray-700">{getTypeLabel(type)}</span>
+                    </div>
+                    <div className="flex items-center space-x-3">
+                      <div className="w-24 bg-gray-200 rounded-full h-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full" 
+                          style={{ width: `${percentage}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm font-medium text-gray-600 w-12 text-right">
+                        {percentage.toFixed(1)}%
+                      </span>
+                      <span className="text-sm font-semibold text-gray-900 w-24 text-right">
+                        R$ {amount.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
 }
