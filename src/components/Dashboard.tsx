@@ -161,7 +161,7 @@ export default function Dashboard() {
       </div>
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-6 md:gap-8">
         <div className="bg-green-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center justify-between">
             <div>
@@ -204,15 +204,15 @@ export default function Dashboard() {
       <QuickGuide />
 
       {/* Wealth Evolution Chart */}
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
+      <div className="bg-white rounded-xl shadow-md overflow-hidden mt-8">
         <WealthEvolutionChart />
       </div>
 
       {/* Asset Breakdown */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-6">
+      <div className="bg-white rounded-xl shadow-md p-6 mb-8 mt-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">Composição do Patrimônio</h2>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4" onClick={(e) => e.currentTarget === e.target && setActiveBreakdown(null)}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" onClick={(e) => e.currentTarget === e.target && setActiveBreakdown(null)}>
           <button
             onClick={() => navigate('/investments')}
             className={`p-4 rounded-xl border-2 transition-all ${
@@ -333,10 +333,10 @@ export default function Dashboard() {
     
 
       {/* Debt Overview */}
-      <div className="bg-white rounded-xl shadow-md p-6">
+      <div className="bg-white rounded-xl shadow-md p-6 mt-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">Visão Geral de Dívidas</h2>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
           <div className="bg-white p-4 rounded-xl border border-red-200">
             <div className="flex items-center space-x-3 mb-3">
               <CreditCard className="h-5 w-5 text-red-600" />
@@ -377,10 +377,10 @@ export default function Dashboard() {
       </div>
 
       {/* Net Worth */}
-      <div className="bg-white rounded-xl shadow-md p-6">
+      <div className="bg-white rounded-xl shadow-md p-6 mt-8">
         <h2 className="text-xl font-semibold text-gray-800 mb-6">Patrimônio Líquido</h2>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
           <div className="bg-white p-4 rounded-xl border border-green-200">
             <div className="flex items-center space-x-3 mb-3">
               <TrendingUp className="h-5 w-5 text-green-600" />
