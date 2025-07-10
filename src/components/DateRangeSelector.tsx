@@ -12,8 +12,9 @@ export default function DateRangeSelector({ onRangeChange, className = '' }: Dat
   const [isOpen, setIsOpen] = useState(false);
   const [selectedRange, setSelectedRange] = useState<PresetRange>('30days');
   const [startDate, setStartDate] = useState<string>(() => {
-    const date = new Date();
-    date.setDate(date.getDate() - 30);
+    // Default to last 365 days to ensure we capture all bills
+    const date = new Date(); 
+    date.setDate(date.getDate() - 365);
     return date.toISOString().split('T')[0];
   });
   const [endDate, setEndDate] = useState<string>(() => {
@@ -117,6 +118,7 @@ export default function DateRangeSelector({ onRangeChange, className = '' }: Dat
                 { id: '7days', label: 'Últimos 7 dias' },
                 { id: '30days', label: 'Últimos 30 dias' },
                 { id: '90days', label: 'Últimos 90 dias' },
+                { id: '365days', label: 'Último ano' },
                 { id: 'ytd', label: 'Desde o início do ano' },
                 { id: 'custom', label: 'Personalizado' }
               ].map((option) => (

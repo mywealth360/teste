@@ -83,9 +83,10 @@ export default function Bills() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
+  const [showEmptyState, setShowEmptyState] = useState(false);
   const [startDate, setStartDate] = useState<string>(() => {
     const date = new Date();
-    date.setDate(date.getDate() - 30);
+    date.setDate(date.getDate() - 365); // Fetch bills from the last year
     return date.toISOString().split('T')[0];
   });
   const [endDate, setEndDate] = useState<string>(() => {
@@ -108,9 +109,7 @@ export default function Bills() {
   useEffect(() => {
     // Atualizar contagem de contas pendentes
     const pending = bills.filter(bill => {
-      const dueDate = new Date(bill.next_due);
-      const today = new Date();
-      return bill.is_active && dueDate <= today;
+      return bill.is_active && bill.payment_status !== 'paid';
     }).length;
     
     setPendingCount(pending);
@@ -119,16 +118,30 @@ export default function Bills() {
   const fetchBills = async () => {
     try {
       setLoading(true);
+      setShowEmptyState(false);
+      
       const { data, error } = await supabase
         .from('bills')
         .select('*')
         .eq('user_id', user?.id)
-        .gte('next_due', startDate)
-        .lte('next_due', endDate)
         .order('next_due', { ascending: true });
 
       if (error) throw error;
-      setBills(data || []);
+      
+      const filteredBills = data || [];
+      setBills(filteredBills);
+      
+      // Set empty state if no bills found
+      setShowEmptyState(filteredBills.length === 0);
+      
+      // Update pending count
+      const pending = filteredBills.filter(bill => {
+        const dueDate = new Date(bill.next_due);
+        const today = new Date();
+        return bill.is_active && dueDate <= today && bill.payment_status !== 'paid';
+      }).length;
+      
+      setPendingCount(pending);
     } catch (err) {
       console.error('Error fetching bills:', err);
       setError('Erro ao carregar contas');
@@ -139,7 +152,7 @@ export default function Bills() {
   
   const fetchAssociatedEntities = async () => {
     if (!user) return;
-    
+
     try {
       // Fetch properties, vehicles, and employees in parallel
       const [propertiesResult, vehiclesResult, employeesResult, loansResult] = await Promise.all([
@@ -304,7 +317,7 @@ export default function Bills() {
   const upcomingBills = bills
     .filter(bill => bill.is_active)
     .sort((a, b) => new Date(a.next_due).getTime() - new Date(b.next_due).getTime())
-    .slice(0, 5);
+    .slice(0, 5); 
 
   const overdueBills = bills.filter(bill => {
     const dueDate = new Date(bill.next_due);
@@ -518,53 +531,61 @@ export default function Bills() {
       {/* Próximas contas */}
       <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
         <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6">Próximas Contas</h2>
-        <div className="space-y-3 sm:space-y-4">
-          {upcomingBills.map((bill) => {
-            const daysUntilDue = getDaysUntilDue(bill.next_due);
-            const isOverdue = daysUntilDue < 0;
-            const isDueSoon = daysUntilDue <= 3 && daysUntilDue >= 0;
-            
-            return (
-              <div key={bill.id} className={`p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 ${
-                isOverdue ? 'border-red-200 bg-red-50' :
-                isDueSoon ? 'border-yellow-200 bg-yellow-50' :
-                'border-gray-100 bg-gray-50'
-              }`}>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
-                  <div className="flex items-center space-x-3 sm:space-x-4 mb-2 sm:mb-0">
-                    <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center ${
-                      isOverdue ? 'bg-red-500' :
-                      isDueSoon ? 'bg-yellow-500' :
-                      'bg-blue-500'
-                    }`}>
-                      <Receipt className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+        {upcomingBills.length > 0 ? (
+          <div className="space-y-3 sm:space-y-4">
+            {upcomingBills.map((bill) => {
+              const daysUntilDue = getDaysUntilDue(bill.next_due);
+              const isOverdue = daysUntilDue < 0;
+              const isDueSoon = daysUntilDue <= 3 && daysUntilDue >= 0;
+              
+              return (
+                <div key={bill.id} className={`p-3 sm:p-4 rounded-xl border-2 transition-all duration-200 ${
+                  isOverdue ? 'border-red-200 bg-red-50' :
+                  isDueSoon ? 'border-yellow-200 bg-yellow-50' :
+                  'border-gray-100 bg-gray-50'
+                }`}>
+                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex items-center space-x-3 sm:space-x-4 mb-2 sm:mb-0">
+                      <div className={`w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center ${
+                        isOverdue ? 'bg-red-500' :
+                        isDueSoon ? 'bg-yellow-500' :
+                        'bg-blue-500'
+                      }`}>
+                        <Receipt className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                      </div>
+                      
+                      <div>
+                        <h3 className="font-medium text-gray-800 text-sm sm:text-base">{bill.name}</h3>
+                        <p className="text-xs sm:text-sm text-gray-500">{bill.company} • {bill.category}</p>
+                      </div>
                     </div>
                     
-                    <div>
-                      <h3 className="font-medium text-gray-800 text-sm sm:text-base">{bill.name}</h3>
-                      <p className="text-xs sm:text-sm text-gray-500">{bill.company} • {bill.category}</p>
+                    <div className="text-right">
+                      <p className="font-semibold text-base sm:text-lg text-gray-800">
+                        R$ {bill.amount.toLocaleString('pt-BR')}
+                      </p>
+                      <p className={`text-xs sm:text-sm ${
+                        isOverdue ? 'text-red-600' :
+                        isDueSoon ? 'text-yellow-600' :
+                        'text-gray-500'
+                      }`}>
+                        {isOverdue ? `${Math.abs(daysUntilDue)} dias em atraso` :
+                         isDueSoon ? `Vence em ${daysUntilDue} dias` :
+                         `Vence em ${daysUntilDue} dias`}
+                      </p>
                     </div>
                   </div>
-                  
-                  <div className="text-right">
-                    <p className="font-semibold text-base sm:text-lg text-gray-800">
-                      R$ {bill.amount.toLocaleString('pt-BR')}
-                    </p>
-                    <p className={`text-xs sm:text-sm ${
-                      isOverdue ? 'text-red-600' :
-                      isDueSoon ? 'text-yellow-600' :
-                      'text-gray-500'
-                    }`}>
-                      {isOverdue ? `${Math.abs(daysUntilDue)} dias em atraso` :
-                       isDueSoon ? `Vence em ${daysUntilDue} dias` :
-                       `Vence em ${daysUntilDue} dias`}
-                    </p>
-                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="text-center py-8">
+            <Receipt className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Nenhuma conta próxima</h3>
+            <p className="text-gray-500">Você não tem contas a vencer nos próximos dias.</p>
+          </div>
+        )}
       </div>
 
       {/* Lista completa de contas */}
@@ -583,11 +604,18 @@ export default function Bills() {
         </div>
         
         <div className="divide-y divide-gray-100">
-          {bills.length === 0 ? (
-            <div className="p-8 sm:p-12 text-center">
+          {showEmptyState ? (
+            <div className="p-8 sm:p-12 text-center" data-testid="empty-bills-state">
               <Receipt className="h-10 sm:h-12 w-10 sm:w-12 text-gray-300 mx-auto mb-4" />
               <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Nenhuma conta cadastrada</h3>
               <p className="text-sm sm:text-base text-gray-500">Adicione suas contas para acompanhar os vencimentos.</p>
+              <button 
+                onClick={() => setShowAddModal(true)}
+                className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors inline-flex items-center"
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Adicionar Conta
+              </button>
             </div>
           ) : (
             bills.map((bill) => (
@@ -683,6 +711,8 @@ export default function Bills() {
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
                     <div className="flex items-center space-x-3 sm:space-x-4 mb-3 sm:mb-0">
                       <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-xl flex items-center justify-center ${
+                        bill.payment_status === 'paid' ? 'bg-green-500' : 
+                        bill.payment_status === 'overdue' ? 'bg-red-500' : 
                         bill.is_active ? 'bg-blue-500' : 'bg-gray-400'
                       }`}>
                         <Receipt className="h-5 sm:h-6 w-5 sm:w-6 text-white" />
@@ -694,6 +724,12 @@ export default function Bills() {
                           <span className="text-xs px-2 py-1 rounded-full bg-blue-100 text-blue-700">
                             {bill.category}
                           </span>
+                          {bill.payment_status === 'paid' && (
+                            <span className="text-xs px-2 py-1 rounded-full bg-green-100 text-green-700 flex items-center space-x-1">
+                              <CheckCircle className="h-3 w-3" />
+                              <span>Pago</span>
+                            </span>
+                          )}
                           
                           {bill.associated_with && bill.associated_name && (
                             <span className={`text-xs px-2 py-1 rounded-full ${
@@ -711,7 +747,7 @@ export default function Bills() {
                             </span>
                           )}
                           
-                          {getBillStatus(bill) === 'pending' && (
+                          {bill.payment_status === 'pending' && (
                             <span className="text-xs px-2 py-1 rounded-full bg-red-100 text-red-700 flex items-center space-x-1">
                               <Tag className="h-3 w-3" />
                               <span>Pendente</span>
@@ -754,6 +790,11 @@ export default function Bills() {
                       <div className="text-right">
                         <p className="font-semibold text-base sm:text-lg text-gray-800">
                           R$ {bill.amount.toLocaleString('pt-BR')}
+                          {bill.payment_amount && bill.payment_amount !== bill.amount && (
+                            <span className="text-xs text-gray-500 ml-1">
+                              (Pago: R$ {bill.payment_amount.toLocaleString('pt-BR')})
+                            </span>
+                          )}
                         </p>
                         {bill.is_active && (
                           <p className="text-xs sm:text-sm text-gray-500">
@@ -780,19 +821,21 @@ export default function Bills() {
                       
                       <div className="flex items-center space-x-2">
                         {bill.is_active && bill.payment_status !== 'paid' && (
-                          <button
-                            onClick={() => {
-                              const amount = prompt('Valor pago:', bill.amount.toString());
-                              if (amount !== null) {
-                                const method = prompt('Método de pagamento (opcional):', '');
-                                markAsPaid(bill.id, parseFloat(amount), method || undefined);
-                              }
-                            }}
-                            className="px-3 py-1 bg-green-600 text-white text-xs sm:text-sm rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center shadow-sm"
-                          >
-                            <DollarSign className="h-3 w-3 mr-1" />
-                            <span>Marcar como Pago</span>
-                          </button>
+                          <>
+                            <button
+                              onClick={() => {
+                                const amount = prompt('Valor pago:', bill.amount.toString());
+                                if (amount !== null) {
+                                  const method = prompt('Método de pagamento (opcional):', '');
+                                  markAsPaid(bill.id, parseFloat(amount), method || undefined);
+                                }
+                              }}
+                              className="px-3 py-1 bg-green-600 text-white text-xs sm:text-sm rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center shadow-sm"
+                            >
+                              <DollarSign className="h-3 w-3 mr-1" />
+                              <span>Marcar como Pago</span>
+                            </button>
+                          </>
                         )}
                         <button 
                           onClick={() => handleEditBill(bill)}
