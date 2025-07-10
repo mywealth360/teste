@@ -40,7 +40,7 @@ export function useSupabaseData<T = any>(options: DataFetchOptions): UseSupabase
       let query = supabase
         .from(options.table)
         .select(options.columns || '*');
-      
+
       // Only add user_id filter if the table has this column
       if (options.table !== 'profiles') {
         query = query.eq('user_id', user.id);
@@ -141,12 +141,8 @@ export function useSupabaseData<T = any>(options: DataFetchOptions): UseSupabase
       const { error } = await supabase
         .from(options.table)
         .delete()
-        .select(options.columns || '*');
-      
-      // Only add user_id filter if the table has this column
-      if (options.table !== 'profiles') {
-        query = query.eq('user_id', user.id);
-      }
+        .eq('id', id)
+        .eq('user_id', user.id);
 
       if (error) throw error;
       
@@ -604,8 +600,6 @@ export function useBills() {
     payment_method: string;
     send_email_reminder: boolean;
     reminder_days_before: number;
-    financial_goal_id: string;
-    is_goal_contribution: boolean;
     financial_goal_id: string;
     is_goal_contribution: boolean;
   }>({
