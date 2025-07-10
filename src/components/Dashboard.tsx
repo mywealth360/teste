@@ -23,6 +23,7 @@ import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import WealthEvolutionChart from './WealthEvolutionChart';
 import FinancialBreakdown from './FinancialBreakdown';
+import DateRangeSelector from './DateRangeSelector';
 import { useDashboardData } from '../hooks/useSupabaseData';
 import { useNavigate } from 'react-router-dom';
 
