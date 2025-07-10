@@ -73,7 +73,7 @@ export function useSupabaseData<T = any>(options: DataFetchOptions): UseSupabase
       setError(err instanceof Error ? err.message : 'An error occurred');
       console.error('Error fetching data:', err);
     } finally {
-      setLoading(false);
+      setLoading(false); 
     }
   };
 
@@ -141,8 +141,12 @@ export function useSupabaseData<T = any>(options: DataFetchOptions): UseSupabase
       const { error } = await supabase
         .from(options.table)
         .delete()
-        .eq('id', id)
-        .eq('user_id', user.id);
+        .select(options.columns || '*');
+      
+      // Only add user_id filter if the table has this column
+      if (options.table !== 'profiles') {
+        query = query.eq('user_id', user.id);
+      }
 
       if (error) throw error;
       
@@ -193,7 +197,7 @@ export function useDashboardData() {
     id: string;
     type: string;
     name: string;
-    company: string;
+    company: string; 
     monthly_contribution: number;
     total_contributed: number;
     expected_return: number;
@@ -600,6 +604,8 @@ export function useBills() {
     payment_method: string;
     send_email_reminder: boolean;
     reminder_days_before: number;
+    financial_goal_id: string;
+    is_goal_contribution: boolean;
     financial_goal_id: string;
     is_goal_contribution: boolean;
   }>({

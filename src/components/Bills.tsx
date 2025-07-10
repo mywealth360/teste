@@ -84,13 +84,14 @@ export default function Bills() {
   const [error, setError] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
   const [showEmptyState, setShowEmptyState] = useState(false);
-  const [startDate, setStartDate] = useState<string>(() => {
-    const date = new Date();
-    date.setDate(date.getDate() - 365); // Fetch bills from the last year
-    return date.toISOString().split('T')[0];
-  });
-  const [endDate, setEndDate] = useState<string>(() => {
-    return new Date().toISOString().split('T')[0];
+  const [dateRange, setDateRange] = useState<{start: string, end: string}>(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setFullYear(start.getFullYear() - 1); // Default to last year
+    return {
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0]
+    };
   });
 
   // Properties, Vehicles, and Employees for associating bills
@@ -104,7 +105,7 @@ export default function Bills() {
       fetchBills();
       fetchAssociatedEntities();
     }
-  }, [user, startDate, endDate]);
+  }, [user, dateRange]);
 
   useEffect(() => {
     // Atualizar contagem de contas pendentes
@@ -124,6 +125,8 @@ export default function Bills() {
         .from('bills')
         .select('*')
         .eq('user_id', user?.id)
+        .gte('created_at', dateRange.start)
+        .lte('created_at', dateRange.end)
         .order('next_due', { ascending: true });
 
       if (error) throw error;
@@ -136,9 +139,7 @@ export default function Bills() {
       
       // Update pending count
       const pending = filteredBills.filter(bill => {
-        const dueDate = new Date(bill.next_due);
-        const today = new Date();
-        return bill.is_active && dueDate <= today && bill.payment_status !== 'paid';
+        return bill.is_active && bill.payment_status !== 'paid';
       }).length;
       
       setPendingCount(pending);
@@ -418,9 +419,9 @@ export default function Bills() {
         <div className="flex flex-wrap gap-3 items-center">
           <DateRangeSelector 
             onRangeChange={(start, end) => {
-              setStartDate(start);
-              setEndDate(end);
-            }} 
+              setDateRange({ start, end });
+            }}
+            defaultRange="365days"
           />
           {overdueBills.length > 0 && (
             <button 
