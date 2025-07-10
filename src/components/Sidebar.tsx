@@ -52,21 +52,20 @@ const mainSections = [
 // Seção de Receitas
 const revenueSections = [
   { id: 'revenues', label: 'Gestão de Receitas', icon: TrendingUp, restricted: false },
-  { id: 'income', label: 'Fontes de Renda', icon: DollarSign, restricted: false },
-  { id: 'bank-accounts', label: 'Contas Bancárias', icon: Banknote, restricted: false }
+  { id: 'income', label: 'Fontes de Renda', icon: DollarSign, restricted: false }
 ];
 
 // Seção de Despesas
 const expenseSections = [
   { id: 'expenses', label: 'Gestão de Gastos', icon: TrendingDown, restricted: false },
   { id: 'bills', label: 'Contas', icon: FileText, restricted: false },
-  { id: 'loans', label: 'Empréstimos', icon: AlertTriangle, restricted: false },
-  { id: 'employees', label: 'Funcionários', icon: Users, restricted: true }
+  { id: 'loans', label: 'Empréstimos', icon: AlertTriangle, restricted: false }
 ];
 
 // Seção de Patrimônio
 const patrimonySections = [
   { id: 'patrimony', label: 'Gestão de Patrimônio', icon: Target, restricted: true },
+  { id: 'bank-accounts', label: 'Contas Bancárias', icon: Banknote, restricted: false },
   { id: 'investments', label: 'Investimentos', icon: Building, restricted: false },
   { id: 'retirement', label: 'Previdência', icon: Shield, restricted: false },
   { id: 'real-estate', label: 'Imóveis', icon: Home, restricted: true },
@@ -77,9 +76,10 @@ const patrimonySections = [
 // Seção de Outros
 const otherSections = [
   { id: 'transactions', label: 'Transações', icon: Receipt, restricted: false },
-  { id: 'financial-goals', label: 'Metas Financeiras', icon: PiggyBank, restricted: false },
+  { id: 'financial-goals', label: 'Metas Financeiras', icon: Target, restricted: false },
   { id: 'access', label: 'Gerenciar Acessos', icon: Users, restricted: true },
-  { id: 'documents', label: 'Documentos', icon: FolderOpen, restricted: false }
+  { id: 'documents', label: 'Documentos', icon: FolderOpen, restricted: false },
+  { id: 'employees', label: 'Funcionários', icon: Users, restricted: true }
 ];
 
 export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
@@ -101,7 +101,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
 
   const handleTabClick = (tabId: string, isRestricted: boolean) => {
     // If trial days left is 0, only allow subscription tab
-    if (!isAdmin && trialDaysLeft === 0 && tabId !== 'subscription' && tabId !== 'profile' && tabId !== 'smart-alerts' && tabId !== 'bills' && tabId !== 'investments' && tabId !== 'real-estate' && tabId !== 'transactions' && tabId !== 'financial-goals') {
+    if (!isAdmin && trialDaysLeft === 0 && tabId !== 'subscription' && tabId !== 'profile') {
       setActiveTab('subscription');
       return;
     }

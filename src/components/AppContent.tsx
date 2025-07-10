@@ -66,7 +66,7 @@ export default function AppContent() {
   const shouldShowSubscriptionPage = () => {
     // If trial days left is 0 or trial has expired or subscription has ended, only show subscription page
     // Admin users are exempt from this restriction
-    if (!isAdmin && false && (trialDaysLeft === 0 ||
+    if (!isAdmin && (trialDaysLeft === 0 ||
         (isInTrial && trialExpiresAt && trialExpiresAt < new Date()) || 
         (!isInTrial && !userPlan))) {
       return true;
@@ -78,8 +78,7 @@ export default function AppContent() {
   const renderContent = () => {
     // If trial expired or no subscription, force subscription page
     if (shouldShowSubscriptionPage()) {
-      // return <SubscriptionPage />;
-      return <Dashboard />;
+      return <SubscriptionPage />;
     }
     
     switch (activeTab) {
