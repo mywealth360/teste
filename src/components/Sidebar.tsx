@@ -143,12 +143,11 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
               onClick={() => handleTabClick(item.id, item.restricted)}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
                 activeTab === item.id
-              className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
-                  : isRestricted
                   ? 'bg-blue-600 text-white shadow-sm' 
+                  : isRestricted
+                    ? 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
               }`}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-bold bg-red-600 text-white shadow-sm hover:bg-red-700"
             >
               <div className="flex items-center space-x-3">
                 <Icon className="h-4 w-4" />
@@ -296,7 +295,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         onClick={() => setShowProfileDropdown(!showProfileDropdown)}
         className="bg-white p-2 rounded-full shadow-md hover:shadow-lg transition-all"
       >
-        <div className={\`w-8 h-8 ${isAdmin ? 'bg-red-500' : 'bg-gray-200'} rounded-full flex items-center justify-center`}>
+        <div className={`w-8 h-8 ${isAdmin ? 'bg-red-500' : 'bg-gray-200'} rounded-full flex items-center justify-center`}>
           {isAdmin ? <Crown className="h-4 w-4 text-white" /> : <User className="h-4 w-4 text-white" />}
         </div>
       </button>
@@ -310,7 +309,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                 <h2 className="text-sm font-bold text-white">
                   Plano {userPlan === 'family' ? 'Family' : 'Starter'} 
                   {isInTrial && (
-                    <span className={\`ml-1 text-xs ${trialDaysLeft > 0 ? 'bg-green-500' : 'bg-red-500'} text-white px-1.5 py-0.5 rounded-full`}>
+                    <span className={`ml-1 text-xs ${trialDaysLeft > 0 ? 'bg-green-500' : 'bg-red-500'} text-white px-1.5 py-0.5 rounded-full`}>
                       {trialDaysLeft > 0 ? 'Trial' : 'Expirado'}
                     </span>
                   )}
@@ -345,7 +344,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
           <div className="space-y-2 mt-3">
             <button
               onClick={() => setActiveTab('profile')}
-              className={\`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+              className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
                 activeTab === 'profile'
                   ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
                   : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600'
@@ -357,7 +356,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
             
             <button
               onClick={() => setActiveTab('subscription')}
-              className={\`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+              className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
                 activeTab === 'subscription' 
                   ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
                   : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600' 
