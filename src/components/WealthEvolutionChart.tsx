@@ -1,212 +1,132 @@
 import React from 'react';
-import { Crown, CheckCircle, Lock, Home, Car, Gem, Users, Target, Brain } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
-import SubscriptionButton from './subscription/SubscriptionButton';
-import { products } from '../stripe-config';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-export default function SubscriptionPage() {
-  const { userPlan, isInTrial, trialExpiresAt, trialDaysLeft } = useAuth();
+// Simulated data for wealth evolution
+const generateWealthData = () => {
+  const months = [ 
+    'Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 
+    'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'
+  ];
   
+  const currentYear = new Date().getFullYear();
+  const data = [];
+  
+  let baseValue = 450000;
+  let investmentsValue = 200000;
+  let realEstateValue = 150000;
+  let bankValue = 50000;
+  let otherValue = 50000; 
+  
+  for (let i = 0; i < 12; i++) {
+    // Simulate some growth and fluctuation with more realistic monthly variations
+    const investmentGrowth = investmentsValue * (0.005 + Math.random() * 0.01);
+    const realEstateGrowth = realEstateValue * (0.001 + Math.random() * 0.003); // More consistent for real estate
+    const bankGrowth = bankValue * 0.001;
+    const otherGrowth = otherValue * (0.001 + Math.random() * 0.005);
+    
+    investmentsValue += investmentGrowth;
+    realEstateValue += realEstateGrowth;
+    bankValue += bankGrowth;
+    otherValue += otherGrowth;
+    
+    baseValue = investmentsValue + realEstateValue + bankValue + otherValue;
+    
+    data.push({
+      month: `${months[i]}/${currentYear}`,
+      total: Math.round(baseValue), 
+      percentChange: i > 0 ? ((baseValue / data[i-1].total - 1) * 100).toFixed(1) + '%' : '0%',
+      investimentos: Math.round(investmentsValue),
+      imoveis: Math.round(realEstateValue),
+      contas: Math.round(bankValue),
+      outros: Math.round(otherValue)
+    });
+  }
+  
+  return data;
+};
+
+const wealthData = generateWealthData();
+
+export default function WealthEvolutionChart() {
   return (
-    <div className="space-y-6 sm:space-y-8 max-w-5xl mx-auto px-4 sm:px-0">
-      <div className="text-center">
-        <h1 className="text-2xl sm:text-3xl font-bold text-blue-600 mb-3 sm:mb-4">Planos de Assinatura</h1>
-        <p className="text-gray-600 max-w-3xl mx-auto text-sm sm:text-base">
-          Escolha o plano ideal para transformar seu patrimônio e alcançar seus objetivos financeiros
-        </p>
-
-        {isInTrial && trialDaysLeft === 0 && (
-          <div className="mt-3 sm:mt-4 bg-red-50 border border-red-200 rounded-xl p-3 sm:p-4 max-w-md mx-auto">
-            <p className="text-red-700 font-medium text-sm sm:text-base">
-              Seu período de teste expirou. Escolha um plano para continuar.
-            </p>
-          </div>
-        )}
-        
-        {userPlan && (
-          <div className="mt-3 sm:mt-4 inline-block">
-            <div className="bg-green-50 border border-green-200 rounded-xl p-3 sm:p-4">
-              <p className="font-medium flex items-center text-gray-800 text-sm sm:text-base">
-                <Crown className="h-5 w-5 mr-2 text-green-600" />
-                Plano atual: {userPlan === 'family' ? 'Family' : 'Starter'}
-              </p>
-            </div>
-          </div>
-        )}
-      </div>
-      
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8 mt-6 sm:mt-8">
-        {/* Starter Plan */}
-        <div className="bg-white rounded-xl sm:rounded-2xl shadow-lg border border-gray-200">
-          <div className="p-6 sm:p-8 border-b border-gray-200">
-            <h3 className="font-bold text-lg sm:text-xl text-blue-600">Starter</h3>
-            <p className="text-gray-600 mt-1 sm:mt-2 text-sm sm:text-base">Controle financeiro essencial</p>
-            <p className="text-2xl sm:text-3xl mt-3 sm:mt-4 font-bold text-blue-600">R$ 79,90<span className="text-xs sm:text-sm text-gray-500">/mês</span></p>
-            <div className="mt-1 sm:mt-2 text-green-700 text-xs sm:text-sm flex items-center">
-              <CheckCircle className="h-4 w-4 mr-1" />
-              <span>7 dias grátis, sem cartão necessário</span>
-            </div>
-            <div className="mt-1 sm:mt-2 text-blue-600 text-xs sm:text-sm flex items-center justify-center">
-              <span>Acesso a recursos essenciais</span>
-            </div>
-          </div>
-          
-          <div className="p-6 sm:p-8">
-            <ul className="space-y-3 sm:space-y-4">
-              <li className="flex items-start">
-                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2 flex-shrink-0" />
-                <span className="text-gray-800 text-sm sm:text-base">Dashboard básico</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-4 w-4 sm:h-5 sm:w-5 text-green-500 mr-2 flex-shrink-0" />
-                <span className="text-gray-800 text-sm sm:text-base">Até 500 transações/mês</span>
-              </li>
-              <li className="flex items-start">
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                <span className="text-gray-800">Controle de investimentos</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                <span className="text-gray-800">Relatórios básicos</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                <span className="text-gray-800">Suporte por email</span>
-              </li>
-            </ul>
-            
-            <div className="mt-6 pt-6 border-t border-gray-100">
-              <h4 className="font-medium text-gray-700 mb-3">Módulos bloqueados:</h4>
-              <div className="grid grid-cols-2 gap-2">
-                <div className="flex items-center text-gray-600">
-                  <Lock className="h-4 w-4 mr-2" /> 
-                  <span className="text-sm">Imóveis</span>
-                </div>
-                <div className="flex items-center text-gray-600">
-                  <Lock className="h-4 w-4 mr-2" /> 
-                  <span className="text-sm">Veículos</span>
-                </div>
-                <div className="flex items-center text-gray-600">
-                  <Lock className="h-4 w-4 mr-2" /> 
-                  <span className="text-sm">Ativos Exóticos</span>
-                </div>
-                <div className="flex items-center text-gray-600">
-                  <Lock className="h-4 w-4 mr-2" /> 
-                  <span className="text-sm">Funcionários</span>
-                </div>
-                <div className="flex items-center text-gray-600">
-                  <Lock className="h-4 w-4 mr-2" /> 
-                  <span className="text-sm">Gestão de Patrimônio</span>
-                </div>
-                <div className="flex items-center text-gray-600">
-                  <Lock className="h-4 w-4 mr-2" /> 
-                  <span className="text-sm">IA Insights</span>
-                </div>
-              </div>
-            </div>
-          </div>
-          
-          <div className="px-8 pb-8">
-            <SubscriptionButton
-              priceId={products[0].priceId}
-              mode="subscription"
-              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-            >
-              Começar Gratuitamente
-            </SubscriptionButton>
-            <p className="text-xs text-center text-green-600 font-medium mt-2">
-              Sem cartão necessário para o período de teste.
-            </p>
-          </div>
-        </div>
-
-        {/* Family Plan */}
-        <div className="bg-white rounded-2xl shadow-lg border-2 border-blue-500 relative">
-          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
-            <div className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">
-              Mais Popular
-            </div>
-          </div>
-          
-          <div className="p-8 border-b border-gray-200">
-            <h3 className="font-bold text-xl text-blue-600">Family</h3>
-            <p className="text-gray-600 mt-2">Controle patrimonial completo</p>
-            <p className="text-3xl mt-4 font-bold text-blue-600">R$ 129,90<span className="text-sm text-gray-500">/mês</span></p>
-          </div>
-          
-          <div className="p-8">
-            <ul className="space-y-4">
-              <li className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                <span className="text-gray-800">Tudo do Starter</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                <span className="text-gray-800">Transações ilimitadas</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                <span className="text-gray-800">Gestão completa de patrimônio</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                <span className="text-gray-800">Controle de imóveis e veículos</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                <span className="text-gray-800">Ativos exóticos e colecionáveis</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                <span className="text-gray-800">Gestão de funcionários</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                <span className="text-gray-800">IA Financeira avançada</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                <span className="text-gray-800">Automação total</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                <span className="text-gray-800">Suporte prioritário 24/7</span>
-              </li>
-              <li className="flex items-start">
-                <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                <span className="text-gray-800">Acesso compartilhado para família</span>
-              </li>
-            </ul>
-          </div>
-          
-          <div className="px-8 pb-8">
-            <SubscriptionButton
-              priceId={products[1].priceId}
-              mode="subscription"
-              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-            >
-              Assinar Agora
-            </SubscriptionButton>
-            <p className="text-xs text-center text-gray-500 mt-2">
-              Inclui 7 dias de teste grátis
-            </p>
-          </div>
-        </div>
-      </div>
-      
-      <div className="mt-12 max-w-3xl mx-auto bg-blue-50 p-6 rounded-xl">
-        <div className="flex flex-wrap items-center justify-center gap-4 text-gray-800">
-          <div className="flex items-center">
-            <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
-            <span>7 dias grátis sem cartão</span>
-          </div>
-          <div className="flex items-center">
-            <CheckCircle className="h-5 w-5 mr-2 text-green-500" />
-            <span>Cancele quando quiser</span>
-          </div>
-        </div>
+    <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
+      <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6">Evolução Patrimonial</h2>
+      <div className="h-64 sm:h-80">
+        <ResponsiveContainer width="100%" height="100%" className="overflow-x-auto">
+          <LineChart
+            data={wealthData}
+            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
+          >
+            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+            <XAxis 
+              dataKey="month" 
+              stroke="#6b7280"
+              fontSize={12}
+              tickLine={false}
+            />
+            <YAxis 
+              stroke="#6b7280"
+              fontSize={12}
+              tickLine={false}
+              tickFormatter={(value) => `R$ ${(value / 1000).toFixed(0)}k`}
+            />
+            <Tooltip 
+              contentStyle={{
+                backgroundColor: '#ffffff',
+                border: '1px solid #e5e7eb',
+                borderRadius: '12px',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
+              }}
+              formatter={(value: any) => [`R$ ${value.toLocaleString('pt-BR')}`, '']}
+              labelStyle={{ color: '#374151', fontWeight: 'bold' }} 
+            />
+            <Legend 
+              wrapperStyle={{ paddingTop: '20px' }}
+              iconType="circle"
+            />
+            <Line
+              type="monotone"
+              dataKey="total" 
+              name="Total"
+              stroke="#3b82f6"
+              strokeWidth={2}
+              dot={{ fill: '#3b82f6', strokeWidth: 1, r: 3 }}
+              activeDot={{ r: 6, stroke: '#3b82f6', strokeWidth: 2 }}
+            />
+            <Line
+              type="monotone"
+              dataKey="investimentos"
+              stroke="#10b981"
+              strokeWidth={1.5}
+              dot={{ fill: '#10b981', strokeWidth: 1, r: 2 }}
+              name="Investimentos"
+            />
+            <Line
+              type="monotone"
+              dataKey="imoveis"
+              stroke="#f59e0b"
+              strokeWidth={1.5}
+              dot={{ fill: '#f59e0b', strokeWidth: 1, r: 2 }}
+              name="Imóveis"
+            />
+            <Line
+              type="monotone"
+              dataKey="contas"
+              stroke="#8b5cf6"
+              strokeWidth={1.5}
+              dot={{ fill: '#8b5cf6', strokeWidth: 1, r: 2 }}
+              name="Contas"
+            />
+            <Line
+              type="monotone"
+              dataKey="outros"
+              stroke="#ec4899"
+              strokeWidth={1.5}
+              dot={{ fill: '#ec4899', strokeWidth: 1, r: 2 }}
+              name="Outros"
+            />
+          </LineChart>
+        </ResponsiveContainer>
       </div>
     </div>
   );
