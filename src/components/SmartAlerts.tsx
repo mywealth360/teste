@@ -184,7 +184,7 @@ export default function SmartAlerts() {
               setEndDate(end);
             }} 
           />
-        </div>
+        
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-gray-500" />
             <select
@@ -354,23 +354,24 @@ export default function SmartAlerts() {
                       </div>
                       
                       <div className="flex items-center space-x-2">
-                      {!alert.is_read && (
+                        {!alert.is_read && (
+                          <button
+                            onClick={() => markAsRead(alert.id)}
+                            className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors duration-200"
+                            title="Marcar como lido"
+                          >
+                            <CheckCircle className="h-4 w-4" />
+                          </button>
+                        )}
+                        
                         <button
-                          onClick={() => markAsRead(alert.id)}
-                          className="p-2 text-gray-400 hover:text-green-600 hover:bg-green-50 rounded-lg transition-colors duration-200"
-                          title="Marcar como lido"
+                          onClick={() => deleteAlert(alert.id)}
+                          className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
+                          title="Excluir alerta"
                         >
-                          <CheckCircle className="h-4 w-4" />
+                          <X className="h-4 w-4" />
                         </button>
-                      )}
-                      
-                      <button
-                        onClick={() => deleteAlert(alert.id)}
-                        className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors duration-200"
-                        title="Excluir alerta"
-                      >
-                        <X className="h-4 w-4" />
-                      </button>
+                      </div>
                     </div>
                   </div>
                 </div>
