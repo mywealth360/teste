@@ -10,13 +10,13 @@ interface RealEstate {
   type: string;
   address: string;
   purchase_price: number;
-  current_value: number;
-  monthly_rent: number;
+  current_value: number | null;
+  monthly_rent: number | null;
   expenses: number;
   purchase_date: string;
   is_rented: boolean;
-  dividend_yield: number;
-  tax_rate: number;
+  dividend_yield: number | null;
+  tax_rate: number | null;
 }
 
 interface Investment {
@@ -25,15 +25,15 @@ interface Investment {
   name: string;
   broker: string;
   amount: number;
-  purchase_price: number;
-  current_price: number;
-  interest_rate: number;
-  monthly_income: number;
+  purchase_price: number | null;
+  current_price: number | null;
+  interest_rate: number | null;
+  monthly_income: number | null;
   purchase_date: string;
-  maturity_date: string;
-  dividend_yield: number;
-  quantity: number;
-  tax_rate: number;
+  maturity_date: string | null;
+  dividend_yield: number | null;
+  quantity: number | null;
+  tax_rate: number | null;
 }
 
 interface Vehicle {
@@ -43,7 +43,7 @@ interface Vehicle {
   model: string;
   year: number;
   purchase_price: number;
-  current_value: number;
+  current_value: number | null;
   mileage: number;
   purchase_date: string;
   depreciation_rate: number;
@@ -57,12 +57,12 @@ interface ExoticAsset {
   category: string;
   custom_tags: string[];
   purchase_price: number;
-  current_value: number;
+  current_value: number | null;
   purchase_date: string;
   condition: string;
-  description: string;
-  location: string;
-  insurance_value: number;
+  description: string | null;
+  location: string | null;
+  insurance_value: number | null;
 }
 
 export default function PatrimonyManagement() {
@@ -102,10 +102,22 @@ export default function PatrimonyManagement() {
     setLoading(true);
     try {
       const [realEstateData, investmentsData, vehiclesData, exoticAssetsData] = await Promise.all([
-        supabase.from('real_estate').select('*').eq('user_id', user?.id),
-        supabase.from('investments').select('*').eq('user_id', user?.id),
-        supabase.from('vehicles').select('*').eq('user_id', user?.id),
-        supabase.from('exotic_assets').select('*').eq('user_id', user?.id)
+        supabase.from('real_estate').select('*')
+          .eq('user_id', user?.id)
+          .gte('purchase_date', startDate)
+          .lte('purchase_date', endDate),
+        supabase.from('investments').select('*')
+          .eq('user_id', user?.id)
+          .gte('purchase_date', startDate)
+          .lte('purchase_date', endDate),
+        supabase.from('vehicles').select('*')
+          .eq('user_id', user?.id)
+          .gte('purchase_date', startDate)
+          .lte('purchase_date', endDate),
+        supabase.from('exotic_assets').select('*')
+          .eq('user_id', user?.id)
+          .gte('purchase_date', startDate)
+          .lte('purchase_date', endDate)
       ]);
 
       if (realEstateData.data) setRealEstate(realEstateData.data);
@@ -536,13 +548,13 @@ export default function PatrimonyManagement() {
                             <p className="text-gray-500">Rentabilidade:</p>
                             <p className="font-medium text-green-600">+{(item.interest_rate || item.dividend_yield || 5).toFixed(2)}%</p>
                           </div>
-                          {item.monthly_income > 0 && (
+                          {item.monthly_income && item.monthly_income > 0 && (
                             <div>
                               <p className="text-gray-500">Renda Mensal:</p>
                               <p className="font-medium text-green-600">{formatCurrency(item.monthly_income)}</p>
                             </div>
                           )}
-                          {item.tax_rate > 0 && (
+                          {item.tax_rate && item.tax_rate > 0 && (
                             <div>
                               <p className="text-gray-500">Imposto:</p>
                               <p className="font-medium text-red-600">{item.tax_rate}%</p>
