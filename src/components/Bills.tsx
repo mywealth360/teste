@@ -93,19 +93,19 @@ export default function SubscriptionPage() {
                   <span className="text-sm">Ativos Exóticos</span>
                 </div>
                 <div className="flex items-center text-gray-600">
-                <div className="flex items-center justify-between sm:justify-start sm:space-x-3">
-                  <span className="font-semibold text-red-600 text-sm sm:text-base">
+                  <Lock className="h-4 w-4 mr-2" /> 
+                  <span className="text-sm">Funcionários</span>
                 </div>
                 <div className="flex items-center text-gray-600">
                   <Lock className="h-4 w-4 mr-2" /> 
                   <span className="text-sm">Gestão de Patrimônio</span>
-                    className="px-2 sm:px-3 py-1 bg-green-500 text-white text-xs sm:text-sm rounded-lg hover:bg-green-600 transition-colors duration-200"
+                </div>
                 <div className="flex items-center text-gray-600">
-        <div className="bg-green-600 p-4 sm:p-6 rounded-xl text-white shadow-md">
+                  <Lock className="h-4 w-4 mr-2" /> 
                   <span className="text-sm">IA Insights</span>
                 </div>
               </div>
-              <p className="text-xl sm:text-3xl font-bold mt-1">{bills.filter(b => b.is_active).length}</p>
+            </div>
           </div>
           
           <div className="px-8 pb-8">
@@ -113,36 +113,36 @@ export default function SubscriptionPage() {
               priceId={products[0].priceId}
               mode="subscription"
               className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
-        <div className="bg-orange-600 p-4 sm:p-6 rounded-xl text-white shadow-md">
+            >
               Começar Gratuitamente
             </SubscriptionButton>
             <p className="text-xs text-center text-green-600 font-medium mt-2">
-              <p className="text-xl sm:text-3xl font-bold mt-1">{upcomingBills.length}</p>
+              Sem cartão necessário para o período de teste.
             </p>
           </div>
         </div>
 
         {/* Family Plan */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-6">
-        <div className="bg-blue-600 p-4 sm:p-6 rounded-xl text-white shadow-md">
+        <div className="bg-white rounded-2xl shadow-lg border-2 border-blue-500 relative">
+          <div className="absolute -top-4 left-1/2 transform -translate-x-1/2">
             <div className="bg-blue-500 text-white px-4 py-1 rounded-full text-sm font-medium">
-              <p className="text-xl sm:text-3xl font-bold mt-1">R$ {totalMonthlyBills.toLocaleString('pt-BR')}</p>
-      <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6">Próximas Contas</h2>
-        <div className="space-y-3 sm:space-y-4">
+              Mais Popular
+            </div>
+          </div>
+          
           <div className="p-8 border-b border-gray-200">
             <h3 className="font-bold text-xl text-blue-600">Family</h3>
             <p className="text-gray-600 mt-2">Controle patrimonial completo</p>
             <p className="text-3xl mt-4 font-bold text-blue-600">R$ 129,90<span className="text-sm text-gray-500">/mês</span></p>
           </div>
           
-              <div key={bill.id} className={`p-3 sm:p-4 rounded-lg sm:rounded-xl border-2 transition-all duration-200 ${
+          <div className="p-8">
             <ul className="space-y-4">
               <li className="flex items-start">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
                 <span className="text-gray-800">Tudo do Starter</span>
-                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 sm:gap-0">
-                  <div className="flex items-center space-x-3 sm:space-x-4">
+              </li>
+              <li className="flex items-start">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
                 <span className="text-gray-800">Transações ilimitadas</span>
               </li>
@@ -152,16 +152,16 @@ export default function SubscriptionPage() {
               </li>
               <li className="flex items-start">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
-                      <h3 className="font-medium text-gray-800 text-sm sm:text-base">{bill.name}</h3>
-                      <p className="text-xs sm:text-sm text-gray-500">{bill.company} • {bill.category}</p>
+                <span className="text-gray-800">Controle de imóveis e veículos</span>
+              </li>
               <li className="flex items-start">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
                 <span className="text-gray-800">Ativos exóticos e colecionáveis</span>
-                  <div className="text-right flex flex-row sm:block items-center justify-between">
-                    <p className="font-semibold text-base sm:text-lg text-gray-800">
+              </li>
+              <li className="flex items-start">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
                 <span className="text-gray-800">Gestão de funcionários</span>
-                    <p className={`text-xs sm:text-sm ${
+              </li>
               <li className="flex items-start">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-2 flex-shrink-0" />
                 <span className="text-gray-800">IA Financeira avançada</span>
@@ -179,13 +179,13 @@ export default function SubscriptionPage() {
                 <span className="text-gray-800">Acesso compartilhado para família</span>
               </li>
             </ul>
-      <div className="bg-white rounded-xl shadow-md overflow-hidden">
-        <div className="p-4 sm:p-6 border-b border-gray-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 sm:gap-0">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Todas as Contas</h2>
+          </div>
+          
+          <div className="px-8 pb-8">
             <SubscriptionButton
               priceId={products[1].priceId}
               mode="subscription"
-              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-green-600 text-white text-xs sm:text-sm rounded-lg hover:bg-green-700 transition-colors duration-200 flex items-center space-x-2 shadow-sm w-full sm:w-auto justify-center sm:justify-start"
+              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
             >
               Assinar Agora
             </SubscriptionButton>
