@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Bell, AlertTriangle, CheckCircle, Clock, X, Filter, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import DateRangeSelector from './DateRangeSelector';
 
 interface Alert {
   id: string;
@@ -26,21 +25,25 @@ export default function SmartAlerts() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread' | 'high'>('all');
-  const [startDate, setStartDate] = useState<string>(() => {
-    const date = new Date();
-    date.setDate(date.getDate() - 30);
-    return date.toISOString().split('T')[0];
-  });
-  const [endDate, setEndDate] = useState<string>(() => {
-    return new Date().toISOString().split('T')[0];
-  });
+  const [startDate, setStartDate] = useState<string>('');
+  const [endDate, setEndDate] = useState<string>('');
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
-    if (user) {
+    if (user && startDate && endDate) {
       fetchAlerts();
     }
   }, [user, filter, startDate, endDate]);
+
+  // Initialize date range
+  useEffect(() => {
+    const date = new Date();
+    const start = new Date();
+    start.setDate(date.getDate() - 30);
+    
+    setStartDate(start.toISOString().split('T')[0]);
+    setEndDate(date.toISOString().split('T')[0]);
+  }, []);
 
   const fetchAlerts = async () => {
     try {
@@ -52,7 +55,7 @@ export default function SmartAlerts() {
       
       // Apply date range filter
       query = query.gte('date', startDate).lte('date', endDate);
-      
+
       // Apply status filter
       if (filter === 'unread') {
         query = query.eq('is_read', false);
@@ -68,22 +71,6 @@ export default function SmartAlerts() {
       setAlerts(data || []);
     } catch (error) {
       console.error('Error fetching alerts:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateAllBillAlerts = async () => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.rpc('update_all_bill_alerts');
-      
-      if (error) throw error;
-      
-      // Refetch alerts after updating
-      fetchAlerts();
-    } catch (err) {
-      console.error('Error updating bill alerts:', err);
     } finally {
       setLoading(false);
     }
@@ -118,6 +105,22 @@ export default function SmartAlerts() {
       setAlerts(alerts.filter(alert => alert.id !== alertId));
     } catch (error) {
       console.error('Error deleting alert:', error);
+    }
+  };
+
+  const updateAllBillAlerts = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.rpc('update_all_bill_alerts');
+      
+      if (error) throw error;
+      
+      // Refetch alerts after updating
+      fetchAlerts();
+    } catch (err) {
+      console.error('Error updating bill alerts:', err);
+    } finally {
+      setLoading(false);
     }
   };
 
