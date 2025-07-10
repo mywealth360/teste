@@ -26,7 +26,6 @@ import FinancialBreakdown from './FinancialBreakdown';
 import { useDashboardData } from '../hooks/useSupabaseData';
 import { useNavigate } from 'react-router-dom';
 import DateRangeSelector from './DateRangeSelector';
-import DateRangeSelector from './DateRangeSelector';
 
 // Quick Guide component
 const QuickGuide = () => {
