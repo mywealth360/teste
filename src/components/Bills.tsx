@@ -841,6 +841,23 @@ export default function Bills() {
                               <DollarSign className="h-3 w-3 mr-1" />
                               <span>Marcar como Pago</span>
                             </button>
+                            <button
+                              onClick={() => {
+                                supabase.rpc('schedule_bill_alert_for_id', { bill_id: bill.id })
+                                  .then(() => {
+                                    alert('Alerta gerado com sucesso!');
+                                    fetchAlerts();
+                                  })
+                                  .catch(err => {
+                                    console.error('Error generating alert:', err);
+                                    alert('Erro ao gerar alerta');
+                                  });
+                              }}
+                              className="px-3 py-1 bg-blue-600 text-white text-xs sm:text-sm rounded-lg hover:bg-blue-700 transition-colors duration-200 flex items-center shadow-sm"
+                            >
+                              <Bell className="h-3 w-3 mr-1" />
+                              <span>Gerar Alerta</span>
+                            </button>
                           </>
                         )}
                         <button 
