@@ -3,7 +3,6 @@ import { Bell, AlertTriangle, CheckCircle, Clock, X, Filter, RefreshCw } from 'l
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import DateRangeSelector from './DateRangeSelector';
-import DateRangeSelector from './DateRangeSelector';
 
 interface Alert {
   id: string;
@@ -35,14 +34,6 @@ export default function SmartAlerts() {
   const [endDate, setEndDate] = useState<string>(() => {
     return new Date().toISOString().split('T')[0];
   });
-  const [startDate, setStartDate] = useState<string>(() => {
-    const date = new Date();
-    date.setDate(date.getDate() - 30);
-    return date.toISOString().split('T')[0];
-  });
-  const [endDate, setEndDate] = useState<string>(() => {
-    return new Date().toISOString().split('T')[0];
-  });
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
@@ -53,7 +44,6 @@ export default function SmartAlerts() {
 
   const fetchAlerts = async () => {
     try {
-      setLoading(true);
       setLoading(true);
       let query = supabase
         .from('alerts')
@@ -74,21 +64,6 @@ export default function SmartAlerts() {
       query = query.order('priority', { ascending: false }).order('date', { ascending: false });
       
       const { data, error } = await query;
-      // Apply date range filter
-      query = query.gte('date', startDate).lte('date', endDate);
-      
-      // Apply status filter
-      if (filter === 'unread') {
-        query = query.eq('is_read', false);
-      } else if (filter === 'high') {
-        query = query.eq('priority', 'high');
-      }
-      
-      // Order by priority and date
-      query = query.order('priority', { ascending: false }).order('date', { ascending: false });
-      
-      const { data, error } = await query;
-
       if (error) throw error;
       setAlerts(data || []);
     } catch (error) {
@@ -109,26 +84,6 @@ export default function SmartAlerts() {
       fetchAlerts();
     } catch (err) {
       console.error('Error updating bill alerts:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const updateAllBillAlerts = async () => {
-    try {
-      setLoading(true);
-      const { error } = await supabase.rpc('update_all_bill_alerts');
-      
-      if (error) throw error;
-      
-      // Refetch alerts after updating
-      fetchAlerts();
-      
-      // Show success message
-      alert('Alertas de contas atualizados com sucesso!');
-    } catch (err) {
-      console.error('Error updating bill alerts:', err);
-      alert('Erro ao atualizar alertas de contas');
     } finally {
       setLoading(false);
     }
@@ -230,13 +185,6 @@ export default function SmartAlerts() {
             }} 
           />
         </div>
-        <div className="flex items-center space-x-3">
-          <DateRangeSelector 
-            onRangeChange={(start, end) => {
-              setStartDate(start);
-              setEndDate(end);
-            }} 
-          />
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-gray-500" />
             <select
@@ -249,14 +197,6 @@ export default function SmartAlerts() {
               <option value="high">Alta prioridade</option>
             </select>
           </div>
-          <button
-            onClick={updateAllBillAlerts}
-            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center space-x-1"
-            title="Atualizar alertas de contas"
-          >
-            <RefreshCw className="h-4 w-4" />
-            <span>Atualizar</span>
-          </button>
           <button
             onClick={updateAllBillAlerts}
             className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center space-x-1"
@@ -353,11 +293,6 @@ export default function SmartAlerts() {
                                 Conta
                               </span>
                             )}
-                            {alert.related_entity === 'bills' && (
-                              <span className="ml-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
-                                Conta
-                              </span>
-                            )}
                           </h3>
                           {!alert.is_read && (
                             <span className="w-2 h-2 bg-blue-500 rounded-full hidden sm:block"></span>
@@ -419,22 +354,6 @@ export default function SmartAlerts() {
                       </div>
                       
                       <div className="flex items-center space-x-2">
-                        {alert.action_path && (
-                          <a 
-                            href={alert.action_path} 
-                            className="px-3 sm:px-4 py-1 sm:py-2 bg-blue-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition-colors duration-200"
-                          >
-                            {alert.action_label || 'Ver Detalhes'}
-                          </a>
-                        )}
-                        
-                        {!alert.action_path && (
-                          <button className="px-3 sm:px-4 py-1 sm:py-2 bg-gray-100 text-gray-600 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-200 transition-colors duration-200">
-                            Detalhes
-                          </button>
-                        )}
-                      </div>
-                      
                       {!alert.is_read && (
                         <button
                           onClick={() => markAsRead(alert.id)}
