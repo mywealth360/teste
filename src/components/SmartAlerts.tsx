@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, AlertTriangle, CheckCircle, Clock, X, Filter } from 'lucide-react';
+import { Bell, AlertTriangle, CheckCircle, Clock, X, Filter, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import DateRangeSelector from './DateRangeSelector';
 
 interface Alert {
   id: string;
@@ -25,27 +26,65 @@ export default function SmartAlerts() {
   const [alerts, setAlerts] = useState<Alert[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'all' | 'unread' | 'high'>('all');
+  const [startDate, setStartDate] = useState<string>(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState<string>(() => {
+    return new Date().toISOString().split('T')[0];
+  });
   const [showAll, setShowAll] = useState(false);
 
   useEffect(() => {
     if (user) {
       fetchAlerts();
     }
-  }, [user]);
+  }, [user, filter, startDate, endDate]);
 
   const fetchAlerts = async () => {
-    setLoading(true);
     try {
-      const { data, error } = await supabase
+      setLoading(true);
+      let query = supabase
         .from('alerts')
         .select('*')
-        .eq('user_id', user?.id)
-        .order('created_at', { ascending: false });
+        .eq('user_id', user?.id);
+      
+      // Apply date range filter
+      query = query.gte('date', startDate).lte('date', endDate);
+      
+      // Apply status filter
+      if (filter === 'unread') {
+        query = query.eq('is_read', false);
+      } else if (filter === 'high') {
+        query = query.eq('priority', 'high');
+      }
+      
+      // Order by priority and date
+      query = query.order('priority', { ascending: false }).order('date', { ascending: false });
+      
+      const { data, error } = await query;
 
       if (error) throw error;
       setAlerts(data || []);
     } catch (error) {
       console.error('Error fetching alerts:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const updateAllBillAlerts = async () => {
+    try {
+      setLoading(true);
+      const { error } = await supabase.rpc('update_all_bill_alerts');
+      
+      if (error) throw error;
+      
+      // Refetch alerts after updating
+      fetchAlerts();
+    } catch (err) {
+      console.error('Error updating bill alerts:', err);
     } finally {
       setLoading(false);
     }
@@ -139,7 +178,13 @@ export default function SmartAlerts() {
           <p className="text-gray-500 mt-1 text-sm sm:text-base">Notificações importantes sobre suas finanças</p>
         </div>
         
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
+          <DateRangeSelector 
+            onRangeChange={(start, end) => {
+              setStartDate(start);
+              setEndDate(end);
+            }} 
+          />
           <div className="flex items-center space-x-2">
             <Filter className="h-4 w-4 text-gray-500" />
             <select
@@ -152,6 +197,14 @@ export default function SmartAlerts() {
               <option value="high">Alta prioridade</option>
             </select>
           </div>
+          <button
+            onClick={updateAllBillAlerts}
+            className="px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center space-x-1"
+            title="Atualizar alertas de contas"
+          >
+            <RefreshCw className="h-4 w-4" />
+            <span>Atualizar</span>
+          </button>
         </div>
       </div>
 
@@ -234,7 +287,12 @@ export default function SmartAlerts() {
                       <div className="flex-1">
                         <div className="flex flex-col sm:flex-row sm:items-center sm:space-x-3 mb-2">
                           <h3 className={`font-medium text-sm sm:text-base ${!alert.is_read ? 'text-gray-900' : 'text-gray-600'}`}>
-                            {alert.title}
+                            {alert.title} 
+                            {alert.related_entity === 'bills' && (
+                              <span className="ml-1 text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded-full">
+                                Conta
+                              </span>
+                            )}
                           </h3>
                           {!alert.is_read && (
                             <span className="w-2 h-2 bg-blue-500 rounded-full hidden sm:block"></span>
@@ -257,12 +315,10 @@ export default function SmartAlerts() {
                           <div className="flex items-center space-x-1">
                             <Clock className="h-3 w-3" />
                             <span>
-                              {new Date(alert.created_at).toLocaleDateString('pt-BR', {
+                              {new Date(alert.date).toLocaleDateString('pt-BR', {
                                 day: '2-digit',
                                 month: '2-digit',
-                                year: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
+                                year: 'numeric'
                               })}
                             </span>
                           </div>
@@ -280,6 +336,23 @@ export default function SmartAlerts() {
                     </div>
                     
                     <div className="flex items-center space-x-2 mt-3 sm:mt-0 sm:ml-4">
+                      <div className="flex items-center space-x-2">
+                        {alert.action_path && (
+                          <a 
+                            href={alert.action_path} 
+                            className="px-3 sm:px-4 py-1 sm:py-2 bg-blue-600 text-white rounded-lg text-xs sm:text-sm font-medium hover:bg-blue-700 transition-colors duration-200"
+                          >
+                            {alert.action_label || 'Ver Detalhes'}
+                          </a>
+                        )}
+                        
+                        {!alert.action_path && (
+                          <button className="px-3 sm:px-4 py-1 sm:py-2 bg-gray-100 text-gray-600 rounded-lg text-xs sm:text-sm font-medium hover:bg-gray-200 transition-colors duration-200">
+                            Detalhes
+                          </button>
+                        )}
+                      </div>
+                      
                       {!alert.is_read && (
                         <button
                           onClick={() => markAsRead(alert.id)}
