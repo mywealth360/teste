@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { DollarSign, Plus, Edit2, Trash2, TrendingUp, Home, Building, Receipt } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import DateRangeSelector from './DateRangeSelector';
 
 interface IncomeSource {
   id: string;
@@ -23,6 +24,14 @@ export default function RevenueManagement() {
   const [loading, setLoading] = useState(true);
   const [totalMonthlyIncome, setTotalMonthlyIncome] = useState(0);
   const [showAddForm, setShowAddForm] = useState(false);
+  const [startDate, setStartDate] = useState<string>(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState<string>(() => {
+    return new Date().toISOString().split('T')[0];
+  });
   const [formData, setFormData] = useState({
     name: '',
     amount: '',
@@ -36,7 +45,7 @@ export default function RevenueManagement() {
     if (user) {
       fetchIncomeSources();
     }
-  }, [user]);
+  }, [user, startDate, endDate]);
 
   const fetchIncomeSources = async () => {
     setLoading(true);
@@ -45,7 +54,9 @@ export default function RevenueManagement() {
       const { data: incomeSources, error: incomeError } = await supabase
         .from('income_sources')
         .select('*')
-        .eq('user_id', user?.id);
+        .eq('user_id', user?.id)
+        .gte('created_at', startDate)
+        .lte('created_at', endDate);
 
       if (incomeError) throw incomeError;
       
@@ -316,13 +327,21 @@ export default function RevenueManagement() {
           <h1 className="text-3xl font-bold text-gray-800">Gestão de Receitas</h1>
           <p className="text-gray-500 mt-1">Gerencie suas fontes de renda</p>
         </div>
-        <button 
-          onClick={() => setShowAddForm(true)}
-          className="flex items-center space-x-2 px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-200 shadow-md"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Adicionar Fonte de Renda</span>
-        </button>
+        <div className="flex space-x-3">
+          <DateRangeSelector 
+            onRangeChange={(start, end) => {
+              setStartDate(start);
+              setEndDate(end);
+            }} 
+          />
+          <button 
+            onClick={() => setShowAddForm(true)}
+            className="flex items-center space-x-2 px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-200 shadow-md"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Adicionar Fonte de Renda</span>
+          </button>
+        </div>
       </div>
 
       {/* Summary Cards */}

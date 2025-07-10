@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Building, Car, TrendingUp, Gem, DollarSign, Plus, Edit2, Trash2, Home, PieChart, BarChart, Shield, CreditCard } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import DateRangeSelector from './DateRangeSelector';
 
 interface RealEstate {
   id: string;
@@ -72,21 +73,33 @@ export default function PatrimonyManagement() {
   const [exoticAssets, setExoticAssets] = useState<ExoticAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCharts, setShowCharts] = useState(true);
+  const [startDate, setStartDate] = useState<string>(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 90);
+    return date.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState<string>(() => {
+    return new Date().toISOString().split('T')[0];
+  });
 
   useEffect(() => {
     if (user) {
       fetchData();
     }
-  }, [user]);
+  }, [user, startDate, endDate]);
 
   const fetchData = async () => {
     setLoading(true);
     try {
       const [realEstateData, investmentsData, vehiclesData, exoticAssetsData] = await Promise.all([
-        supabase.from('real_estate').select('*').eq('user_id', user?.id),
-        supabase.from('investments').select('*').eq('user_id', user?.id),
-        supabase.from('vehicles').select('*').eq('user_id', user?.id),
+        supabase.from('real_estate').select('*').eq('user_id', user?.id)
+          .gte('purchase_date', startDate).lte('purchase_date', endDate),
+        supabase.from('investments').select('*').eq('user_id', user?.id)
+          .gte('purchase_date', startDate).lte('purchase_date', endDate),
+        supabase.from('vehicles').select('*').eq('user_id', user?.id)
+          .gte('purchase_date', startDate).lte('purchase_date', endDate),
         supabase.from('exotic_assets').select('*').eq('user_id', user?.id)
+          .gte('purchase_date', startDate).lte('purchase_date', endDate)
       ]);
 
       if (realEstateData.data) setRealEstate(realEstateData.data);
@@ -156,9 +169,17 @@ export default function PatrimonyManagement() {
           <h1 className="text-3xl font-bold text-gray-800">Gestão de Patrimônio</h1>
           <p className="text-gray-500 mt-1">Visão completa dos seus ativos e investimentos</p>
         </div>
-        <div className="text-right">
-          <p className="text-sm text-gray-500">Patrimônio Total</p>
-          <p className="text-2xl font-bold text-green-600">{formatCurrency(calculateTotalValue())}</p>
+        <div className="flex items-center space-x-4">
+          <DateRangeSelector 
+            onRangeChange={(start, end) => {
+              setStartDate(start);
+              setEndDate(end);
+            }} 
+          />
+          <div className="text-right">
+            <p className="text-sm text-gray-500">Patrimônio Total</p>
+            <p className="text-2xl font-bold text-green-600">{formatCurrency(calculateTotalValue())}</p>
+          </div>
         </div>
       </div>
       

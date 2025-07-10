@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import DateRangeSelector from './DateRangeSelector';
 
 interface ExpenseItem {
   id: string;
@@ -43,13 +44,21 @@ export default function ExpenseManagement() {
   const [filterType, setFilterType] = useState<string>('all');
   const [sortBy, setSortBy] = useState<'date' | 'amount' | 'type'>('date');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
+  const [startDate, setStartDate] = useState<string>(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState<string>(() => {
+    return new Date().toISOString().split('T')[0];
+  });
   const { user } = useAuth();
 
   useEffect(() => {
     if (user) {
       fetchExpenses();
     }
-  }, [user]);
+  }, [user, startDate, endDate]);
 
   const fetchExpenses = async () => {
     try {
@@ -59,12 +68,19 @@ export default function ExpenseManagement() {
       // Fetch from all relevant expense tables
       const allExpenses: ExpenseItem[] = [];
 
+      // Date range filter
+      const startDateObj = new Date(startDate);
+      const endDateObj = new Date(endDate);
+      endDateObj.setHours(23, 59, 59, 999); // End of the day
+
       // Fetch transactions (expenses only)
       const { data: transactions, error: transactionsError } = await supabase
         .from('transactions')
         .select('*')
         .eq('user_id', user.id)
-        .eq('type', 'expense');
+        .eq('type', 'expense')
+        .gte('date', startDate)
+        .lte('date', endDate);
 
       if (transactionsError) throw transactionsError;
 
@@ -343,6 +359,12 @@ export default function ExpenseManagement() {
           <h1 className="text-3xl font-bold text-gray-800">Gestão de Gastos</h1>
           <p className="text-gray-500 mt-1">Visão gerencial de todas as suas despesas</p>
         </div>
+        <DateRangeSelector 
+          onRangeChange={(start, end) => {
+            setStartDate(start);
+            setEndDate(end);
+          }} 
+        />
       </div>
 
       {error && (
@@ -397,7 +419,7 @@ export default function ExpenseManagement() {
 
       {/* Filters and Search */}
       <div className="bg-white rounded-xl p-6 shadow-md">
-        <div className="flex flex-col sm:flex-row gap-4">
+        <div className="flex flex-col sm:flex-row gap-4 items-center">
           <div className="flex-1">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />

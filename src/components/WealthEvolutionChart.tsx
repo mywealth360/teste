@@ -49,9 +49,8 @@ const wealthData = generateWealthData();
 
 export default function WealthEvolutionChart() {
   return (
-    <div className="bg-white rounded-xl shadow-md p-4 sm:p-6">
-      <h2 className="text-lg sm:text-xl font-semibold text-gray-800 mb-4 sm:mb-6">Evolução Patrimonial</h2>
-      <div className="h-64 sm:h-80">
+    <div className="p-4 sm:p-6 pt-0">
+      <div className="h-64 sm:h-80 mt-2">
         <ResponsiveContainer width="100%" height="100%" className="overflow-x-auto">
           <LineChart
             data={wealthData}

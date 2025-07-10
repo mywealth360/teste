@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import DateRangeSelector from './DateRangeSelector';
 
 interface Transaction {
   id: string;
@@ -37,13 +38,20 @@ export default function Transactions() {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedType, setSelectedType] = useState<string>('all');
-  const [selectedPeriod, setSelectedPeriod] = useState<string>('current-month');
+  const [startDate, setStartDate] = useState<string>(() => {
+    const date = new Date();
+    date.setDate(1); // First day of current month
+    return date.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState<string>(() => {
+    return new Date().toISOString().split('T')[0];
+  });
 
   useEffect(() => {
     if (user) {
       fetchTransactions();
     }
-  }, [user]);
+  }, [user, selectedType, startDate, endDate]);
 
   const fetchTransactions = async () => {
     try {
@@ -52,30 +60,12 @@ export default function Transactions() {
         .from('transactions')
         .select('*')
         .eq('user_id', user?.id)
+        .gte('date', startDate)
+        .lte('date', endDate)
         .order('date', { ascending: false });
 
       if (selectedType !== 'all') {
         query = query.eq('type', selectedType);
-      }
-
-      if (selectedPeriod !== 'all') {
-        const now = new Date();
-        const currentMonth = now.getMonth();
-        const currentYear = now.getFullYear();
-
-        if (selectedPeriod === 'current-month') {
-          const startOfMonth = new Date(currentYear, currentMonth, 1).toISOString().split('T')[0];
-          const endOfMonth = new Date(currentYear, currentMonth + 1, 0).toISOString().split('T')[0];
-          query = query.gte('date', startOfMonth).lte('date', endOfMonth);
-        } else if (selectedPeriod === 'last-month') {
-          const startOfLastMonth = new Date(currentYear, currentMonth - 1, 1).toISOString().split('T')[0];
-          const endOfLastMonth = new Date(currentYear, currentMonth, 0).toISOString().split('T')[0];
-          query = query.gte('date', startOfLastMonth).lte('date', endOfLastMonth);
-        } else if (selectedPeriod === 'current-year') {
-          const startOfYear = new Date(currentYear, 0, 1).toISOString().split('T')[0];
-          const endOfYear = new Date(currentYear, 11, 31).toISOString().split('T')[0];
-          query = query.gte('date', startOfYear).lte('date', endOfYear);
-        }
       }
 
       const { data, error: fetchError } = await query;
@@ -203,13 +193,21 @@ export default function Transactions() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Transações</h1>
           <p className="text-gray-500 mt-1 text-sm sm:text-base">Gerencie suas receitas e despesas</p>
         </div>
-        <button 
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center space-x-2 px-4 sm:px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg text-sm sm:text-base"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Nova Transação</span>
-        </button>
+        <div className="flex space-x-3">
+          <DateRangeSelector 
+            onRangeChange={(start, end) => {
+              setStartDate(start);
+              setEndDate(end);
+            }} 
+          />
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center space-x-2 px-4 sm:px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg text-sm sm:text-base"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Nova Transação</span>
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -276,27 +274,12 @@ export default function Transactions() {
             value={selectedType}
             onChange={(e) => {
               setSelectedType(e.target.value);
-              fetchTransactions();
             }}
             className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm sm:text-base"
           >
             <option value="all">Todos os tipos</option>
             <option value="income">Receitas</option>
             <option value="expense">Despesas</option>
-          </select>
-
-          <select
-            value={selectedPeriod}
-            onChange={(e) => {
-              setSelectedPeriod(e.target.value);
-              fetchTransactions();
-            }}
-            className="px-4 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-sm sm:text-base"
-          >
-            <option value="current-month">Mês atual</option>
-            <option value="last-month">Mês passado</option>
-            <option value="current-year">Ano atual</option>
-            <option value="all">Todos os períodos</option>
           </select>
         </div>
       </div>

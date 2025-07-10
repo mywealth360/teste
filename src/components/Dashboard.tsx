@@ -25,6 +25,7 @@ import WealthEvolutionChart from './WealthEvolutionChart';
 import FinancialBreakdown from './FinancialBreakdown';
 import { useDashboardData } from '../hooks/useSupabaseData';
 import { useNavigate } from 'react-router-dom';
+import DateRangeSelector from './DateRangeSelector';
 
 // Quick Guide component
 const QuickGuide = () => {
@@ -150,13 +151,13 @@ export default function Dashboard() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Dashboard</h1>
           <p className="text-gray-500 mt-1 text-sm sm:text-base">Visão geral das suas finanças</p>
         </div>
-        <div className="flex space-x-2 self-end sm:self-auto">
-          <button className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">
-            <Calendar className="h-5 w-5" />
-          </button>
-          <button className="px-3 sm:px-4 py-1.5 sm:py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50">
-            <Bell className="h-5 w-5" />
-          </button>
+        <div className="flex space-x-3 self-end sm:self-auto">
+          <DateRangeSelector 
+            onRangeChange={(startDate, endDate) => {
+              console.log('Date range changed:', startDate, endDate);
+              // Here you would fetch data for the selected date range
+            }} 
+          />
         </div>
       </div>
 
@@ -271,6 +272,15 @@ export default function Dashboard() {
 
       {/* Wealth Evolution Chart */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden p-2 sm:p-0">
+        <div className="flex justify-between items-center p-4">
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Evolução Patrimonial</h2>
+          <DateRangeSelector 
+            onRangeChange={(startDate, endDate) => {
+              console.log('Chart date range changed:', startDate, endDate);
+              // Here you would update the chart data for the selected date range
+            }} 
+          />
+        </div>
         <WealthEvolutionChart />
       </div>
 

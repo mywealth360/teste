@@ -24,6 +24,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import DateRangeSelector from './DateRangeSelector';
 
 interface Bill {
   id: string;
@@ -82,6 +83,14 @@ export default function Bills() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [pendingCount, setPendingCount] = useState(0);
+  const [startDate, setStartDate] = useState<string>(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
+    return date.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState<string>(() => {
+    return new Date().toISOString().split('T')[0];
+  });
 
   // Properties, Vehicles, and Employees for associating bills
   const [properties, setProperties] = useState<any[]>([]);
@@ -94,7 +103,7 @@ export default function Bills() {
       fetchBills();
       fetchAssociatedEntities();
     }
-  }, [user]);
+  }, [user, startDate, endDate]);
 
   useEffect(() => {
     // Atualizar contagem de contas pendentes
@@ -114,6 +123,8 @@ export default function Bills() {
         .from('bills')
         .select('*')
         .eq('user_id', user?.id)
+        .gte('next_due', startDate)
+        .lte('next_due', endDate)
         .order('next_due', { ascending: true });
 
       if (error) throw error;
@@ -391,7 +402,13 @@ export default function Bills() {
             </div>
           )}
         </div>
-        <div className="flex flex-wrap gap-3">
+        <div className="flex flex-wrap gap-3 items-center">
+          <DateRangeSelector 
+            onRangeChange={(start, end) => {
+              setStartDate(start);
+              setEndDate(end);
+            }} 
+          />
           {overdueBills.length > 0 && (
             <button 
               onClick={markAllAsPaid}

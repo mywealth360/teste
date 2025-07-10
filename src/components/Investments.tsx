@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, TrendingUp, Building, DollarSign, Calendar, Edit, Trash2, PieChart, Save, X, Landmark } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
+import DateRangeSelector from './DateRangeSelector';
 
 interface Investment {
   id: string;
@@ -43,6 +44,14 @@ export default function Investments() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string>('');
+  const [startDate, setStartDate] = useState<string>(() => {
+    const date = new Date();
+    date.setDate(date.getDate() - 90);
+    return date.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState<string>(() => {
+    return new Date().toISOString().split('T')[0];
+  });
   const [formData, setFormData] = useState({
     quantity: '',
     current_price: '',
@@ -140,7 +149,7 @@ export default function Investments() {
     if (user) {
       fetchInvestments();
     }
-  }, [user]);
+  }, [user, startDate, endDate]);
 
   // Auto-calculate amount when quantity or current price change for stocks/FIIs
   useEffect(() => {
@@ -179,6 +188,8 @@ export default function Investments() {
         .from('investments')
         .select('id, name, type, broker, amount, purchase_price, current_price, interest_rate, monthly_income, purchase_date, maturity_date, quantity, dividend_yield, tax_rate, created_at, updated_at')
         .eq('user_id', user?.id)
+        .gte('purchase_date', startDate)
+        .lte('purchase_date', endDate)
         .order('created_at', { ascending: false });
 
       if (error) throw error;
@@ -357,13 +368,21 @@ export default function Investments() {
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">Investimentos</h1>
           <p className="text-gray-500 mt-1 text-sm sm:text-base">Gerencie sua carteira de investimentos</p>
         </div>
-        <button 
-          onClick={() => setShowAddModal(true)}
-          className="flex items-center space-x-2 px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-md text-sm sm:text-base"
-        >
-          <Plus className="h-4 w-4" />
-          <span>Novo Investimento</span>
-        </button>
+        <div className="flex space-x-3">
+          <DateRangeSelector 
+            onRangeChange={(start, end) => {
+              setStartDate(start);
+              setEndDate(end);
+            }} 
+          />
+          <button 
+            onClick={() => setShowAddModal(true)}
+            className="flex items-center space-x-2 px-4 sm:px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-md text-sm sm:text-base"
+          >
+            <Plus className="h-4 w-4" />
+            <span>Novo Investimento</span>
+          </button>
+        </div>
       </div>
 
       {error && (
