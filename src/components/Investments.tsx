@@ -352,14 +352,14 @@ export default function Investments() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sm:gap-0">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-800">Investimentos</h1>
           <p className="text-gray-500 mt-1">Gerencie sua carteira de investimentos</p>
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
-          className="flex items-center space-x-2 px-6 py-2 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-200 shadow-md"
+          className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-md"
         >
           <Plus className="h-4 w-4" />
           <span>Novo Investimento</span>
@@ -971,7 +971,7 @@ export default function Investments() {
                     </button>
                     <button
                       type="submit"
-                      className="flex-1 py-3 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all duration-200 shadow-sm"
+                      className="flex-1 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-sm"
                     >
                       Adicionar
                     </button>

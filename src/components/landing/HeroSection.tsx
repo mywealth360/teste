@@ -32,7 +32,7 @@ export default function HeroSection({ onRegisterClick }: HeroSectionProps) {
             <SubscriptionButton
               priceId={products[0].priceId}
               mode="subscription"
-              className="bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-md"
+              className="bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition-all duration-200 flex items-center space-x-2 shadow-sm"
             >
               <span>Começar Teste Grátis</span>
               <ArrowRight className="h-5 w-5 ml-2" />

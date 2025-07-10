@@ -387,7 +387,7 @@ export default function Bills() {
           )}
           <button 
             onClick={() => setShowAddModal(true)}
-            className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-md"
+            className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-sm"
           >
             <Plus className="h-4 w-4" />
             <span>Nova Conta</span>

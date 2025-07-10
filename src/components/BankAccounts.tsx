@@ -185,7 +185,7 @@ export default function BankAccounts() {
         </div>
         <button 
           onClick={() => setShowAddModal(true)}
-          className="flex items-center space-x-2 px-6 py-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200 shadow-lg"
+          className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-sm"
         >
           <Plus className="h-4 w-4" />
           <span>Nova Conta</span>
@@ -423,7 +423,7 @@ export default function BankAccounts() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all duration-200"
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-sm"
                 >
                   Adicionar
                 </button>

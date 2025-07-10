@@ -21,7 +21,7 @@ export default function AuthModal({ isOpen, onClose, initialMode = 'login' }: Au
         {/* Modal Header */}
         <div className="p-6 border-b border-gray-100 flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+            <div className="w-8 h-8 bg-blue-600 rounded-xl flex items-center justify-center">
               <Heart className="h-5 w-5 text-white" />
             </div>
             <div>

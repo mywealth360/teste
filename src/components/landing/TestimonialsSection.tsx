@@ -5,7 +5,7 @@ const testimonials = [
   {
     name: 'Maria Silva',
     role: 'Empresária',
-    content: 'O MyWealth 360 revolucionou como gerencio meu patrimônio. A IA me ajudou a economizar 30% em 6 meses!',
+    content: 'O PROSPERA.AI revolucionou como gerencio meu patrimônio. A IA me ajudou a economizar 30% em 6 meses!',
     rating: 5
   },
   {
@@ -31,7 +31,7 @@ export default function TestimonialsSection() {
             O que nossos clientes dizem
           </h2>
           <p className="text-lg sm:text-xl text-gray-700">
-            Milhares de famílias já transformaram seu patrimônio com o MyWealth 360
+            Milhares de famílias já transformaram seu patrimônio com o PROSPERA.AI
           </p>
         </div>
         

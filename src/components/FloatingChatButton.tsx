@@ -69,7 +69,7 @@ export default function FloatingChatButton() {
       {/* Floating Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 w-12 h-12 sm:w-14 sm:h-14 bg-indigo-600 text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center z-50 hover:scale-110 ${
+        className={`fixed bottom-6 right-6 w-12 h-12 sm:w-14 sm:h-14 bg-blue-600 text-white rounded-full shadow-md hover:shadow-lg transition-all duration-300 flex items-center justify-center z-50 hover:scale-110 ${
           isOpen ? 'hidden' : 'block'
         }`}
       >
@@ -80,7 +80,7 @@ export default function FloatingChatButton() {
       {isOpen && (
         <div className="fixed bottom-6 right-6 w-[90vw] sm:w-80 md:w-96 h-[80vh] sm:h-[500px] bg-white rounded-xl shadow-lg border border-gray-200 z-50 flex flex-col overflow-hidden">
           {/* Header */}
-          <div className="p-4 bg-indigo-600 text-white">
+          <div className="p-4 bg-blue-600 text-white">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-white/20 rounded-full flex items-center justify-center">
@@ -88,7 +88,7 @@ export default function FloatingChatButton() {
                 </div>
                 <div>
                   <h3 className="font-semibold text-sm">Assistente IA</h3>
-                  <p className="text-xs text-purple-100">Online agora</p>
+                  <p className="text-xs text-white/80">Online agora</p>
                 </div>
               </div>
               <button
@@ -107,8 +107,8 @@ export default function FloatingChatButton() {
                 <div className={`flex items-start space-x-2 max-w-[80%] ${message.type === 'user' ? 'flex-row-reverse space-x-reverse' : ''}`}>
                   <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
                     message.type === 'user' 
-                      ? 'bg-blue-500' 
-                      : 'bg-gradient-to-br from-purple-500 to-pink-600'
+                      ? 'bg-blue-600' 
+                      : 'bg-blue-600'
                   }`}>
                     {message.type === 'user' ? (
                       <User className="h-3 w-3 text-white" />
@@ -119,7 +119,7 @@ export default function FloatingChatButton() {
                   
                   <div className={`rounded-2xl p-3 ${
                     message.type === 'user'
-                      ? 'bg-blue-500 text-white'
+                      ? 'bg-blue-600 text-white'
                       : 'bg-gray-100 text-gray-800'
                   }`}>
                     <p className="text-xs sm:text-sm leading-relaxed">{message.content}</p>
@@ -143,7 +143,7 @@ export default function FloatingChatButton() {
                   <button
                     key={index}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="text-xs px-2 py-1 bg-purple-50 text-purple-700 rounded-full hover:bg-purple-100 transition-colors duration-200"
+                    className="text-xs px-3 py-1 bg-blue-50 text-blue-700 rounded-full hover:bg-blue-100 transition-colors duration-200"
                   >
                     {suggestion}
                   </button>
@@ -155,7 +155,7 @@ export default function FloatingChatButton() {
             {isTyping && (
               <div className="flex justify-start">
                 <div className="flex items-center space-x-2">
-                  <div className="w-6 h-6 rounded-full bg-gradient-to-br from-purple-500 to-pink-600 flex items-center justify-center">
+                  <div className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center">
                     <Bot className="h-3 w-3 text-white" />
                   </div>
                   <div className="bg-gray-100 rounded-2xl p-3">
@@ -179,12 +179,12 @@ export default function FloatingChatButton() {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleSendMessage(inputValue)}
                 placeholder="Digite sua pergunta..."
-                className="flex-1 p-2 text-xs sm:text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 transition-colors duration-200 bg-white"
+                className="flex-1 p-2 text-xs sm:text-sm border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-colors duration-200 bg-white"
               />
               <button
                 onClick={() => handleSendMessage(inputValue)}
                 disabled={!inputValue.trim() || isTyping}
-                className="p-2 bg-indigo-600 text-white rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
+                className="p-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 shadow-sm"
               >
                 <Send className="h-3 w-3" />
               </button>

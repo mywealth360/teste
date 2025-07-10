@@ -86,7 +86,7 @@ export default function UpgradeModal({ isOpen, onClose, featureName }: UpgradeMo
             <SubscriptionButton
               priceId={products[1].priceId}
               mode="subscription"
-              className="flex-1 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200"
+              className="flex-1 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-sm"
             >
               Fazer Upgrade
             </SubscriptionButton>

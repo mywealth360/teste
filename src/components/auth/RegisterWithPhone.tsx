@@ -313,7 +313,7 @@ export default function RegisterWithPhone({ onSuccess, onBack }: RegisterWithPho
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium flex items-center justify-center space-x-2"
+                className="w-full py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium flex items-center justify-center space-x-2 shadow-sm"
               >
                 {loading ? (
                   <span>Processando...</span>
@@ -381,7 +381,7 @@ export default function RegisterWithPhone({ onSuccess, onBack }: RegisterWithPho
               <button
                 type="submit"
                 disabled={loading || formData.verificationCode.length !== 6}
-                className="flex-1 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-md"
+                className="flex-1 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed shadow-sm"
               >
                 {loading ? 'Verificando...' : 'Verificar e Criar Conta'}
               </button>

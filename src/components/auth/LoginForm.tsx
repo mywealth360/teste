@@ -75,7 +75,7 @@ export default function LoginForm({ onSuccess, onRegisterClick }: LoginFormProps
           <button
             type="button"
             onClick={() => setShowPassword(!showPassword)}
-            className="w-full py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-md"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2 p-1 text-gray-400 hover:text-gray-600 transition-colors duration-200"
           >
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
@@ -91,7 +91,7 @@ export default function LoginForm({ onSuccess, onRegisterClick }: LoginFormProps
       <button
         type="submit"
         disabled={loading}
-        className="w-full py-3 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-xl hover:from-blue-600 hover:to-purple-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-md"
+        className="w-full py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium shadow-sm"
       >
         {loading ? 'Carregando...' : 'Entrar'}
       </button>

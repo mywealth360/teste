@@ -283,9 +283,9 @@ export default function Income() {
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="bg-green-600 text-white px-4 py-2 rounded-lg hover:bg-green-700 transition-colors flex items-center gap-2"
+          className="flex items-center space-x-2 px-6 py-2 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-sm"
         >
-          <Plus size={16} />
+          <Plus className="h-4 w-4" />
           Adicionar Renda
         </button>
       </div>
@@ -549,7 +549,7 @@ export default function Income() {
               <div className="flex gap-3">
                 <button
                   type="submit"
-                  className="flex-1 bg-green-600 text-white py-3 rounded-xl hover:bg-green-700 transition-colors font-medium"
+                  className="flex-1 bg-blue-600 text-white py-3 rounded-xl hover:bg-blue-700 transition-colors font-medium shadow-sm"
                 >
                   Adicionar
                 </button>

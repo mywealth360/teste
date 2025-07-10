@@ -7,37 +7,37 @@ const features = [
     icon: Brain,
     title: 'IA Financeira Avançada',
     description: 'Assistente inteligente que analisa seus gastos e oferece insights personalizados para otimizar suas finanças.',
-    color: 'from-purple-500 to-pink-600'
+    color: 'bg-indigo-600'
   },
   {
     icon: BarChart3,
     title: 'Dashboard Completo',
     description: 'Visão 360° do seu patrimônio com gráficos interativos e métricas em tempo real.',
-    color: 'from-blue-500 to-indigo-600'
+    color: 'bg-blue-600'
   },
   {
     icon: Shield,
     title: 'Gestão de Patrimônio',
     description: 'Acompanhe investimentos, imóveis, previdência e evolução patrimonial vs inflação e CDI.',
-    color: 'from-green-500 to-emerald-600'
+    color: 'bg-green-600'
   },
   {
     icon: Target,
     title: 'Planejamento Inteligente',
     description: 'Metas financeiras automáticas baseadas no seu perfil e objetivos de vida.',
-    color: 'from-orange-500 to-red-600'
+    color: 'bg-orange-600'
   },
   {
     icon: PieChart,
     title: 'Análise Avançada',
     description: 'Relatórios detalhados com análise de tendências e projeções futuras.',
-    color: 'from-teal-500 to-cyan-600'
+    color: 'bg-teal-600'
   },
   {
     icon: Zap,
     title: 'Automação Total',
     description: 'Renovação automática de receitas e despesas mensais. Nunca mais esqueça um pagamento.',
-    color: 'from-yellow-500 to-orange-600'
+    color: 'bg-purple-600'
   }
 ];
 

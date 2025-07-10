@@ -114,7 +114,7 @@ export default function SubscriptionPage() {
             <SubscriptionButton
               priceId={products[0].priceId}
               mode="subscription"
-              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700 shadow-md"
+              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
             >
               Começar Gratuitamente
             </SubscriptionButton>
@@ -187,7 +187,7 @@ export default function SubscriptionPage() {
             <SubscriptionButton
               priceId={products[1].priceId}
               mode="subscription"
-              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700 shadow-md"
+              className="w-full py-3 rounded-xl font-semibold transition-all duration-200 bg-blue-600 text-white hover:bg-blue-700 shadow-sm"
             >
               Assinar Agora
             </SubscriptionButton>

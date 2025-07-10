@@ -143,12 +143,12 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
               onClick={() => handleTabClick(item.id, item.restricted)}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
                 activeTab === item.id
-              className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium shadow-sm ${
+              className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
                   : isRestricted
-                  ? 'bg-blue-600 text-white shadow-md' 
+                  ? 'bg-blue-600 text-white shadow-sm' 
                     : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
               }`}
-              disabled={isRestricted && userPlan === 'starter'}
+              className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-bold bg-red-600 text-white shadow-sm hover:bg-red-700"
             >
               <div className="flex items-center space-x-3">
                 <Icon className="h-4 w-4" />
@@ -164,11 +164,11 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
 
   return (
     <>
-    <div className="w-72 bg-white shadow-xl border-r border-gray-100 h-screen fixed left-0 top-0 z-30 overflow-y-auto transition-all duration-300">
+    <div className="w-64 bg-white shadow-md border-r border-gray-100 h-screen fixed left-0 top-0 z-30 overflow-y-auto transition-all duration-300">
       <div className="p-2 border-b border-gray-100">
         <div className="flex items-center justify-between py-4 px-2">
           <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 text-transparent bg-clip-text">PROSPERA.AI</h1>
-          <span className="text-xs text-gray-500 border-l border-gray-200 pl-2">Gestão Financeira</span>
+          <span className="text-xs text-gray-500">Gestão Financeira</span>
         </div>
       </div>
      
@@ -188,7 +188,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
                 onClick={() => handleTabClick(item.id, item.restricted)}
                 className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl transition-all duration-200 text-sm font-medium ${
                   activeTab === item.id
-                    ? 'bg-blue-600 text-white shadow-md'
+                    ? 'bg-blue-600 text-white shadow-sm'
                     : isRestricted
                       ? 'text-gray-400 cursor-not-allowed opacity-70'
                       : 'text-gray-600 hover:bg-gray-50 hover:text-gray-800'
@@ -296,7 +296,7 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
         onClick={() => setShowProfileDropdown(!showProfileDropdown)}
         className="bg-white p-2 rounded-full shadow-md hover:shadow-lg transition-all"
       >
-        <div className={`w-8 h-8 ${isAdmin ? 'bg-red-500' : 'bg-gray-200'} rounded-full flex items-center justify-center`}>
+        <div className={\`w-8 h-8 ${isAdmin ? 'bg-red-500' : 'bg-gray-200'} rounded-full flex items-center justify-center`}>
           {isAdmin ? <Crown className="h-4 w-4 text-white" /> : <User className="h-4 w-4 text-white" />}
         </div>
       </button>
@@ -304,101 +304,100 @@ export default function Sidebar({ activeTab, setActiveTab }: SidebarProps) {
       {/* Profile dropdown */}
       {showProfileDropdown && (
         <div className="absolute top-12 right-0 bg-white rounded-xl shadow-xl border border-gray-100 w-64 overflow-hidden">
-        <div className="bg-blue-600 p-3 rounded-xl text-white mb-4">
-          <div className="flex items-center justify-between">
-            <div className="flex-1 cursor-pointer" onClick={() => setActiveTab('subscription')}>
-              <h2 className="text-sm font-bold text-white">
-                Plano {userPlan === 'family' ? 'Family' : 'Starter'} 
-                {isInTrial && (
-                  <span className={`ml-1 text-xs ${trialDaysLeft > 0 ? 'bg-green-500' : 'bg-red-500'} text-white px-1.5 py-0.5 rounded-full`}>
-                    {trialDaysLeft > 0 ? 'Trial' : 'Expirado'}
-                  </span>
-                )}
-              </h2>
-              <SubscriptionStatus />
-            </div>
-            {isAdmin && (
-              <div className="flex items-center space-x-1">
-                <Crown className="h-3 w-3 text-yellow-300" />
-               className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-bold bg-red-600 text-white shadow-md hover:bg-red-700"
-              </div> 
-            )}
-          </div>
-        </div>
-        
-        <div className="mb-3 flex items-center space-x-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-sm font-medium text-gray-800 truncate">
-              {user?.email}
-            </p>
-            <div className="flex items-center space-x-2">
-              {isAdmin && (
-                <p className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">
-                  ADMIN
-                </p>
-              )}
-              <p className="text-xs text-blue-600 font-medium">
-                Plano {userPlan === 'starter' ? 'Starter' : 'Family'}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="space-y-2 mt-3">
-          <button
-            onClick={() => setActiveTab('profile')}
-            className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
-              activeTab === 'profile'
-                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
-                : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600'
-            }`}
-          >
-            <User className="h-4 w-4" />
-            <span>Meu Perfil</span>
-          </button>
-          
-          <button
-            onClick={() => setActiveTab('subscription')}
-            className={`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
-              activeTab === 'subscription' 
-                ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
-                : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600' 
-            }`}
-          >
-            <Crown className="h-4 w-4" />
-            <span>Assinatura</span>
-          </button>
-          
-          {isAdmin && (
-            <button
-              onClick={() => setActiveTab('admin')}
-              className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-bold bg-red-600 text-white shadow-md hover:bg-red-700"
-            >
-              <div className="flex items-center space-x-3">
-                <Crown className="h-5 w-5" />
-                <span>PAINEL ADMIN</span>
+          <div className="bg-blue-600 p-3 rounded-xl text-white mb-4">
+            <div className="flex items-center justify-between">
+              <div className="flex-1 cursor-pointer" onClick={() => setActiveTab('subscription')}>
+                <h2 className="text-sm font-bold text-white">
+                  Plano {userPlan === 'family' ? 'Family' : 'Starter'} 
+                  {isInTrial && (
+                    <span className={\`ml-1 text-xs ${trialDaysLeft > 0 ? 'bg-green-500' : 'bg-red-500'} text-white px-1.5 py-0.5 rounded-full`}>
+                      {trialDaysLeft > 0 ? 'Trial' : 'Expirado'}
+                    </span>
+                  )}
+                </h2>
+                <SubscriptionStatus />
               </div>
-              <Shield className="h-5 w-5" />
+              {isAdmin && (
+                <div className="flex items-center space-x-1">
+                  <Crown className="h-3 w-3 text-yellow-300" />
+                </div>
+              )}
+            </div>
+          </div>
+        
+          <div className="mb-3 flex items-center space-x-3">
+            <div className="flex-1 min-w-0">
+              <p className="text-sm font-medium text-gray-800 truncate">
+                {user?.email}
+              </p>
+              <div className="flex items-center space-x-2">
+                {isAdmin && (
+                  <p className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-full font-medium">
+                    ADMIN
+                  </p>
+                )}
+                <p className="text-xs text-blue-600 font-medium">
+                  Plano {userPlan === 'starter' ? 'Starter' : 'Family'}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-2 mt-3">
+            <button
+              onClick={() => setActiveTab('profile')}
+              className={\`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+                activeTab === 'profile'
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg'
+                  : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600'
+              }`}
+            >
+              <User className="h-4 w-4" />
+              <span>Meu Perfil</span>
             </button>
-          )}
-          
-          <button
-            onClick={handleSignOut}
-            className="w-full flex items-center space-x-3 px-4 py-2 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200 text-sm font-medium"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Sair</span>
-          </button>
-        </div>
+            
+            <button
+              onClick={() => setActiveTab('subscription')}
+              className={\`w-full flex items-center space-x-3 px-4 py-2 rounded-xl transition-all duration-200 text-sm font-medium ${
+                activeTab === 'subscription' 
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-600 text-white shadow-lg' 
+                  : 'text-gray-600 hover:bg-blue-50 hover:text-blue-600' 
+              }`}
+            >
+              <Crown className="h-4 w-4" />
+              <span>Assinatura</span>
+            </button>
+            
+            {isAdmin && (
+              <button
+                onClick={() => setActiveTab('admin')}
+                className="w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-sm font-bold bg-red-600 text-white shadow-md hover:bg-red-700"
+              >
+                <div className="flex items-center space-x-3">
+                  <Crown className="h-5 w-5" />
+                  <span>PAINEL ADMIN</span>
+                </div>
+                <Shield className="h-5 w-5" />
+              </button>
+            )}
+            
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center space-x-3 px-4 py-2 text-gray-600 hover:bg-red-50 hover:text-red-600 rounded-xl transition-all duration-200 text-sm font-medium"
+            >
+              <LogOut className="h-4 w-4" />
+              <span>Sair</span>
+            </button>
+          </div>
         </div>
       )}
     </div>
       
-      {/* Modal de Upgrade */}
-      <UpgradeModal 
-        isOpen={showUpgradeModal} 
-        onClose={() => setShowUpgradeModal(false)}
-        featureName={restrictedFeature}
-      />
+    {/* Modal de Upgrade */}
+    <UpgradeModal 
+      isOpen={showUpgradeModal} 
+      onClose={() => setShowUpgradeModal(false)}
+      featureName={restrictedFeature}
+    />
     </>
   );
 }

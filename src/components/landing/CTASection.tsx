@@ -16,7 +16,7 @@ export default function CTASection() {
           <SubscriptionButton
             priceId={products[0].priceId}
             mode="subscription"
-            className="bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition-all duration-200 shadow-md"
+            className="bg-blue-600 text-white px-8 py-4 rounded-xl text-lg font-semibold hover:bg-blue-700 transition-all duration-200 shadow-sm"
           >
             Começar Teste Grátis
           </SubscriptionButton>
