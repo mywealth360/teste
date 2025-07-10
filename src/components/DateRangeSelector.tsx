@@ -1,27 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Calendar, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface DateRangeSelectorProps {
   onRangeChange: (startDate: string, endDate: string) => void;
   className?: string;
+  defaultRange?: 'today' | '7days' | '30days' | '90days' | '365days' | 'ytd' | 'custom';
 }
 
-type PresetRange = 'today' | '7days' | '30days' | '90days' | 'ytd' | 'custom';
+type PresetRange = 'today' | '7days' | '30days' | '90days' | '365days' | 'ytd' | 'custom';
 
-export default function DateRangeSelector({ onRangeChange, className = '' }: DateRangeSelectorProps) {
+export default function DateRangeSelector({ 
+  onRangeChange, 
+  className = '',
+  defaultRange = '30days'
+}: DateRangeSelectorProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [selectedRange, setSelectedRange] = useState<PresetRange>('30days');
+  const [selectedRange, setSelectedRange] = useState<PresetRange>(defaultRange as PresetRange);
   const [startDate, setStartDate] = useState<string>(() => {
-    // Default to last 365 days to ensure we capture all bills
-    const date = new Date(); 
-    date.setDate(date.getDate() - 365);
+    // Default to last 30 days
+    const date = new Date();
+    date.setDate(date.getDate() - 30);
     return date.toISOString().split('T')[0];
   });
   const [endDate, setEndDate] = useState<string>(() => {
     return new Date().toISOString().split('T')[0];
   });
 
-  const handlePresetSelect = (preset: PresetRange) => {
+  // Set initial dates based on default range
+  useEffect(() => {
+    handlePresetSelect(defaultRange as PresetRange, false);
+  }, [defaultRange]);
+
+  const handlePresetSelect = (preset: PresetRange, closeDropdown = true) => {
     const today = new Date();
     let start = new Date();
     
@@ -41,6 +51,10 @@ export default function DateRangeSelector({ onRangeChange, className = '' }: Dat
         start = new Date(today);
         start.setDate(today.getDate() - 90);
         break;
+      case '365days':
+        start = new Date(today);
+        start.setDate(today.getDate() - 365);
+        break;
       case 'ytd':
         start = new Date(today.getFullYear(), 0, 1); // January 1st of current year
         break;
@@ -58,7 +72,7 @@ export default function DateRangeSelector({ onRangeChange, className = '' }: Dat
     setSelectedRange(preset);
     onRangeChange(startDateStr, endDateStr);
     
-    if (preset !== 'custom') {
+    if (preset !== 'custom' && closeDropdown) {
       setIsOpen(false);
     }
   };
@@ -83,6 +97,8 @@ export default function DateRangeSelector({ onRangeChange, className = '' }: Dat
         return 'Últimos 30 dias';
       case '90days':
         return 'Últimos 90 dias';
+      case '365days':
+        return 'Último ano';
       case 'ytd':
         return 'Desde o início do ano';
       case 'custom':
@@ -92,8 +108,23 @@ export default function DateRangeSelector({ onRangeChange, className = '' }: Dat
     }
   };
 
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      if (isOpen && !target.closest('.date-range-selector')) {
+        setIsOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isOpen]);
+
   return (
-    <div className={`relative ${className}`}>
+    <div className={`relative date-range-selector ${className}`}>
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="flex items-center space-x-2 px-4 py-2 bg-white border border-gray-200 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors"
