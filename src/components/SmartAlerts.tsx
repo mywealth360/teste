@@ -52,6 +52,7 @@ export default function SmartAlerts() {
   }, [user, filter, startDate, endDate]);
 
   const fetchAlerts = async () => {
+    try {
       setLoading(true);
       setLoading(true);
       let query = supabase
@@ -227,6 +228,8 @@ export default function SmartAlerts() {
               setStartDate(start);
               setEndDate(end);
             }} 
+          />
+        </div>
         <div className="flex items-center space-x-3">
           <DateRangeSelector 
             onRangeChange={(start, end) => {
@@ -381,6 +384,8 @@ export default function SmartAlerts() {
                                 day: '2-digit',
                                 month: '2-digit',
                                 year: 'numeric'
+                              })}
+                            </span>
                           </div>
                           
                           {alert.expires_at && (
