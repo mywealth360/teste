@@ -355,57 +355,70 @@ export default function PatrimonyManagement() {
       </div>
       
       {/* Asset Type Summary */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-orange-500">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+        <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-orange-500 hover:shadow-lg transition-all duration-200">
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm text-gray-500">Imóveis</p>
-              <p className="text-xl font-bold text-gray-900">{formatCurrency(realEstate.reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0))}</p>
+              <p className="text-xl font-bold text-gray-900">
+                {formatCurrency(realEstate.reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0))}
+              </p>
             </div>
-            <div className="p-3 bg-orange-100 rounded-xl">
-              <Home className="h-5 w-5 text-orange-600" />
+            <div className="p-3 bg-orange-100 rounded-xl flex items-center justify-center">
+              <Home className="h-6 w-6 text-orange-600" />
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">{realEstate.length} imóveis cadastrados</p>
+          <p className="text-xs text-gray-500 mt-2">{realEstate.length} {realEstate.length === 1 ? 'imóvel cadastrado' : 'imóveis cadastrados'}</p>
         </div>
         
-        <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-blue-500">
+        <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-blue-500 hover:shadow-lg transition-all duration-200">
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm text-gray-500">Investimentos</p>
-              <p className="text-xl font-bold text-gray-900">{formatCurrency(investments.reduce((sum, item) => sum + (item.current_price || item.purchase_price || 0) * (item.quantity || 1), 0))}</p>
+              <p className="text-xl font-bold text-gray-900">
+                {formatCurrency(investments.reduce((sum, item) => {
+                  if (item.quantity && item.current_price) {
+                    return sum + (item.quantity * item.current_price);
+                  }
+                  return sum + (item.current_price || item.purchase_price || item.amount);
+                }, 0))}
+              </p>
             </div>
-            <div className="p-3 bg-blue-100 rounded-xl">
-              <Building className="h-5 w-5 text-blue-600" />
+            <div className="p-3 bg-blue-100 rounded-xl flex items-center justify-center">
+              <Building className="h-6 w-6 text-blue-600" />
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">{investments.length} investimentos cadastrados</p>
+          <p className="text-xs text-gray-500 mt-2">{investments.length} {investments.length === 1 ? 'investimento cadastrado' : 'investimentos cadastrados'}</p>
         </div>
         
-        <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-green-500">
+        <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-green-500 hover:shadow-lg transition-all duration-200">
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm text-gray-500">Veículos</p>
-              <p className="text-xl font-bold text-gray-900">{formatCurrency(vehicles.reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0))}</p>
+              <p className="text-xl font-bold text-gray-900">
+                {formatCurrency(vehicles.reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0))}
+              </p>
             </div>
-            <div className="p-3 bg-green-100 rounded-xl">
-              <Car className="h-5 w-5 text-green-600" />
+            <div className="p-3 bg-green-100 rounded-xl flex items-center justify-center">
+              <Car className="h-6 w-6 text-green-600" />
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">{vehicles.length} veículos cadastrados</p>
+          <p className="text-xs text-gray-500 mt-2">{vehicles.length} {vehicles.length === 1 ? 'veículo cadastrado' : 'veículos cadastrados'}</p>
         </div>
         
-        <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-purple-500">
+        <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-purple-500 hover:shadow-lg transition-all duration-200">
           <div className="flex justify-between items-center">
             <div>
               <p className="text-sm text-gray-500">Ativos Exóticos</p>
-              <p className="text-xl font-bold text-gray-900">{formatCurrency(exoticAssets.reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0))}</p>
+              <p className="text-xl font-bold text-gray-900">
+                {formatCurrency(exoticAssets.reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0))}
+              </p>
             </div>
-            <div className="p-3 bg-purple-100 rounded-xl">
-              <Gem className="h-5 w-5 text-purple-600" />
+            <div className="p-3 bg-purple-100 rounded-xl flex items-center justify-center">
+              <Gem className="h-6 w-6 text-purple-600" />
             </div>
           </div>
-          <p className="text-xs text-gray-500 mt-2">{exoticAssets.length} ativos cadastrados</p>
+          <p className="text-xs text-gray-500 mt-2">{exoticAssets.length} {exoticAssets.length === 1 ? 'ativo cadastrado' : 'ativos cadastrados'}</p>
         </div>
       </div>
 
