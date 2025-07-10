@@ -273,7 +273,10 @@ export default function Dashboard() {
       {/* Wealth Evolution Chart */}
       <div className="bg-white rounded-xl shadow-md overflow-hidden p-2 sm:p-0">
         <div className="flex justify-between items-center p-4">
-          <h2 className="text-lg sm:text-xl font-semibold text-gray-800">Evolução Patrimonial</h2>
+          <h2 className="text-lg sm:text-xl font-semibold text-gray-800 flex items-center">
+            <TrendingUp className="h-5 w-5 mr-2 text-blue-600" />
+            Evolução Patrimonial
+          </h2>
           <DateRangeSelector 
             onRangeChange={(startDate, endDate) => {
               console.log('Chart date range changed:', startDate, endDate);

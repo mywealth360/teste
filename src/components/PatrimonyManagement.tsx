@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { Building, Car, TrendingUp, Gem, DollarSign, Plus, Edit2, Trash2, Home, PieChart, BarChart, Shield, CreditCard } from 'lucide-react';
+import { Building, Car, TrendingUp, Gem, DollarSign, Plus, Edit2, Trash2, Home, PieChart, BarChart, Shield, CreditCard, RefreshCw } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
 import DateRangeSelector from './DateRangeSelector';
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 
 interface RealEstate {
   id: string;
@@ -73,6 +74,8 @@ export default function PatrimonyManagement() {
   const [exoticAssets, setExoticAssets] = useState<ExoticAsset[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCharts, setShowCharts] = useState(true);
+  const [assetDistribution, setAssetDistribution] = useState<{name: string, value: number, color: string}[]>([]);
+  const [assetGrowth, setAssetGrowth] = useState<{month: string, value: number}[]>([]);
   const [startDate, setStartDate] = useState<string>(() => {
     const date = new Date();
     date.setDate(date.getDate() - 90);
@@ -87,6 +90,13 @@ export default function PatrimonyManagement() {
       fetchData();
     }
   }, [user, startDate, endDate]);
+
+  useEffect(() => {
+    if (realEstate.length > 0 || investments.length > 0 || vehicles.length > 0 || exoticAssets.length > 0) {
+      calculateAssetDistribution();
+      generateAssetGrowthData();
+    }
+  }, [realEstate, investments, vehicles, exoticAssets]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -113,29 +123,91 @@ export default function PatrimonyManagement() {
     }
   };
 
-  const calculateTotalValue = () => {
-    const realEstateValue = realEstate.reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0);
-    const investmentsValue = investments.reduce((sum, item) => sum + (item.current_price || item.purchase_price || 0) * (item.quantity || 1), 0);
-    const vehiclesValue = vehicles.reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0);
-    const exoticAssetsValue = exoticAssets.reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0);
-    
-    return realEstateValue + investmentsValue + vehiclesValue + exoticAssetsValue;
-  };
-
   const calculateAssetDistribution = () => {
     const realEstateValue = realEstate.reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0);
-    const investmentsValue = investments.reduce((sum, item) => sum + (item.current_price || item.purchase_price || 0) * (item.quantity || 1), 0);
+    const investmentsValue = investments.reduce((sum, item) => {
+      if (item.quantity && item.current_price) {
+        return sum + (item.quantity * item.current_price);
+      }
+      return sum + (item.current_price || item.purchase_price || item.amount);
+    }, 0);
     const vehiclesValue = vehicles.reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0);
     const exoticAssetsValue = exoticAssets.reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0);
     
     const total = realEstateValue + investmentsValue + vehiclesValue + exoticAssetsValue;
     
-    return [
-      { name: 'Imóveis', value: realEstateValue, percentage: total > 0 ? (realEstateValue / total) * 100 : 0, color: 'bg-orange-500' },
-      { name: 'Investimentos', value: investmentsValue, percentage: total > 0 ? (investmentsValue / total) * 100 : 0, color: 'bg-blue-500' },
-      { name: 'Veículos', value: vehiclesValue, percentage: total > 0 ? (vehiclesValue / total) * 100 : 0, color: 'bg-green-500' },
-      { name: 'Ativos Exóticos', value: exoticAssetsValue, percentage: total > 0 ? (exoticAssetsValue / total) * 100 : 0, color: 'bg-purple-500' }
-    ].sort((a, b) => b.value - a.value);
+    const distribution = [
+      { name: 'Imóveis', value: realEstateValue, color: '#f97316' },
+      { name: 'Investimentos', value: investmentsValue, color: '#3b82f6' },
+      { name: 'Veículos', value: vehiclesValue, color: '#22c55e' },
+      { name: 'Ativos Exóticos', value: exoticAssetsValue, color: '#a855f7' }
+    ].filter(item => item.value > 0);
+    
+    setAssetDistribution(distribution);
+  };
+
+  const generateAssetGrowthData = () => {
+    // Get the last 6 months
+    const months = [];
+    const today = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+      const month = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      months.push({
+        month: month.toLocaleString('pt-BR', { month: 'short' }),
+        date: month
+      });
+    }
+    
+    // Calculate total value for each month based on purchase dates
+    const growthData = months.map(({ month, date }) => {
+      // Only count assets purchased before or during this month
+      const monthEnd = new Date(date.getFullYear(), date.getMonth() + 1, 0);
+      
+      const realEstateValue = realEstate
+        .filter(item => new Date(item.purchase_date) <= monthEnd)
+        .reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0);
+        
+      const investmentsValue = investments
+        .filter(item => new Date(item.purchase_date) <= monthEnd)
+        .reduce((sum, item) => {
+          if (item.quantity && item.current_price) {
+            return sum + (item.quantity * item.current_price);
+          }
+          return sum + (item.current_price || item.purchase_price || item.amount);
+        }, 0);
+        
+      const vehiclesValue = vehicles
+        .filter(item => new Date(item.purchase_date) <= monthEnd)
+        .reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0);
+        
+      const exoticAssetsValue = exoticAssets
+        .filter(item => new Date(item.purchase_date) <= monthEnd)
+        .reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0);
+      
+      const totalValue = realEstateValue + investmentsValue + vehiclesValue + exoticAssetsValue;
+      
+      return {
+        month,
+        value: totalValue
+      };
+    });
+    
+    setAssetGrowth(growthData);
+  };
+
+  const calculateTotalValue = () => {
+    const realEstateValue = realEstate.reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0);
+    const investmentsValue = investments.reduce((sum, item) => {
+      if (item.quantity && item.current_price) {
+        return sum + (item.quantity * item.current_price);
+      }
+      return sum + (item.current_price || item.purchase_price || item.amount);
+    }, 0);
+    const vehiclesValue = vehicles.reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0);
+    const exoticAssetsValue = exoticAssets.reduce((sum, item) => sum + (item.current_value || item.purchase_price), 0);
+    
+    return realEstateValue + investmentsValue + vehiclesValue + exoticAssetsValue;
   };
 
   const formatCurrency = (amount: number) => {
@@ -160,16 +232,25 @@ export default function PatrimonyManagement() {
     );
   }
 
-  const assetDistribution = calculateAssetDistribution();
-
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <div>
+        <div className="flex-1">
           <h1 className="text-3xl font-bold text-gray-800">Gestão de Patrimônio</h1>
           <p className="text-gray-500 mt-1">Visão completa dos seus ativos e investimentos</p>
         </div>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-3">
+          <button
+            onClick={() => {
+              fetchData();
+              calculateAssetDistribution();
+              generateAssetGrowthData();
+            }}
+            className="p-2 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+            title="Atualizar dados"
+          >
+            <RefreshCw className="h-5 w-5" />
+          </button>
           <DateRangeSelector 
             onRangeChange={(start, end) => {
               setStartDate(start);
@@ -184,7 +265,7 @@ export default function PatrimonyManagement() {
       </div>
       
       {/* Asset Distribution Charts */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pie Chart */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
           <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
@@ -192,77 +273,89 @@ export default function PatrimonyManagement() {
             Distribuição de Ativos
           </h2>
           <div className="flex flex-col items-center">
-            <div className="relative w-48 h-48 mb-6">
-              {assetDistribution.map((asset, index) => {
-                // Create a simple pie chart with CSS conic-gradient
-                const segments = assetDistribution.map(a => `${a.color} 0 ${a.percentage}%`).join(', ');
-                return (
-                  <div 
-                    key={index}
-                    className="absolute inset-0 rounded-full"
-                    style={{ 
-                      background: `conic-gradient(${segments})`,
-                      clipPath: index === 0 ? 'circle(50%)' : 'none'
-                    }}
-                  ></div>
-                );
-              })}
-            </div>
-            <div className="grid grid-cols-2 gap-4 w-full">
-              {assetDistribution.map((asset, index) => (
-                <div key={index} className="flex items-center">
-                  <div className={`w-3 h-3 ${asset.color} rounded-full mr-2`}></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-700">{asset.name}</p>
-                    <div className="flex justify-between">
-                      <span className="text-xs text-gray-500">{asset.percentage.toFixed(1)}%</span>
-                      <span className="text-xs font-medium">{formatCurrency(asset.value)}</span>
-                    </div>
-                  </div>
+            <div className="h-64 w-full">
+              {assetDistribution.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <Pie
+                      data={assetDistribution}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      nameKey="name"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {assetDistribution.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: number) => formatCurrency(value)}
+                      contentStyle={{ 
+                        backgroundColor: 'white', 
+                        border: '1px solid #e5e7eb',
+                        borderRadius: '0.5rem',
+                        padding: '0.5rem'
+                      }}
+                    />
+                    <Legend />
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center">
+                  <p className="text-gray-500">Sem dados para exibir</p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
         
         {/* Bar Chart */}
         <div className="bg-white rounded-2xl shadow-lg p-6">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+          <h2 className="text-xl font-semibold text-gray-800 mb-6 flex items-center">
             <BarChart className="h-5 w-5 mr-2 text-blue-600" />
             Evolução Patrimonial
           </h2>
-          <div className="h-64 relative">
-            <div className="absolute inset-x-0 bottom-0 h-px bg-gray-200"></div>
-            <div className="absolute inset-y-0 left-0 w-px bg-gray-200"></div>
-            
-            {/* Bars */}
-            <div className="absolute bottom-0 left-[10%] w-12 h-32 bg-blue-500 rounded-t-lg"></div>
-            <div className="absolute bottom-0 left-[25%] w-12 h-40 bg-blue-500 rounded-t-lg"></div>
-            <div className="absolute bottom-0 left-[40%] w-12 h-48 bg-blue-500 rounded-t-lg"></div>
-            <div className="absolute bottom-0 left-[55%] w-12 h-56 bg-blue-500 rounded-t-lg"></div>
-            <div className="absolute bottom-0 left-[70%] w-12 h-60 bg-blue-500 rounded-t-lg"></div>
-            <div className="absolute bottom-0 left-[85%] w-12 h-64 bg-blue-500 rounded-t-lg"></div>
-            
-            {/* X-axis labels */}
-            <div className="absolute bottom-[-20px] left-[10%] text-xs text-gray-500">Jan</div>
-            <div className="absolute bottom-[-20px] left-[25%] text-xs text-gray-500">Mar</div>
-            <div className="absolute bottom-[-20px] left-[40%] text-xs text-gray-500">Mai</div>
-            <div className="absolute bottom-[-20px] left-[55%] text-xs text-gray-500">Jul</div>
-            <div className="absolute bottom-[-20px] left-[70%] text-xs text-gray-500">Set</div>
-            <div className="absolute bottom-[-20px] left-[85%] text-xs text-gray-500">Nov</div>
-            
-            {/* Y-axis labels */}
-            <div className="absolute left-[-30px] bottom-0 text-xs text-gray-500">0</div>
-            <div className="absolute left-[-30px] bottom-[32px] text-xs text-gray-500">500k</div>
-            <div className="absolute left-[-30px] bottom-[64px] text-xs text-gray-500">1M</div>
-            <div className="absolute left-[-30px] bottom-[96px] text-xs text-gray-500">1.5M</div>
-            <div className="absolute left-[-30px] bottom-[128px] text-xs text-gray-500">2M</div>
+          <div className="h-64">
+            {assetGrowth.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <RechartsBarChart data={assetGrowth}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} />
+                  <XAxis dataKey="month" />
+                  <YAxis 
+                    tickFormatter={(value) => 
+                      value === 0 ? '0' : 
+                      value < 1000 ? `${value}` : 
+                      value < 1000000 ? `${(value/1000).toFixed(0)}k` : 
+                      `${(value/1000000).toFixed(1)}M`
+                    } 
+                  />
+                  <Tooltip 
+                    formatter={(value: number) => formatCurrency(value)}
+                    contentStyle={{ 
+                      backgroundColor: 'white', 
+                      border: '1px solid #e5e7eb',
+                      borderRadius: '0.5rem',
+                      padding: '0.5rem'
+                    }}
+                  />
+                  <Bar dataKey="value" fill="#3b82f6" radius={[4, 4, 0, 0]} />
+                </RechartsBarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="h-full flex items-center justify-center">
+                <p className="text-gray-500">Sem dados para exibir</p>
+              </div>
+            )}
           </div>
         </div>
       </div>
       
       {/* Asset Type Summary */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-white rounded-xl shadow-md p-4 border-l-4 border-orange-500">
           <div className="flex justify-between items-center">
             <div>
@@ -590,7 +683,7 @@ export default function PatrimonyManagement() {
     
       
       {/* Asset Metrics */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
         <div className="bg-blue-600 p-6 rounded-xl text-white shadow-md">
           <div className="flex items-center space-x-3 mb-3">
             <div className="bg-white/20 p-3 rounded-lg">
