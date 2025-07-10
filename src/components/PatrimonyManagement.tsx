@@ -102,14 +102,10 @@ export default function PatrimonyManagement() {
     setLoading(true);
     try {
       const [realEstateData, investmentsData, vehiclesData, exoticAssetsData] = await Promise.all([
-        supabase.from('real_estate').select('*').eq('user_id', user?.id)
-          .gte('purchase_date', startDate).lte('purchase_date', endDate),
-        supabase.from('investments').select('*').eq('user_id', user?.id)
-          .gte('purchase_date', startDate).lte('purchase_date', endDate),
-        supabase.from('vehicles').select('*').eq('user_id', user?.id)
-          .gte('purchase_date', startDate).lte('purchase_date', endDate),
+        supabase.from('real_estate').select('*').eq('user_id', user?.id),
+        supabase.from('investments').select('*').eq('user_id', user?.id),
+        supabase.from('vehicles').select('*').eq('user_id', user?.id),
         supabase.from('exotic_assets').select('*').eq('user_id', user?.id)
-          .gte('purchase_date', startDate).lte('purchase_date', endDate)
       ]);
 
       if (realEstateData.data) setRealEstate(realEstateData.data);
