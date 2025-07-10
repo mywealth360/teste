@@ -260,9 +260,9 @@ export default function Bills() {
   const markAsPaid = async (billId: string, amount?: number, paymentMethod?: string) => {
     try {
       const today = new Date().toISOString().split('T')[0];
-      
-      // In production, call the mark_bill_as_paid database function
-      const { data, error } = await supabase.rpc('mark_bill_as_paid', {
+
+      // Call the mark_bill_as_paid_with_alert function to update bill and alert
+      const { data, error } = await supabase.rpc('mark_bill_as_paid_with_alert', {
         bill_id: billId,
         payment_date_val: today,
         payment_amount_val: amount,
@@ -271,6 +271,9 @@ export default function Bills() {
 
       if (error) throw error;
       fetchBills();
+      
+      // Show success message
+      alert('Conta marcada como paga com sucesso!');
     } catch (err) {
       console.error('Error marking bill as paid:', err);
       setError('Erro ao marcar conta como paga');
@@ -280,11 +283,11 @@ export default function Bills() {
   const markAllAsPaid = async () => {
     if (!confirm('Tem certeza que deseja marcar todas as contas pendentes como pagas?')) return;
 
+    setLoading(true);
     try {
       const today = new Date();
       const pendingBills = bills.filter(bill => {
-        const dueDate = new Date(bill.next_due);
-        return bill.is_active && dueDate <= today;
+        return bill.is_active && bill.payment_status !== 'paid';
       });
 
       if (pendingBills.length === 0) {
@@ -292,22 +295,27 @@ export default function Bills() {
         return;
       }
 
-      const updates = pendingBills.map(bill => {
-        const nextMonth = new Date(today.getFullYear(), today.getMonth() + 1, bill.due_day);
-        return supabase
-          .from('bills')
-          .update({
-            last_paid: today.toISOString().split('T')[0],
-            next_due: nextMonth.toISOString().split('T')[0]
-          })
-          .eq('id', bill.id);
+      // Get array of bill IDs
+      const billIds = pendingBills.map(bill => bill.id);
+      
+      // Mark all bills as paid
+      const { data, error } = await supabase.rpc('mark_multiple_bills_as_paid', {
+        bill_ids: billIds,
+        payment_date_val: today.toISOString().split('T')[0]
       });
 
-      await Promise.all(updates);
+      if (error) throw error;
+      
+      // Show success message
+      alert(`${data} contas marcadas como pagas com sucesso!`);
+      
+      // Refresh bills
       fetchBills();
     } catch (err) {
       console.error('Error marking all bills as paid:', err);
       setError('Erro ao marcar todas as contas como pagas');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -337,18 +345,12 @@ export default function Bills() {
   const getBillStatus = (bill: Bill) => {
     if (bill.payment_status === 'paid') {
       return 'paid';
-    }
-    
-    if (bill.payment_status === 'partial') {
-      return 'partial';
-    }
-    
-    if (bill.payment_status === 'overdue' || 
+    } else if (bill.payment_status === 'overdue' || 
         (bill.next_due && new Date(bill.next_due) < new Date())) {
       return 'overdue';
+    } else {
+      return 'pending';
     }
-    
-    return 'pending';
   };
 
   // Toggle email reminder for a bill
@@ -455,6 +457,9 @@ export default function Bills() {
             <div className="flex items-center space-x-3 mb-3 sm:mb-0">
               <AlertTriangle className="h-5 sm:h-6 w-5 sm:w-6 text-red-600" />
               <h2 className="text-base sm:text-lg font-semibold text-red-800">Contas em Atraso</h2>
+              <span className="text-xs bg-red-100 text-red-700 px-2 py-1 rounded-full">
+                {overdueBills.length} {overdueBills.length === 1 ? 'conta' : 'contas'}
+              </span>
             </div>
             <button
               onClick={markAllAsPaid}

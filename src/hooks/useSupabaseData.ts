@@ -173,6 +173,17 @@ export function useDashboardData() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   
+  // Add date range state
+  const [dateRange, setDateRange] = useState<{start: string, end: string}>(() => {
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 30); // Default to last 30 days
+    return {
+      start: start.toISOString().split('T')[0],
+      end: end.toISOString().split('T')[0]
+    };
+  });
+  
   // Individual data hooks
   const incomeSources = useIncomeSources();
   const transactions = useTransactions();
@@ -281,23 +292,40 @@ export function useDashboardData() {
   const totalMonthlyIncome = incomeSources.data
     .filter(source => source.is_active)
     .reduce((sum, source) => {
-      const multiplier = source.frequency === 'monthly' ? 1 : 
-                        source.frequency === 'weekly' ? 4.33 :
-                        source.frequency === 'yearly' ? 1/12 : 1;
-      return sum + (source.amount * multiplier);
+      try {
+        const multiplier = source.frequency === 'monthly' ? 1 : 
+                          source.frequency === 'weekly' ? 4.33 :
+                          source.frequency === 'yearly' ? 1/12 : 1;
+        return sum + (source.amount * multiplier);
+      } catch (e) {
+        console.error('Error calculating income:', e);
+        return sum;
+      }
     }, 0) + 
     // Add real estate rental income
-    realEstate.data.reduce((sum, property) => sum + (property.is_rented ? (property.monthly_rent || 0) : 0), 0) +
-    // Add investment dividend income
-    investments.data.reduce((sum, investment) => {
-      // Calculate monthly dividend income
-      if (investment.dividend_yield && investment.quantity && investment.current_price) {
-        const currentValue = investment.quantity * investment.current_price;
-        return sum + ((currentValue * investment.dividend_yield) / 100 / 12);
-      } else if (investment.monthly_income) {
-        return sum + investment.monthly_income;
+    realEstate.data.reduce((sum, property) => {
+      try {
+        return sum + (property.is_rented ? (property.monthly_rent || 0) : 0);
+      } catch (e) {
+        console.error('Error calculating real estate income:', e);
+        return sum;
       }
-      return sum;
+    }, 0) +
+    // Add investment dividend income
+    investments.data.reduce((sum, investment) => { 
+      try {
+        // Calculate monthly dividend income
+        if (investment.dividend_yield && investment.quantity && investment.current_price) {
+          const currentValue = investment.quantity * investment.current_price;
+          return sum + ((currentValue * investment.dividend_yield) / 100 / 12);
+        } else if (investment.monthly_income) {
+          return sum + investment.monthly_income;
+        }
+        return sum;
+      } catch (e) {
+        console.error('Error calculating investment income:', e);
+        return sum;
+      }
     }, 0);
 
   // Calculate total monthly expenses by summing up all expense categories
@@ -316,14 +344,52 @@ export function useDashboardData() {
   
   // For display in the dashboard, we'll use a fixed value to match the UI
   const totalMonthlyExpenses = bills.data
-    .filter(bill => bill.is_active)
-    .reduce((sum, bill) => sum + bill.amount, 0) +
-    loans.data.reduce((sum, loan) => sum + loan.monthly_payment, 0) +
-    employees.data
-      .filter(emp => emp.status !== 'terminated')
-      .reduce((sum, emp) => sum + emp.salary + (emp.salary * emp.fgts_percentage / 100) + (emp.salary * emp.inss_percentage / 100) + (emp.salary * emp.irrf_percentage / 100) + (emp.other_benefits || 0), 0) +
-    vehicles.data.reduce((sum, vehicle) => sum + (vehicle.monthly_expenses || 0), 0) +
-    realEstate.data.reduce((sum, property) => sum + property.expenses, 0);
+    .filter(bill => bill.is_active && bill.payment_status !== 'paid')
+    .reduce((sum, bill) => {
+      try {
+        return sum + (bill.amount || 0);
+      } catch (e) {
+        console.error('Error calculating bill expenses:', e);
+        return sum;
+      }
+    }, 0) +
+    loans.data.reduce((sum, loan) => {
+      try {
+        return sum + (loan.monthly_payment || 0);
+      } catch (e) {
+        console.error('Error calculating loan expenses:', e);
+        return sum;
+      }
+    }, 0) +
+    employees.data.filter(emp => emp.status !== 'terminated')
+      .reduce((sum, emp) => {
+        try {
+          return sum + emp.salary + 
+            (emp.salary * (emp.fgts_percentage || 0) / 100) + 
+            (emp.salary * (emp.inss_percentage || 0) / 100) + 
+            (emp.salary * (emp.irrf_percentage || 0) / 100) + 
+            (emp.other_benefits || 0);
+        } catch (e) {
+          console.error('Error calculating employee expenses:', e);
+          return sum;
+        }
+      }, 0) +
+    vehicles.data.reduce((sum, vehicle) => {
+      try {
+        return sum + (vehicle.monthly_expenses || 0);
+      } catch (e) {
+        console.error('Error calculating vehicle expenses:', e);
+        return sum;
+      }
+    }, 0) +
+    realEstate.data.reduce((sum, property) => {
+      try {
+        return sum + (property.expenses || 0);
+      } catch (e) {
+        console.error('Error calculating real estate expenses:', e);
+        return sum;
+      }
+    }, 0);
   
   // Calculate the total of all expense categories for internal calculations
   const totalAllExpenses = totalMonthlyExpenses;
@@ -331,47 +397,160 @@ export function useDashboardData() {
   const netMonthlyIncome = totalMonthlyIncome - totalMonthlyExpenses;
 
   const totalInvestmentValue = investments.data.reduce((sum, inv) => {
-    if (inv.quantity && inv.current_price) {
-      return sum + (inv.quantity * inv.current_price);
+    try {
+      if (inv.quantity && inv.current_price) {
+        return sum + (inv.quantity * inv.current_price);
+      }
+      return sum + (inv.amount || 0);
+    } catch (e) {
+      console.error('Error calculating investment value:', e);
+      return sum;
     }
-    return sum + inv.amount;
   }, 0);
   
   const totalInvestmentIncome = investments.data.reduce((sum, inv) => {
-    if (inv.dividend_yield && inv.quantity && inv.current_price) {
-      const currentValue = inv.quantity * inv.current_price;
-      return sum + ((currentValue * inv.dividend_yield) / 100 / 12);
-    } else if (inv.monthly_income) {
-      return sum + inv.monthly_income;
+    try {
+      if (inv.dividend_yield && inv.quantity && inv.current_price) {
+        const currentValue = inv.quantity * inv.current_price;
+        return sum + ((currentValue * inv.dividend_yield) / 100 / 12);
+      } else if (inv.monthly_income) {
+        return sum + inv.monthly_income;
+      }
+      return sum;
+    } catch (e) {
+      console.error('Error calculating investment income:', e);
+      return sum;
     }
-    return sum;
   }, 0);
 
-  const totalRealEstateValue = realEstate.data.reduce((sum, prop) => sum + (prop.current_value || prop.purchase_price), 0);
-  const totalRealEstateIncome = realEstate.data.reduce((sum, prop) => sum + (prop.is_rented ? (prop.monthly_rent || 0) : 0), 0);
-  const totalRealEstateExpenses = realEstate.data.reduce((sum, prop) => sum + prop.expenses, 0);
+  const totalRealEstateValue = realEstate.data.reduce((sum, prop) => {
+    try {
+      return sum + (prop.current_value || prop.purchase_price || 0);
+    } catch (e) {
+      console.error('Error calculating real estate value:', e);
+      return sum;
+    }
+  }, 0);
+  
+  const totalRealEstateIncome = realEstate.data.reduce((sum, prop) => {
+    try {
+      return sum + (prop.is_rented ? (prop.monthly_rent || 0) : 0);
+    } catch (e) {
+      console.error('Error calculating real estate income:', e);
+      return sum;
+    }
+  }, 0);
+  
+  const totalRealEstateExpenses = realEstate.data.reduce((sum, prop) => {
+    try {
+      return sum + (prop.expenses || 0);
+    } catch (e) {
+      console.error('Error calculating real estate expenses:', e);
+      return sum;
+    }
+  }, 0);
 
-  const totalRetirementSaved = retirementPlans.data.reduce((sum, plan) => sum + plan.total_contributed, 0);
-  const totalRetirementContribution = retirementPlans.data.reduce((sum, plan) => sum + plan.monthly_contribution, 0);
+  const totalRetirementSaved = retirementPlans.data.reduce((sum, plan) => {
+    try {
+      return sum + (plan.total_contributed || 0);
+    } catch (e) {
+      console.error('Error calculating retirement savings:', e);
+      return sum;
+    }
+  }, 0);
+  
+  const totalRetirementContribution = retirementPlans.data.reduce((sum, plan) => {
+    try {
+      return sum + (plan.monthly_contribution || 0);
+    } catch (e) {
+      console.error('Error calculating retirement contributions:', e);
+      return sum;
+    }
+  }, 0);
 
-  const totalDebt = loans.data.reduce((sum, loan) => sum + loan.remaining_amount, 0);
-  const totalLoanPayments = loans.data.reduce((sum, loan) => sum + loan.monthly_payment, 0);
+  const totalDebt = loans.data.reduce((sum, loan) => {
+    try {
+      return sum + (loan.remaining_amount || 0);
+    } catch (e) {
+      console.error('Error calculating debt:', e);
+      return sum;
+    }
+  }, 0);
+  
+  const totalLoanPayments = loans.data.reduce((sum, loan) => {
+    try {
+      return sum + (loan.monthly_payment || 0);
+    } catch (e) {
+      console.error('Error calculating loan payments:', e);
+      return sum;
+    }
+  }, 0);
 
   const totalBills = bills.data
-    .filter(bill => bill.is_active)
-    .reduce((sum, bill) => sum + bill.amount, 0);
+    .filter(bill => bill.is_active && bill.payment_status !== 'paid')
+    .reduce((sum, bill) => {
+      try {
+        return sum + (bill.amount || 0);
+      } catch (e) {
+        console.error('Error calculating bills total:', e);
+        return sum;
+      }
+    }, 0);
 
-  const totalBankBalance = bankAccounts.data.reduce((sum, account) => sum + account.balance, 0);
-
-  const totalVehicleValue = vehicles.data.reduce((sum, vehicle) => sum + (vehicle.current_value || vehicle.purchase_price), 0);
-  const totalVehicleDepreciation = vehicles.data.reduce((sum, vehicle) => {
-    const monthsSincePurchase = Math.max(1, Math.floor((Date.now() - new Date(vehicle.purchase_date).getTime()) / (1000 * 60 * 60 * 24 * 30)));
-    return sum + (vehicle.purchase_price * (vehicle.depreciation_rate / 100) * monthsSincePurchase / 12);
+  const totalBankBalance = bankAccounts.data.reduce((sum, account) => {
+    try {
+      return sum + (account.balance || 0);
+    } catch (e) {
+      console.error('Error calculating bank balance:', e);
+      return sum;
+    }
   }, 0);
-  const totalVehicleExpenses = vehicles.data.reduce((sum, vehicle) => sum + (vehicle.monthly_expenses || 0), 0);
 
-  const totalExoticAssetsValue = exoticAssets.data.reduce((sum, asset) => sum + (asset.current_value || asset.purchase_price), 0);
-  const totalExoticAssetsAppreciation = exoticAssets.data.reduce((sum, asset) => sum + ((asset.current_value || asset.purchase_price) - asset.purchase_price), 0);
+  const totalVehicleValue = vehicles.data.reduce((sum, vehicle) => {
+    try {
+      return sum + (vehicle.current_value || vehicle.purchase_price || 0);
+    } catch (e) {
+      console.error('Error calculating vehicle value:', e);
+      return sum;
+    }
+  }, 0);
+  
+  const totalVehicleDepreciation = vehicles.data.reduce((sum, vehicle) => {
+    try {
+      const monthsSincePurchase = Math.max(1, Math.floor((Date.now() - new Date(vehicle.purchase_date).getTime()) / (1000 * 60 * 60 * 24 * 30)));
+      return sum + (vehicle.purchase_price * (vehicle.depreciation_rate / 100) * monthsSincePurchase / 12);
+    } catch (e) {
+      console.error('Error calculating vehicle depreciation:', e);
+      return sum;
+    }
+  }, 0);
+  
+  const totalVehicleExpenses = vehicles.data.reduce((sum, vehicle) => {
+    try {
+      return sum + (vehicle.monthly_expenses || 0);
+    } catch (e) {
+      console.error('Error calculating vehicle expenses:', e);
+      return sum;
+    }
+  }, 0);
+
+  const totalExoticAssetsValue = exoticAssets.data.reduce((sum, asset) => {
+    try {
+      return sum + (asset.current_value || asset.purchase_price || 0);
+    } catch (e) {
+      console.error('Error calculating exotic assets value:', e);
+      return sum;
+    }
+  }, 0);
+  
+  const totalExoticAssetsAppreciation = exoticAssets.data.reduce((sum, asset) => {
+    try {
+      return sum + ((asset.current_value || asset.purchase_price || 0) - (asset.purchase_price || 0));
+    } catch (e) {
+      console.error('Error calculating exotic assets appreciation:', e);
+      return sum;
+    }
+  }, 0);
 
   // Calculate returns and depreciation percentages
   const investmentReturn = totalInvestmentValue > 0 ? 12.5 : 0; // Placeholder value
@@ -380,20 +559,30 @@ export function useDashboardData() {
   const exoticAssetsReturn = totalExoticAssetsValue > 0 ? 15.7 : 0; // Placeholder value
   
   // Calculate fixed income and other income
-  const fixedIncomeReturn = investments.data
-    .filter(inv => inv.type === 'renda-fixa')
-    .reduce((sum, inv) => {
-      if (inv.interest_rate && inv.amount) {
-        return sum + ((inv.amount * inv.interest_rate) / 100 / 12);
+  const fixedIncomeReturn = investments.data.filter(inv => inv.type === 'renda-fixa')
+    .reduce((sum, inv) => { 
+      try {
+        if (inv.interest_rate && inv.amount) {
+          return sum + ((inv.amount * (inv.interest_rate || 0)) / 100 / 12);
+        }
+        return sum + (inv.monthly_income || 0);
+      } catch (e) {
+        console.error('Error calculating fixed income return:', e);
+        return sum;
       }
-      return sum + (inv.monthly_income || 0);
-    }, 0);
+    }, 0); 
     
   const otherIncome = totalMonthlyIncome - totalInvestmentIncome - totalRealEstateIncome - fixedIncomeReturn;
 
-  const totalFinancialGoals = financialGoals.data
-    .filter(goal => goal.status === 'active')
-    .reduce((sum, goal) => sum + goal.current_amount, 0); // Only count current amount, not target amount
+  const totalFinancialGoals = financialGoals.data.filter(goal => goal.status === 'active')
+    .reduce((sum, goal) => {
+      try {
+        return sum + (goal.current_amount || 0);
+      } catch (e) {
+        console.error('Error calculating financial goals total:', e);
+        return sum;
+      }
+    }, 0); // Only count current amount, not target amount
 
   const totalAssets = totalInvestmentValue + totalRealEstateValue + totalRetirementSaved + 
                      totalBankBalance + totalVehicleValue + totalExoticAssetsValue + 
@@ -404,31 +593,45 @@ export function useDashboardData() {
   // Calculate taxes based on registered tax rates
   const totalTaxes = 
     // Income source taxes
-    incomeSources.data
-      .filter(source => source.is_active && source.tax_rate)
-      .reduce((sum, source) => {
-        const monthlyAmount = source.frequency === 'monthly' ? source.amount : 
-                             source.frequency === 'weekly' ? source.amount * 4.33 :
-                             source.frequency === 'yearly' ? source.amount / 12 : 0;
-        return sum + (monthlyAmount * (source.tax_rate / 100));
+    incomeSources.data.filter(source => source.is_active && source.tax_rate)
+      .reduce((sum, source) => { 
+        try {
+          const monthlyAmount = source.frequency === 'monthly' ? source.amount : 
+                               source.frequency === 'weekly' ? source.amount * 4.33 :
+                               source.frequency === 'yearly' ? source.amount / 12 : 0;
+          return sum + (monthlyAmount * ((source.tax_rate || 0) / 100));
+        } catch (e) {
+          console.error('Error calculating income source taxes:', e);
+          return sum;
+        }
       }, 0) +
     // Investment taxes
-    investments.data
-      .filter(inv => inv.tax_rate)
-      .reduce((sum, inv) => {
-        let monthlyIncome = 0;
-        if (inv.dividend_yield && inv.quantity && inv.current_price) {
-          const currentValue = inv.quantity * inv.current_price;
-          monthlyIncome = (currentValue * inv.dividend_yield) / 100 / 12;
-        } else if (inv.monthly_income) {
-          monthlyIncome = inv.monthly_income;
+    investments.data.filter(inv => inv.tax_rate)
+      .reduce((sum, inv) => { 
+        try {
+          let monthlyIncome = 0;
+          if (inv.dividend_yield && inv.quantity && inv.current_price) {
+            const currentValue = inv.quantity * inv.current_price;
+            monthlyIncome = (currentValue * (inv.dividend_yield || 0)) / 100 / 12;
+          } else if (inv.monthly_income) {
+            monthlyIncome = inv.monthly_income;
+          }
+          return sum + (monthlyIncome * ((inv.tax_rate || 0) / 100));
+        } catch (e) {
+          console.error('Error calculating investment taxes:', e);
+          return sum;
         }
-        return sum + (monthlyIncome * (inv.tax_rate / 100));
       }, 0) +
     // Real estate rental taxes
-    realEstate.data
-      .filter(prop => prop.is_rented && prop.monthly_rent && prop.tax_rate)
-      .reduce((sum, prop) => sum + (prop.monthly_rent * (prop.tax_rate / 100)), 0);
+    realEstate.data.filter(prop => prop.is_rented && prop.monthly_rent && prop.tax_rate)
+      .reduce((sum, prop) => {
+        try {
+          return sum + ((prop.monthly_rent || 0) * ((prop.tax_rate || 0) / 100));
+        } catch (e) {
+          console.error('Error calculating real estate taxes:', e);
+          return sum;
+        }
+      }, 0);
 
   return {
     totalMonthlyIncome,
@@ -461,7 +664,8 @@ export function useDashboardData() {
     netWorth,
     totalTaxes,
     loading,
-    error
+    error,
+    setDateRange
   };
 }
 
